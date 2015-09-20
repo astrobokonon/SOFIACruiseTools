@@ -10,7 +10,6 @@ Created on Wed Sep 16 16:40:05 2015
 
 import os
 import sys
-import time
 import pytz
 import datetime
 
@@ -35,9 +34,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Some constants/tracking variables and various defaults
         self.legpos = 0
         self.successparse = False
-        self.toggle_legparam_labels_off()
+        self.toggle_legparam_values_off()
         self.metcounting = False
         self.ttlcounting = False
+        self.legcounting = False
         self.localtz = pytz.timezone('US/Pacific')
         self.setDateTimeEditBoxes()
         self.txt_met.setText("MET +00:00:00")
@@ -54,8 +54,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.set_landing_time.clicked.connect(self.setlanding)
         # Leg timer control
         self.leg_timer_start.clicked.connect(self.startlegtimer)
-        self.leg_timer_start.clicked.connect(self.stoplegtimer)
-        self.leg_timer_start.clicked.connect(self.resetlegtimer)
+        self.leg_timer_stop.clicked.connect(self.stoplegtimer)
+        self.leg_timer_reset.clicked.connect(self.resetlegtimer)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
@@ -64,13 +64,23 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.showlcd()
 
     def startlegtimer(self):
-        pass
+        self.legcounting = True
 
     def stoplegtimer(self):
-        pass
+        self.legcounting = False
 
     def resetlegtimer(self):
-        pass
+        self.legcounting = True
+        self.timerstarttime = datetime.datetime.now()
+        self.timerstarttime = self.timerstarttime.replace(microsecond=0)
+        hms = self.leg_duration.time().toPyTime()
+        dhour = hms.hour
+        dmins = hms.minute
+        dsecs = hms.second
+        durationDT = datetime.timedelta(hours=dhour,
+                                        minutes=dmins,
+                                        seconds=dsecs)
+        self.timerendtime = self.timerstarttime + durationDT
 
     def totalsec_to_hms_str(self, obj):
         tsecs = obj.total_seconds()
@@ -150,22 +160,31 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.metstr = "MET " + self.totalsec_to_hms_str(self.met)
             self.txt_met.setText(self.metstr)
         if self.ttlcounting is True:
+            local2 = self.localnow.replace(tzinfo=None)
             landing2 = self.landing.replace(tzinfo=None)
             self.ttl = landing2 - local2
             self.ttlstr = "TTL " + self.totalsec_to_hms_str(self.ttl)
             self.txt_ttl.setText(self.ttlstr)
+        if self.legcounting is True:
+            local2 = self.localnow.replace(tzinfo=None)
+            legend = self.timerendtime.replace(tzinfo=None)
+            self.legremain = legend - local2
+            self.legremainstr = self.totalsec_to_hms_str(self.legremain)
+            self.txt_leg_timer.setText(self.legremainstr)
 
         self.txt_utc.setText(self.utcnow_str)
         self.txt_kpmd.setText(self.localnow_str)
 
     def toggle_legparam_labels_off(self):
         self.txt_elevation.setVisible(False)
-        self.leg_elevation.setText('')
         self.txt_obsplan.setVisible(False)
-        self.leg_obsblock.setText('')
         self.txt_rof.setVisible(False)
-        self.leg_rofrofrt.setText('')
         self.txt_target.setVisible(False)
+
+    def toggle_legparam_values_off(self):
+        self.leg_elevation.setText('')
+        self.leg_obsblock.setText('')
+        self.leg_rofrofrt.setText('')
         self.leg_target.setText('')
 
     def toggle_legparam_labels_on(self):
@@ -189,7 +208,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.leg_rofrofrt.setText(rof_label)
             self.leg_obsblock.setText(self.lginfo.obsplan)
         else:
-            self.toggle_legparam_labels_off()
+            self.toggle_legparam_values_off()
             # Quick and dirty way to show the leg type
             legtxt = "%i %s" % (self.legpos + 1, self.lginfo.legtype)
             self.leg_number.setText(legtxt)
