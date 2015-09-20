@@ -45,6 +45,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.setDateTimeEditBoxes()
         self.txt_met.setText("MET +00:00:00")
         self.txt_ttl.setText("TTL +00:00:00")
+        # Is a list really the best way of handling this? Don't know yet.
+        self.CruiseLog = []
 
         # Hooking up the various buttons to their actions to take
         # Open the file chooser for the flight plan input
@@ -62,12 +64,25 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Leg timer counting type (radio buttons)
         self.time_select_remaining.clicked.connect(self.countremaining)
         self.time_select_elapsed.clicked.connect(self.countelapsed)
+        # Text log stuff
+        self.log_post.clicked.connect(self.postlogline)
+        self.log_inputline.returnPressed.connect(self.postlogline)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.showlcd)
         timer.start(500)
         self.showlcd()
+
+    def postlogline(self):
+        line = self.log_inputline.text()
+        timestamp = datetime.datetime.utcnow()
+        timestamp = timestamp.replace(microsecond=0)
+        stampedline = timestamp.isoformat() + ">" + line
+        self.CruiseLog.append(stampedline)
+        self.log_display.append(stampedline)
+        # Clear the line
+        self.log_inputline.setText('')
 
     def countremaining(self):
         self.doLegCountElapsed = False

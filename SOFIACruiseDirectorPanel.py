@@ -252,6 +252,7 @@ class Ui_MainWindow(object):
         self.time_select_remaining.setObjectName(_fromUtf8("time_select_remaining"))
         self.gridLayout_9.addWidget(self.time_select_remaining, 0, 0, 1, 1)
         self.time_select_elapsed = QtGui.QRadioButton(self.widget_2)
+        self.time_select_elapsed.setChecked(False)
         self.time_select_elapsed.setObjectName(_fromUtf8("time_select_elapsed"))
         self.gridLayout_9.addWidget(self.time_select_elapsed, 0, 1, 1, 1)
         self.leg_duration = QtGui.QTimeEdit(self.widget_2)
