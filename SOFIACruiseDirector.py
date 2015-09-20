@@ -39,6 +39,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.ttlcounting = False
         self.legcounting = False
         self.legcountingstopped = False
+        self.doLegCountRemaining = True
+        self.doLegCountElapsed = False
         self.localtz = pytz.timezone('US/Pacific')
         self.setDateTimeEditBoxes()
         self.txt_met.setText("MET +00:00:00")
@@ -57,12 +59,23 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.leg_timer_start.clicked.connect(self.startlegtimer)
         self.leg_timer_stop.clicked.connect(self.stoplegtimer)
         self.leg_timer_reset.clicked.connect(self.resetlegtimer)
+        # Leg timer counting type (radio buttons)
+        self.time_select_remaining.clicked.connect(self.countremaining)
+        self.time_select_elapsed.clicked.connect(self.countelapsed)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.showlcd)
         timer.start(500)
         self.showlcd()
+
+    def countremaining(self):
+        self.doLegCountElapsed = False
+        self.doLegCountRemaining = True
+
+    def countelapsed(self):
+        self.doLegCountElapsed = True
+        self.doLegCountRemaining = False
 
     def startlegtimer(self):
         self.legcounting = True
@@ -169,11 +182,23 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             '%m/%d/%Y %H:%M:%S')
 
     def showlcd(self):
+        """
+        Contains the clock logic code for all the various timers.
+
+        MET: Mission Elapsed Time
+        TTL: Time unTill Landing
+        Plus the leg timer variants (elapsed/remaining)
+
+        Since the times were converted to local elsewhere,
+        we ditch the tzinfo to make everything naive to subtract easier.
+        """
+        # Update the current local/utc times before computing timedeltas
         self.update_times()
+        # We set the takeoff time to be in local time, and we know the
+        #   current time is in local as well. So ditch the tzinfo because
+        #   timezones suck and it's a big pain in the ass otherwise.
+        #   The logic follows the same for each counter/timer.
         if self.metcounting is True:
-            # We set the takeoff time to be in local time, and we know the
-            #   current time is in local as well. So ditch the tzinfo because
-            #   timezones suck and it's a big pain in the ass otherwise
             local2 = self.localnow.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
@@ -188,58 +213,93 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         if self.legcounting is True:
             local2 = self.localnow.replace(tzinfo=None)
             legend = self.timerendtime.replace(tzinfo=None)
-            self.legremain = legend - local2
-            self.legremainstr = self.totalsec_to_hms_str(self.legremain)
-            self.txt_leg_timer.setText(self.legremainstr)
+            legstart = self.timerstarttime.replace(tzinfo=None)
 
+            if self.doLegCountRemaining is True:
+                self.legremain = legend - local2
+                self.legremainstr = self.totalsec_to_hms_str(self.legremain)
+                self.txt_leg_timer.setText(self.legremainstr)
+            if self.doLegCountElapsed is True:
+                self.legelapsed = local2 - legstart
+                self.legelapsedstr = self.totalsec_to_hms_str(self.legelapsed)
+                self.txt_leg_timer.setText(self.legelapsedstr)
         self.txt_utc.setText(self.utcnow_str)
-        self.txt_kpmd.setText(self.localnow_str)
+        self.txt_localtime.setText(self.localnow_str)
 
     def toggle_legparam_labels_off(self):
+        """
+        Quick method to hide the leg parameter labels,
+        should we find them distracting
+        """
         self.txt_elevation.setVisible(False)
         self.txt_obsplan.setVisible(False)
         self.txt_rof.setVisible(False)
         self.txt_target.setVisible(False)
 
     def toggle_legparam_values_off(self):
+        """
+        Quick method to clear the leg parameter values,
+        should we know them to be wrong/bogus
+        (such as on dead/departure/arrival) legs
+        """
         self.leg_elevation.setText('')
         self.leg_obsblock.setText('')
         self.leg_rofrofrt.setText('')
         self.leg_target.setText('')
 
     def toggle_legparam_labels_on(self):
+        """
+        Quick method to ensure that the leg parameter labels are visible
+        """
         self.txt_elevation.setVisible(True)
         self.txt_obsplan.setVisible(True)
         self.txt_rof.setVisible(True)
         self.txt_target.setVisible(True)
 
     def updateLegInfoWindow(self):
-        self.leg_number.setText(str(self.legpos + 1))
-        self.leg_target.setText(self.lginfo.target)
-
-        if self.lginfo.legtype is 'Observing':
-            self.toggle_legparam_labels_on()
-            elevation_label = "%.1f to %.1f" % (self.lginfo.range_elev[0],
-                                                self.lginfo.range_elev[1])
-            self.leg_elevation.setText(elevation_label)
-            rof_label = "%.1f to %.1f | %.1f to %.1f" % \
-                (self.lginfo.range_rof[0], self.lginfo.range_rof[1],
-                 self.lginfo.range_rofrt[0], self.lginfo.range_rofrt[1])
-            self.leg_rofrofrt.setText(rof_label)
-            self.leg_obsblock.setText(self.lginfo.obsplan)
-        else:
-            self.toggle_legparam_values_off()
+        """
+        If the flight plan was successfully parsed, show the values
+        for the leg occuring at self.legpos (+1 if you prefer 1-indexed)
+        """
+        # Only worth doing if we read in a flight plan file
+        if self.successparse is True:
             # Quick and dirty way to show the leg type
-            legtxt = "%i %s" % (self.legpos + 1, self.lginfo.legtype)
+            legtxt = "%i\t%s" % (self.legpos + 1, self.lginfo.legtype)
             self.leg_number.setText(legtxt)
 
-        # Now take the duration and autoset our timer duration
-        timeparts = self.lginfo.duration.split(":")
-        timeparts = [np.int(x) for x in timeparts]
-        durtime = QtCore.QTime(timeparts[0], timeparts[1], timeparts[2])
-        self.leg_duration.setTime(durtime)
+            # Target name
+            self.leg_target.setText(self.lginfo.target)
+
+            # If the leg type is an observing leg, show the deets
+            if self.lginfo.legtype is 'Observing':
+                self.toggle_legparam_labels_on()
+                elevation_label = "%.1f to %.1f" % (self.lginfo.range_elev[0],
+                                                    self.lginfo.range_elev[1])
+                self.leg_elevation.setText(elevation_label)
+                rof_label = "%.1f to %.1f | %.1f to %.1f" % \
+                    (self.lginfo.range_rof[0], self.lginfo.range_rof[1],
+                     self.lginfo.range_rofrt[0], self.lginfo.range_rofrt[1])
+                self.leg_rofrofrt.setText(rof_label)
+                self.leg_obsblock.setText(self.lginfo.obsplan)
+            else:
+                # If it's a dead leg, update the leg number and we'll move on
+                # Clear values since they're probably crap
+                self.toggle_legparam_values_off()
+                # Quick and dirty way to show the leg type
+                legtxt = "%i\t%s" % (self.legpos + 1, self.lginfo.legtype)
+                self.leg_number.setText(legtxt)
+
+            # Now take the duration and autoset our timer duration
+            timeparts = self.lginfo.duration.split(":")
+            timeparts = [np.int(x) for x in timeparts]
+            durtime = QtCore.QTime(timeparts[0], timeparts[1], timeparts[2])
+            self.leg_duration.setTime(durtime)
 
     def prevLeg(self):
+        """
+        Move the leg position counter to the previous value,
+        bottoming out at 0
+        """
         if self.successparse is True:
             self.legpos -= 1
             if self.legpos < 0:
@@ -248,6 +308,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.updateLegInfoWindow()
 
     def nextLeg(self):
+        """
+        Move the leg position counter to the next value,
+        hitting the ceiling at the max number of found legs
+        """
         if self.successparse is True:
             self.legpos += 1
             if self.legpos > self.flightinfo.nlegs-1:
@@ -258,6 +322,12 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.updateLegInfoWindow()
 
     def updateTakeoffTime(self):
+        """
+        Grab the flight takeoff time from the flight plan, which is in UTC,
+        and turn it into the time at the local location.
+
+        Then, take that time and update the DateTimeEdit box in the GUI
+        """
         fptakeoffDT = self.flightinfo.takeoff.replace(tzinfo=pytz.utc)
         fptakeoffDT = fptakeoffDT.astimezone(self.localtz)
         fptakeoffstr = fptakeoffDT.strftime("%m/%d/%Y %H:%M:%S")
@@ -266,6 +336,12 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.takeoff_time.setDateTime(fptakeoffQt)
 
     def updateLandingTime(self):
+        """
+        Grab the flight landing time from the flight plan, which is in UTC,
+        and turn it into the time at the local location.
+
+        Then, take that time and update the DateTimeEdit box in the GUI
+        """
         fplandingDT = self.flightinfo.landing.replace(tzinfo=pytz.utc)
         fplandingDT = fplandingDT.astimezone(self.localtz)
         fplandingstr = fplandingDT.strftime("%m/%d/%Y %H:%M:%S")
@@ -274,7 +350,17 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.landing_time.setDateTime(fplandingQt)
 
     def selectFile(self):
+        """
+        Spawn the file chooser diaglog box and return the result, attempting
+        to parse the file as a SOFIA flight plan (.mis).
+
+        If successful, set the various state parameters for further use.
+        If unsuccessful, make the label text red and angry and give the
+        user another chance
+        """
         self.fname = QtGui.QFileDialog.getOpenFileName()
+        # Make sure the label text is black every time we start, and
+        #   cut out the path so we just have the filename instead of huge str
         self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
         self.flightplan_filename.setText(os.path.basename(self.fname))
         try:
@@ -296,10 +382,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
     def browse_folder(self):
         # In case there are any existing elements in the list
         self.listWidget.clear()
-        directory = QtGui.QFileDialog.getExistingDirectory(self,
-                                                           "Pick a folder")
-        # execute getExistingDirectory dialog and set the directory
-        #   variable to be equal to the user selected directory
+        titlestr = "Choose a SOFIA mission file (.mis)"
+        directory = QtGui.QFileDialog.getExistingDirectory(self, titlestr)
 
         # if user didn't pick a directory don't continue
         if directory:

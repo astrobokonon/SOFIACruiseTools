@@ -483,7 +483,7 @@
           </font>
          </property>
          <property name="text">
-          <string>00:00:00</string>
+          <string>+00:00:00</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -517,7 +517,7 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="txt_kpmd">
+        <widget class="QLabel" name="txt_localtime">
          <property name="font">
           <font>
            <family>Digital-7</family>
