@@ -38,6 +38,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.metcounting = False
         self.ttlcounting = False
         self.legcounting = False
+        self.legcountingstopped = False
         self.localtz = pytz.timezone('US/Pacific')
         self.setDateTimeEditBoxes()
         self.txt_met.setText("MET +00:00:00")
@@ -65,9 +66,28 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
     def startlegtimer(self):
         self.legcounting = True
+        self.timerstarttime = datetime.datetime.now()
+        self.timerstarttime = self.timerstarttime.replace(microsecond=0)
+        if self.legcountingstopped is False:
+            hms = self.leg_duration.time().toPyTime()
+            dhour = hms.hour
+            dmins = hms.minute
+            dsecs = hms.second
+        else:
+            newdur = self.txt_leg_timer.text()
+            dhour = np.int(newdur.split(":")[0])
+            dmins = np.int(newdur.split(":")[1])
+            dsecs = np.int(newdur.split(":")[2])
+
+        durationDT = datetime.timedelta(hours=dhour,
+                                        minutes=dmins,
+                                        seconds=dsecs)
+        self.timerendtime = self.timerstarttime + durationDT
+        self.legcountingstopped = False
 
     def stoplegtimer(self):
         self.legcounting = False
+        self.legcountingstopped = True
 
     def resetlegtimer(self):
         self.legcounting = True
