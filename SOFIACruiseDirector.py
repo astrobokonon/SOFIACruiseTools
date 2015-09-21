@@ -4,9 +4,8 @@ Created on Wed Sep 16 16:40:05 2015
 
 @author: rhamilton
 """
-# Started adapting from:
-#  http://nikolak.com/pyqt-qt-designer-getting-started/
-
+# Regen the UI Py file via:
+#   pyuic4-2.7 SOFIACruiseDirectorPanel.ui -o SOFIACruiseDirectorPanel.py
 
 import os
 import sys
@@ -41,22 +40,24 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.legcountingstopped = False
         self.doLegCountRemaining = True
         self.doLegCountElapsed = False
+        self.outputname = ''
         self.localtz = pytz.timezone('US/Pacific')
         self.setDateTimeEditBoxes()
-        self.txt_met.setText("MET +00:00:00")
-        self.txt_ttl.setText("TTL +00:00:00")
+        self.txt_met.setText("+00:00:00 MET")
+        self.txt_ttl.setText("+00:00:00 TTL")
         # Is a list really the best way of handling this? Don't know yet.
         self.CruiseLog = []
 
         # Hooking up the various buttons to their actions to take
         # Open the file chooser for the flight plan input
-        self.flightplan_openfile.clicked.connect(self.selectFile)
+        self.flightplan_openfile.clicked.connect(self.selectInputFile)
         # Flight plan progression
         self.leg_previous.clicked.connect(self.prevLeg)
         self.leg_next.clicked.connect(self.nextLeg)
         # Start the flight progression timers
         self.set_takeoff_time.clicked.connect(self.settakeoff)
         self.set_landing_time.clicked.connect(self.setlanding)
+        self.set_takeofflanding.clicked.connect(self.settakeoffandlanding)
         # Leg timer control
         self.leg_timer_start.clicked.connect(self.startlegtimer)
         self.leg_timer_stop.clicked.connect(self.stoplegtimer)
@@ -68,19 +69,78 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.log_post.clicked.connect(self.postlogline)
         self.log_inputline.returnPressed.connect(self.postlogline)
 
+        self.log_quick_faultmccs.clicked.connect(self.mark_faultmccs)
+        self.log_quick_faultsi.clicked.connect(self.mark_faultsi)
+        self.log_quick_landing.clicked.connect(self.mark_landing)
+        self.log_quick_onheading.clicked.connect(self.mark_onheading)
+        self.log_quick_ontarget.clicked.connect(self.mark_ontarget)
+        self.log_quick_takeoff.clicked.connect(self.mark_takeoff)
+        self.log_quick_turning.clicked.connect(self.mark_turning)
+        self.log_save.clicked.connect(self.selectOutputFile)
+
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.showlcd)
         timer.start(500)
         self.showlcd()
 
-    def postlogline(self):
-        line = self.log_inputline.text()
+    def linestamper(self, line):
         timestamp = datetime.datetime.utcnow()
         timestamp = timestamp.replace(microsecond=0)
-        stampedline = timestamp.isoformat() + ">" + line
-        self.CruiseLog.append(stampedline)
+        stampedline = timestamp.isoformat() + "> " + line
+        self.CruiseLog.append(stampedline + '\n')
         self.log_display.append(stampedline)
+        if self.outputname != '':
+            try:
+                f = open(self.outputname, 'w')
+                f.writelines(self.CruiseLog)
+                f.close()
+            except Exception:
+                self.txt_logoutputname.setText("ERROR WRITING TO FILE!")
+
+    def mark_faultmccs(self):
+        line = "MCCS fault encountered"
+        self.linestamper(line)
+
+    def mark_faultsi(self):
+        line = "SI fault encountered"
+        self.linestamper(line)
+
+    def mark_landing(self):
+        line = "End of flight, packing up and sitting down"
+        self.linestamper(line)
+
+    def mark_onheading(self):
+        line = "On heading, TOs setting up"
+        self.linestamper(line)
+
+    def mark_ontarget(self):
+        line = "On target, SI taking over"
+        self.linestamper(line)
+
+    def mark_takeoff(self):
+        line = "Beginning of flight, getting set up"
+        self.linestamper(line)
+
+    def mark_turning(self):
+        line = "Turning off target"
+        self.linestamper(line)
+
+    def selectOutputFile(self):
+        """
+        Spawn the file chooser diaglog box and return the result, attempting
+        to both open and write to the file.
+
+        """
+        defaultname = "SILog_" + self.utcnow.strftime("%Y%m%d.txt")
+        self.outputname = QtGui.QFileDialog.getSaveFileName(self, "Save File",
+                                                            defaultname)
+        self.txt_logoutputname.setText("Writing to: " +
+                                       os.path.basename(self.outputname))
+
+    def postlogline(self):
+        line = self.log_inputline.text()
+        self.linestamper(line)
         # Clear the line
         self.log_inputline.setText('')
 
@@ -177,6 +237,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Add tzinfo to this object to make it able to interact
         self.landing = self.landing.replace(tzinfo=self.localtz)
 
+    def settakeoffandlanding(self):
+        self.settakeoff()
+        self.setlanding()
+
     def update_times(self):
         """
         Grab the current UTC and local timezone time, and populate the strings.
@@ -186,13 +250,13 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         """
         self.utcnow = datetime.datetime.utcnow()
         self.utcnow = self.utcnow.replace(microsecond=0)
-        self.utcnow_str = self.utcnow.strftime('%H:%M:%S UTC')
+        self.utcnow_str = self.utcnow.strftime(' %H:%M:%S UTC')
         self.utcnow_datetimestr = self.utcnow.strftime('%m/%d/%Y %H:%M:%S $Z')
 
         # Safest way to sensibly go from UTC -> local timezone...?
         self.localnow = self.utcnow.replace(
             tzinfo=pytz.utc).astimezone(self.localtz)
-        self.localnow_str = self.localnow.strftime('%H:%M:%S %Z')
+        self.localnow_str = self.localnow.strftime(' %H:%M:%S %Z')
         self.localnow_datetimestr = self.localnow.strftime(
             '%m/%d/%Y %H:%M:%S')
 
@@ -217,13 +281,13 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             local2 = self.localnow.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
-            self.metstr = "MET " + self.totalsec_to_hms_str(self.met)
+            self.metstr = self.totalsec_to_hms_str(self.met) + " MET"
             self.txt_met.setText(self.metstr)
         if self.ttlcounting is True:
             local2 = self.localnow.replace(tzinfo=None)
             landing2 = self.landing.replace(tzinfo=None)
             self.ttl = landing2 - local2
-            self.ttlstr = "TTL " + self.totalsec_to_hms_str(self.ttl)
+            self.ttlstr = self.totalsec_to_hms_str(self.ttl) + " TTL"
             self.txt_ttl.setText(self.ttlstr)
         if self.legcounting is True:
             local2 = self.localnow.replace(tzinfo=None)
@@ -364,7 +428,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                                   "MM/dd/yyyy HH:mm:ss")
         self.landing_time.setDateTime(fplandingQt)
 
-    def selectFile(self):
+    def selectInputFile(self):
         """
         Spawn the file chooser diaglog box and return the result, attempting
         to parse the file as a SOFIA flight plan (.mis).

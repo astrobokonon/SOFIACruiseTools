@@ -318,7 +318,7 @@ def parse_fpmis_new(infile):
             # Leg header row 3
             # Need to be a bit finicky here to account for target names
             partial = contents[idx+2].split('Target:')[1].strip()
-            leg.target = partial.split('RA:')[0]
+            leg.target = partial.split('RA:')[0].strip()
             leg.ra = partial.split('RA:')[1].split()[0]
             leg.dec = partial.split('Dec:')[1].split()[0]
             leg.epoch = partial.split('Equinox:')[1].split()[0]
