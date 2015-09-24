@@ -153,25 +153,28 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.doLegCountRemaining = False
 
     def startlegtimer(self):
-        self.legcounting = True
-        self.timerstarttime = datetime.datetime.now()
-        self.timerstarttime = self.timerstarttime.replace(microsecond=0)
-        if self.legcountingstopped is False:
-            hms = self.leg_duration.time().toPyTime()
-            dhour = hms.hour
-            dmins = hms.minute
-            dsecs = hms.second
+        if self.legcounting is True:
+            pass
         else:
-            newdur = self.txt_leg_timer.text()
-            dhour = np.int(newdur.split(":")[0])
-            dmins = np.int(newdur.split(":")[1])
-            dsecs = np.int(newdur.split(":")[2])
+            self.legcounting = True
+            self.timerstarttime = datetime.datetime.now()
+            self.timerstarttime = self.timerstarttime.replace(microsecond=0)
+            if self.legcountingstopped is False:
+                hms = self.leg_duration.time().toPyTime()
+                dhour = hms.hour
+                dmins = hms.minute
+                dsecs = hms.second
+            else:
+                newdur = self.txt_leg_timer.text()
+                dhour = np.int(newdur.split(":")[0])
+                dmins = np.int(newdur.split(":")[1])
+                dsecs = np.int(newdur.split(":")[2])
 
-        durationDT = datetime.timedelta(hours=dhour,
-                                        minutes=dmins,
-                                        seconds=dsecs)
-        self.timerendtime = self.timerstarttime + durationDT
-        self.legcountingstopped = False
+            durationDT = datetime.timedelta(hours=dhour,
+                                            minutes=dmins,
+                                            seconds=dsecs)
+            self.timerendtime = self.timerstarttime + durationDT
+            self.legcountingstopped = False
 
     def stoplegtimer(self):
         self.legcounting = False
