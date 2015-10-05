@@ -9,14 +9,62 @@ Created on Wed Sep 16 16:40:05 2015
 
 import os
 import sys
+import csv
 import pytz
+import glob
 import datetime
 
 import numpy as np
+import astropy.io.fits as pyf
 from PyQt4 import QtGui, QtCore
 
 import fp_helper as fpmis
 import SOFIACruiseDirectorPanel as scdp
+
+
+def grab_header(infile, headerlist):
+    """
+    Given a FITS file and a list of header keywords of interest,
+    parse those two together and return the result.
+    """
+    key = ''
+    bname = os.path.basename(infile)
+    try:
+        hed = pyf.getheader(infile)
+    except:
+        hed = ' '
+
+    item = []
+    for key in headerlist:
+        try:
+            item.append(hed[key])
+        except:
+            item.append('')
+
+    return bname, item
+
+
+def grab_headers(inlist, headerlist):
+    """
+    Given a list of FITS files and a list of header keywords of interest,
+    parse those two together and return the result.
+    """
+    ret = []
+    key = ''
+    for each in inlist:
+        bname = os.path.basename(each)
+        try:
+            hed = pyf.getheader(each)
+            item = []
+            for key in headerlist:
+                try:
+                    item.append(hed[key])
+                except:
+                    item.append('')
+            ret.append([bname, item])
+        except:
+            pass
+    return ret
 
 
 class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
@@ -47,6 +95,31 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.txt_ttl.setText("+00:00:00 TTL")
         # Is a list really the best way of handling this? Don't know yet.
         self.CruiseLog = []
+        self.startdatalog = False
+        self.data_current = []
+        self.data_previous = []
+        self.datatable = []
+        self.datafilenames = []
+        self.logoutputname = ''
+
+        self.headers = ['itime', 'co_adds', 'sibs_x', 'sibs_y',
+                        'telra', 'teldec', 'telel', 'tellos', 'alti_sta',
+                        'spectel1', 'slit', 'planid', 'aor_id', 'object']
+        self.headers = [hlab.upper() for hlab in self.headers]
+        # Add the number of columns we'll need for the header keys given
+        for hkey in self.headers:
+            colPosition = self.table_datalog.columnCount()
+            self.table_datalog.insertColumn(colPosition)
+
+        # Need to add just one more column for commenting purposes
+        colPosition = self.table_datalog.columnCount()
+        self.table_datalog.insertColumn(colPosition)
+        self.table_datalog.setHorizontalHeaderLabels(self.headers + ['NOTES'])
+
+#        self.table_datalog.setHorizontalHeaderLabels(self.headers)
+        self.table_datalog.resizeColumnsToContents()
+        self.table_datalog.resizeRowsToContents()
+        self.table_datalog.show()
 
         # Hooking up the various buttons to their actions to take
         # Open the file chooser for the flight plan input
@@ -77,12 +150,20 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.log_quick_takeoff.clicked.connect(self.mark_takeoff)
         self.log_quick_turning.clicked.connect(self.mark_turning)
         self.log_save.clicked.connect(self.selectOutputFile)
+        self.datalog_opendir.clicked.connect(self.selectDir)
+        self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.showlcd)
         timer.start(500)
         self.showlcd()
+
+    def selectDir(self):
+        dtxt = 'Select Data Directory'
+        self.datalogdir = QtGui.QFileDialog.getExistingDirectory(self, dtxt)
+        self.txt_datalogdir.setText(self.datalogdir)
+        self.startdatalog = True
 
     def linestamper(self, line):
         timestamp = datetime.datetime.utcnow()
@@ -137,6 +218,19 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                                             defaultname)
         self.txt_logoutputname.setText("Writing to: " +
                                        os.path.basename(self.outputname))
+
+    def selectLogOutputFile(self):
+        """
+        Spawn the file chooser diaglog box and return the result, attempting
+        to both open and write to the file.
+
+        """
+        defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.txt")
+        self.logoutputname = QtGui.QFileDialog.getSaveFileName(self,
+                                                               "Save File",
+                                                               defaultname)
+        self.txt_datalogsavefile.setText("Writing to: " +
+                                         os.path.basename(self.logoutputname))
 
     def postlogline(self):
         line = self.log_inputline.text()
@@ -292,21 +386,107 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.ttl = landing2 - local2
             self.ttlstr = self.totalsec_to_hms_str(self.ttl) + " TTL"
             self.txt_ttl.setText(self.ttlstr)
+            # Visual indicators setup
+            if self.ttl.total_seconds() >= 7200:
+                self.txt_ttl.setStyleSheet("QLabel { color : black; }")
+            elif self.ttl.total_seconds() < 7200 and self.ttl.total_seconds() >= 5400:
+                self.txt_ttl.setStyleSheet("QLabel { color : yellow; }")
+            elif self.ttl.total_seconds() < 5400:
+                self.txt_ttl.setStyleSheet("QLabel { color : red; }")
         if self.legcounting is True:
             local2 = self.localnow.replace(tzinfo=None)
             legend = self.timerendtime.replace(tzinfo=None)
             legstart = self.timerstarttime.replace(tzinfo=None)
-
             if self.doLegCountRemaining is True:
                 self.legremain = legend - local2
                 self.legremainstr = self.totalsec_to_hms_str(self.legremain)
                 self.txt_leg_timer.setText(self.legremainstr)
+
+                # Visual indicators setup
+                if self.legremain.total_seconds() >= 3600:
+                    self.txt_leg_timer.setStyleSheet(
+                        "QLabel { color : black; }")
+                elif self.legremain.total_seconds() < 3600 and self.legremain.total_seconds() >= 2400:
+                    self.txt_leg_timer.setStyleSheet(
+                        "QLabel { color : yellow; }")
+                elif self.legremain.total_seconds() < 2400:
+                    self.txt_leg_timer.setStyleSheet("QLabel { color : red; }")
             if self.doLegCountElapsed is True:
                 self.legelapsed = local2 - legstart
                 self.legelapsedstr = self.totalsec_to_hms_str(self.legelapsed)
                 self.txt_leg_timer.setText(self.legelapsedstr)
         self.txt_utc.setText(self.utcnow_str)
         self.txt_localtime.setText(self.localnow_str)
+
+        if self.startdatalog is True:
+            if self.utcnow.second % 5 == 0:
+                # Get the current list of FITS files in the location
+                self.data_current = glob.glob(self.datalogdir + "/*.fits")
+                # If the length of the current listing is bigger than
+                #   the previous, then lets look at the new files.
+                #   This avoids the situation where files disappear
+                #   and cause off-by-one errors that we don't want to deal with
+                #   in this first early version.
+                if len(self.data_current) > len(self.data_previous):
+                    self.datanew = []
+                    # Make the unique listing of old files
+                    s = set(self.data_previous)
+                    # Compare the new listing to the unique set of the old ones
+                    diff = [x for x in self.data_current if x not in s]
+                    # Capture the last row position so we know where to start
+                    self.lastdatarow = self.table_datalog.rowCount()
+                    # Actually query the files for the desired headers
+                    for newfile in diff:
+                        # Save the filenames
+                        self.datafilenames.append(os.path.basename(newfile))
+                        # Add number of rows for files to go into first
+                        rowPosition = self.table_datalog.rowCount()
+                        self.table_datalog.insertRow(rowPosition)
+                        # Actually get the header data
+                        self.datanew.append(grab_header(newfile,
+                                                        self.headers))
+
+                    self.setTableData()
+                    self.writedatalog()
+
+                self.data_previous = self.data_current
+#                print self.datatable
+
+    def setTableData(self):
+        if len(self.datanew[0]) != 0:
+            # Actually set the labels for rows
+            self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
+            # Create the data table items and populate things
+            for n, row in enumerate(self.datanew):
+                for m, col in enumerate(row[1]):
+                    newitem = QtGui.QTableWidgetItem(str(col))
+                    self.table_datalog.setItem(n + self.lastdatarow,
+                                               m, newitem)
+
+            # Resize to minimum required, then display
+            self.table_datalog.resizeColumnsToContents()
+            self.table_datalog.resizeRowsToContents()
+            self.table_datalog.show()
+
+    def writedatalog(self):
+        if self.logoutputname != '':
+            try:
+                f = open(self.logoutputname, 'w')
+                writer = csv.writer(f)
+                for row in range(self.table_datalog.rowCount()):
+                    rowdata = []
+                    rowdata.append(self.datafilenames[row])
+                    for column in range(self.table_datalog.columnCount()):
+                        item = self.table_datalog.item(row, column)
+                        if item is not None:
+                            rowdata.append(item.text())
+                        else:
+                            rowdata.append('')
+                    writer.writerow(rowdata)
+                f.close()
+            except Exception, why:
+                print str(why)
+                self.txt_datalogsavefile.setText("ERROR WRITING TO FILE!")
 
     def toggle_legparam_labels_off(self):
         """
