@@ -7,6 +7,12 @@ Created on Wed Sep 16 16:40:05 2015
 # Regen the UI Py file via:
 #   pyuic4-2.7 SOFIACruiseDirectorPanel.ui -o SOFIACruiseDirectorPanel.py
 
+# Current bug:
+#  If you put the output file in the wrong place and try to redefine it,
+#  screwy things result and either the name updates underneath of you
+#  or it doesn't actually write to the new location?
+
+
 import os
 import sys
 import csv
@@ -102,9 +108,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.datafilenames = []
         self.logoutputname = ''
 
-        self.headers = ['itime', 'co_adds', 'sibs_x', 'sibs_y',
+        self.headers = ['itime', 'co_adds', 'object', 'sibs_x', 'sibs_y',
                         'telra', 'teldec', 'telel', 'tellos', 'alti_sta',
-                        'spectel1', 'slit', 'planid', 'aor_id', 'object']
+                        'spectel1', 'slit', 'planid', 'aor_id',
+                        'instmode', 'instcfg', 'obstype', 'nodbeam']
         self.headers = [hlab.upper() for hlab in self.headers]
         # Add the number of columns we'll need for the header keys given
         for hkey in self.headers:
