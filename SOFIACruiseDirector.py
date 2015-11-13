@@ -393,17 +393,23 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.ttl = landing2 - local2
             self.ttlstr = self.totalsec_to_hms_str(self.ttl) + " TTL"
             self.txt_ttl.setText(self.ttlstr)
+
             # Visual indicators setup
             if self.ttl.total_seconds() >= 7200:
                 self.txt_ttl.setStyleSheet("QLabel { color : black; }")
-            elif self.ttl.total_seconds() < 7200 and self.ttl.total_seconds() >= 5400:
+
+            elif self.ttl.total_seconds() < 7200 and\
+                    self.ttl.total_seconds() >= 5400:
                 self.txt_ttl.setStyleSheet("QLabel { color : yellow; }")
+
             elif self.ttl.total_seconds() < 5400:
                 self.txt_ttl.setStyleSheet("QLabel { color : red; }")
+
         if self.legcounting is True:
             local2 = self.localnow.replace(tzinfo=None)
             legend = self.timerendtime.replace(tzinfo=None)
             legstart = self.timerstarttime.replace(tzinfo=None)
+
             if self.doLegCountRemaining is True:
                 self.legremain = legend - local2
                 self.legremainstr = self.totalsec_to_hms_str(self.legremain)
@@ -413,19 +419,25 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 if self.legremain.total_seconds() >= 3600:
                     self.txt_leg_timer.setStyleSheet(
                         "QLabel { color : black; }")
-                elif self.legremain.total_seconds() < 3600 and self.legremain.total_seconds() >= 2400:
+
+                elif self.legremain.total_seconds() < 3600 and\
+                        self.legremain.total_seconds() >= 2400:
                     self.txt_leg_timer.setStyleSheet(
                         "QLabel { color : yellow; }")
+
                 elif self.legremain.total_seconds() < 2400:
                     self.txt_leg_timer.setStyleSheet("QLabel { color : red; }")
+
             if self.doLegCountElapsed is True:
                 self.legelapsed = local2 - legstart
                 self.legelapsedstr = self.totalsec_to_hms_str(self.legelapsed)
                 self.txt_leg_timer.setText(self.legelapsedstr)
+
         self.txt_utc.setText(self.utcnow_str)
         self.txt_localtime.setText(self.localnow_str)
 
         if self.startdatalog is True:
+
             if self.utcnow.second % 5 == 0:
                 # Get the current list of FITS files in the location
                 self.data_current = glob.glob(self.datalogdir + "/*.fits")
