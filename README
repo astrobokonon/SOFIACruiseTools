@@ -43,3 +43,13 @@ should be commented enough to read through briefly and at least find the
 relevant section if you need/want to tinker with something but that varies
 greatly since I wrote the bulk of this while transitioning to a night schedule
 in the day or two before flights.
+
+Description:
+The main package is PyQt4, that handles all of the window and GUI things.  The nice thing about that is there's a GUI for making GUIs, QtDesigner,
+that offers a drag-and-drop interface to do stuff.  Once you have your design you can use a simple command-line tool to take that GUI output and
+turn it into a python file that you can import into your project, and *then* and assign actions to all the different buttons.  That keeps the
+GUI divorced from the actions so you can move stuff around without having to actually change the meat of your code.
+
+'SOFIACruiseDirectorPanel.ui' is the actual GUI design file, 'SOFIACruiseDirectorPanel.py' is the python automatically translated equivalent, and 'SOFIACruiseDirector.py' is where
+all the actions/magic happens.  There's an additional file 'fp_helper.py' that I wrote a while back to read and parse .mis files into python
+structures that I rolled into this as well since it was convenient.
