@@ -21,7 +21,8 @@ import glob
 import datetime
 
 import numpy as np
-import astropy.io.fits as pyf
+#import astropy.io.fits as pyf
+import pyfits as pyf
 from PyQt4 import QtGui, QtCore
 
 import fp_helper as fpmis
@@ -224,7 +225,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.outputname = QtGui.QFileDialog.getSaveFileName(self, "Save File",
                                                             defaultname)
         self.txt_logoutputname.setText("Writing to: " +
-                                       os.path.basename(self.outputname))
+                                       os.path.basename(str(self.outputname)))
 
     def selectLogOutputFile(self):
         """
@@ -237,7 +238,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                                                "Save File",
                                                                defaultname)
         self.txt_datalogsavefile.setText("Writing to: " +
-                                         os.path.basename(self.logoutputname))
+                                         os.path.basename(str(self.logoutputname)))
 
     def postlogline(self):
         line = self.log_inputline.text()
@@ -440,7 +441,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
             if self.utcnow.second % 5 == 0:
                 # Get the current list of FITS files in the location
-                self.data_current = glob.glob(self.datalogdir + "/*.fits")
+                self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
                 # If the length of the current listing is bigger than
                 #   the previous, then lets look at the new files.
                 #   This avoids the situation where files disappear
@@ -643,7 +644,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
-        self.flightplan_filename.setText(os.path.basename(self.fname))
+        self.flightplan_filename.setText(os.path.basename(str(self.fname)))
         try:
             self.flightinfo = fpmis.parse_fpmis(self.fname)
             self.lginfo = self.flightinfo.legs[self.legpos]
