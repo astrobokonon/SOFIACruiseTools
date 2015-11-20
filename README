@@ -5,6 +5,7 @@ Python packages required:
 (shouldn't have to install): re, os, sys, csv, copy, glob, datetime, itertools
 Might have to install: pytz, numpy, scipy
 Will likely have to install: astropy, PyQt4
+NOTE: If you use anaconda, you're probably already set.
 
 Start it by:
 python SOFIACruiseDirector.py
