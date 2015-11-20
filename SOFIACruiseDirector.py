@@ -114,17 +114,20 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                         'spectel1', 'slit', 'planid', 'aor_id',
                         'instmode', 'instcfg', 'obstype', 'nodbeam']
         self.headers = [hlab.upper() for hlab in self.headers]
+
+        # Notes position is first in the table
+        self.table_datalog.insertColumn(0)
+
         # Add the number of columns we'll need for the header keys given
         for hkey in self.headers:
             colPosition = self.table_datalog.columnCount()
             self.table_datalog.insertColumn(colPosition)
 
-        # Need to add just one more column for commenting purposes
-        colPosition = self.table_datalog.columnCount()
-        self.table_datalog.insertColumn(colPosition)
-        self.table_datalog.setHorizontalHeaderLabels(self.headers + ['NOTES'])
+        # IF notes is first in the table
+        self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
+        # IF notes are last in the table
+#        self.table_datalog.setHorizontalHeaderLabels(self.headers + ['NOTES'])
 
-#        self.table_datalog.setHorizontalHeaderLabels(self.headers)
         self.table_datalog.resizeColumnsToContents()
         self.table_datalog.resizeRowsToContents()
         self.table_datalog.show()
@@ -474,18 +477,35 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
     def setTableData(self):
         if len(self.datanew[0]) != 0:
+
+            # Disable fun stuff while we update
+            self.table_datalog.setSortingEnabled(False)
+            self.table_datalog.horizontalHeader().setMovable(False)
+            self.table_datalog.horizontalHeader().setDragEnabled(False)
+            self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+
             # Actually set the labels for rows
             self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
             # Create the data table items and populate things
+
             for n, row in enumerate(self.datanew):
                 for m, col in enumerate(row[1]):
                     newitem = QtGui.QTableWidgetItem(str(col))
                     self.table_datalog.setItem(n + self.lastdatarow,
-                                               m, newitem)
+                                               m+1, newitem)
 
             # Resize to minimum required, then display
             self.table_datalog.resizeColumnsToContents()
             self.table_datalog.resizeRowsToContents()
+
+            # Reenable fun stuff
+            self.table_datalog.setSortingEnabled(True)
+            self.table_datalog.horizontalHeader().setMovable(True)
+            self.table_datalog.horizontalHeader().setDragEnabled(True)
+            self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+#            self.table_datalog.setDragEnabled(True)
+#            self.table_datalog.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+
             self.table_datalog.show()
 
     def writedatalog(self):

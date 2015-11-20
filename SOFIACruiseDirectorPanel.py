@@ -437,7 +437,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -464,7 +464,6 @@ class Ui_MainWindow(object):
         self.datalog_forceupdate.setText(_translate("MainWindow", "Force Update", None))
         self.datalog_forcewrite.setText(_translate("MainWindow", "Force Write", None))
         self.datalog_editFITSKeys.setText(_translate("MainWindow", "Edit FITS Keywords to Query...", None))
-        self.table_datalog.setSortingEnabled(True)
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.dataLogTab), _translate("MainWindow", "Data Log", None))
         self.LegTimers.setTitle(_translate("MainWindow", "Leg Timers", None))
         self.leg_timer_stop.setText(_translate("MainWindow", "Stop", None))
