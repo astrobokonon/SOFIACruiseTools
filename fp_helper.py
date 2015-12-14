@@ -277,7 +277,7 @@ def parse_fpmis_new(infile):
     # Locate where each leg description begins in the file
     legidx = []
     for i in np.arange(8, len(contents)):
-        if contents[i] != '\n' and contents[i].split()[0] == 'Leg':
+        if contents[i] != '\n' and contents[i] != '\r\n' and contents[i].split()[0] == 'Leg':
             legidx.append(i)
 
     # Make sure we found all the legs that were advertised, or else bail
