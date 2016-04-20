@@ -24,7 +24,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>2</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="directorLogTab">
           <attribute name="title">
@@ -190,7 +190,7 @@ p, li { white-space: pre-wrap; }
               </font>
              </property>
              <property name="text">
-              <string/>
+              <string>No Directory Chosen to Scan!</string>
              </property>
             </widget>
            </item>
@@ -215,7 +215,7 @@ p, li { white-space: pre-wrap; }
               </font>
              </property>
              <property name="text">
-              <string/>
+              <string>No Output Filename!</string>
              </property>
             </widget>
            </item>
@@ -240,34 +240,38 @@ p, li { white-space: pre-wrap; }
            <string>FITS Keywords</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_11">
-           <item row="0" column="0">
-            <widget class="QLabel" name="txt_hduchooser">
+           <item row="13" column="4">
+            <widget class="QPushButton" name="pushButton">
              <property name="text">
-              <string>HDU to Search for Keywords (0 indexed)</string>
+              <string>Use Current List for Data Log Ordering</string>
+             </property>
+            </widget>
+           </item>
+           <item row="12" column="4">
+            <widget class="QLabel" name="label">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+               <underline>true</underline>
+              </font>
+             </property>
+             <property name="text">
+              <string>Note: Drag and Drop Items to Reorder</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <set>Qt::AlignCenter</set>
              </property>
             </widget>
            </item>
-           <item row="4" column="2">
-            <widget class="QPushButton" name="fitskw_movedown">
+           <item row="13" column="2" colspan="2">
+            <widget class="QPushButton" name="fitskw_savelist">
              <property name="text">
-              <string>Move Down</string>
+              <string>Save List ...</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="2">
-            <widget class="QPushButton" name="fitskw_add">
-             <property name="text">
-              <string>Add Keyword</string>
-             </property>
-             <property name="default">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" rowspan="6" colspan="2">
+           <item row="1" column="0" rowspan="12" colspan="4">
             <widget class="QListWidget" name="fitskw_listing">
              <property name="font">
               <font>
@@ -278,6 +282,12 @@ p, li { white-space: pre-wrap; }
              </property>
              <property name="dragEnabled">
               <bool>true</bool>
+             </property>
+             <property name="dragDropMode">
+              <enum>QAbstractItemView::InternalMove</enum>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::ExtendedSelection</enum>
              </property>
              <property name="selectionRectVisible">
               <bool>true</bool>
@@ -340,41 +350,108 @@ p, li { white-space: pre-wrap; }
              </item>
             </widget>
            </item>
-           <item row="5" column="2">
-            <widget class="QPushButton" name="fitskw_remove">
-             <property name="text">
-              <string>Remove Keyword</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2">
-            <widget class="QPushButton" name="fitskw_moveup">
-             <property name="text">
-              <string>Move Up</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
-            <widget class="QPushButton" name="fitskw_savelist">
-             <property name="text">
-              <string>Save List ...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
+           <item row="13" column="0" colspan="2">
             <widget class="QPushButton" name="fitskw_loadlist">
              <property name="text">
               <string>Load List ...</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="fitskw_currenthdu">
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
+           <item row="1" column="4">
+            <widget class="QWidget" name="widget_4" native="true">
+             <layout class="QGridLayout" name="gridLayout_13">
+              <item row="1" column="0">
+               <widget class="QSpinBox" name="fitskw_currenthdu">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="suffix">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QCheckBox" name="fitskw_hdulockbox">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLabel" name="fitskw_hdulocklabel">
+                <property name="text">
+                 <string>LOCKED</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="3">
+               <widget class="QLabel" name="txt_hduchooser">
+                <property name="text">
+                 <string>HDU to Search for Keywords (0 indexed)</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="7" column="4">
+            <widget class="QPushButton" name="fitskw_remove">
+             <property name="text">
+              <string>Remove Keyword</string>
              </property>
-             <property name="suffix">
-              <string/>
+            </widget>
+           </item>
+           <item row="6" column="4">
+            <widget class="QPushButton" name="fitskw_movedown">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string>Drag and drop instead!</string>
+             </property>
+             <property name="text">
+              <string>Move Down</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="4">
+            <widget class="QPushButton" name="fitskw_moveup">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string>Drag and drop instead!</string>
+             </property>
+             <property name="text">
+              <string>Move Up</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="4">
+            <widget class="QPushButton" name="fitskw_add">
+             <property name="text">
+              <string>Add Keyword</string>
+             </property>
+             <property name="default">
+              <bool>false</bool>
              </property>
             </widget>
            </item>

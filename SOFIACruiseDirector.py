@@ -36,9 +36,8 @@ def grab_header(infile, headerlist, HDU=0):
     """
     key = ''
     bname = os.path.basename(infile)
-    # NOW NEED TO ADD IN GRABBING THE RIGHT HDU
     try:
-        hed = pyf.getheader(infile)
+        hed = pyf.getheader(infile, ext=HDU)
     except:
         hed = ' '
 
@@ -52,7 +51,7 @@ def grab_header(infile, headerlist, HDU=0):
     return bname, item
 
 
-def grab_headers(inlist, headerlist):
+def grab_headers(inlist, headerlist, HDU=0):
     """
     Given a list of FITS files and a list of header keywords of interest,
     parse those two together and return the result.
@@ -62,7 +61,7 @@ def grab_headers(inlist, headerlist):
     for each in inlist:
         bname = os.path.basename(each)
         try:
-            hed = pyf.getheader(each)
+            hed = pyf.getheader(each, ext=HDU)
             item = []
             for key in headerlist:
                 try:
@@ -165,10 +164,21 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.log_quick_takeoff.clicked.connect(self.mark_takeoff)
         self.log_quick_turning.clicked.connect(self.mark_turning)
         self.log_save.clicked.connect(self.selectOutputFile)
+
         self.datalog_opendir.clicked.connect(self.selectDir)
         self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
         self.datalog_forcewrite.clicked.connect(self.writedatalog)
         self.datalog_forceupdate.clicked.connect(self.updateDatalog)
+        # Add an action that detects when a cell is changed by the user
+        #  in table_datalog!
+
+        self.fitskw_add.clicked.connect(self.getkeywordfromuser)
+        self.fitskw_remove.clicked.connect(self.removekeywordfromlist)
+        self.fitskw_moveup.clicked.connect(self.movekwupinlist)
+        self.fitskw_movedown.clicked.connect(self.movekwdowninlist)
+        self.fitskw_model = self.fitskw_listing.model()
+        self.fitskw_model.layoutChanged.connect(self.updateheadlist)
+        self.fitskw_hdulockbox.toggled.connect(self.togglehdulock)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
@@ -176,7 +186,40 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.showlcd()
 
+    def togglehdulock(self):
+        if self.fitskw_hdulockbox.isChecked() is True:
+            self.fitskw_hdulocklabel.setText('LOCKED')
+            self.fitskw_currenthdu.setEnabled(False)
+        else:
+            self.fitskw_hdulocklabel.setText('UNLOCKED')
+            self.fitskw_currenthdu.setEnabled(True)
+
+    def movekwupinlist(self):
+        # Future work
+        pass
+
+    def movekwdowninlist(self):
+        # Future work
+        pass
+
+    def getkeywordfromuser(self):
+        text, ok = QtGui.QInputDialog.getText(self, "Add Keyword",
+                                              "New Keyword:",
+                                              QtGui.QLineEdit.Normal,
+                                              QtCore.QDir.home().dirName())
+        text = text.strip()
+        text = text.upper()
+        if ok and text != '':
+            self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
+            self.updateheadlist()
+
+    def removekeywordfromlist(self):
+        for it in self.fitskw_listing.selectedItems():
+            self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
+        self.updateheadlist()
+
     def updateheadlist(self):
+        self.headers = []
         for j in range(self.fitskw_listing.count()):
             ched = self.fitskw_listing.item(j).text()
             self.headers.append(ched)
@@ -481,10 +524,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
-                # NEED TO ADD ADDITIONAL HDU ARGUMENT RIGHT HERE
                 self.datanew.append(grab_header(newfile,
-                                                self.headers),
-                                                HDU=self.fitskw_currenthdu.value())
+                                                self.headers,
+                                                HDU=self.fitskw_currenthdu.value()))
 
             self.setTableData()
             self.writedatalog()
