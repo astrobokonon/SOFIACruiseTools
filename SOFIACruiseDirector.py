@@ -74,8 +74,8 @@ def grab_headers(inlist, headerlist):
             pass
     return ret
 
-
-class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
+class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow,
+                             fkp.Ui_FITSKWDialog):
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
@@ -84,6 +84,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         super(self.__class__, self).__init__()
         # This is defined in SOFIACruiseDirectorPanel.py file automatically;
         #   It sets up layout and widgets that are defined
+
         self.setupUi(self)
 
         # Some constants/tracking variables and various defaults
@@ -164,9 +165,12 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.log_save.clicked.connect(self.selectOutputFile)
         self.datalog_opendir.clicked.connect(self.selectDir)
         self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
-#        self.datalog_editFITSKeys.clicked.connect(self.fk
         self.datalog_forcewrite.clicked.connect(self.writedatalog)
         self.datalog_forceupdate.clicked.connect(self.updateDatalog)
+        # INSERT WAY TO SPAWN NEW PANEL AND GET ITS DATA HERE
+#        subform =
+#        self.datalog_editFITSKeys.clicked.connect()
+#        self.datalog_editFITSKeys.clicked.connect(self.FITSKWDialog.show())
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
