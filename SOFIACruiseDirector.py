@@ -27,6 +27,7 @@ from PyQt4 import QtGui, QtCore
 
 import fp_helper as fpmis
 import SOFIACruiseDirectorPanel as scdp
+import FITSKeywordPanel as fkp
 
 
 def grab_header(infile, headerlist):
@@ -163,6 +164,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.log_save.clicked.connect(self.selectOutputFile)
         self.datalog_opendir.clicked.connect(self.selectDir)
         self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
+#        self.datalog_editFITSKeys.clicked.connect(self.fk
+        self.datalog_forcewrite.clicked.connect(self.writedatalog)
+        self.datalog_forceupdate.clicked.connect(self.updateDatalog)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
@@ -440,40 +444,43 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.txt_utc.setText(self.utcnow_str)
         self.txt_localtime.setText(self.localnow_str)
 
-        if self.startdatalog is True:
-
-            if self.utcnow.second % 5 == 0:
-                # Get the current list of FITS files in the location
-                self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
-                # If the length of the current listing is bigger than
-                #   the previous, then lets look at the new files.
-                #   This avoids the situation where files disappear
-                #   and cause off-by-one errors that we don't want to deal with
-                #   in this first early version.
-                if len(self.data_current) > len(self.data_previous):
-                    self.datanew = []
-                    # Make the unique listing of old files
-                    s = set(self.data_previous)
-                    # Compare the new listing to the unique set of the old ones
-                    diff = [x for x in self.data_current if x not in s]
-                    # Capture the last row position so we know where to start
-                    self.lastdatarow = self.table_datalog.rowCount()
-                    # Actually query the files for the desired headers
-                    for newfile in diff:
-                        # Save the filenames
-                        self.datafilenames.append(os.path.basename(newfile))
-                        # Add number of rows for files to go into first
-                        rowPosition = self.table_datalog.rowCount()
-                        self.table_datalog.insertRow(rowPosition)
-                        # Actually get the header data
-                        self.datanew.append(grab_header(newfile,
-                                                        self.headers))
-
-                    self.setTableData()
-                    self.writedatalog()
-
-                self.data_previous = self.data_current
+        if self.startdatalog is True and\
+           self.datalog_autoupdate.isChecked() is True:
+            if self.utcnow.second % self.datalog_updateinterval.value() == 0:
+                self.updateDatalog()
 #                print self.datatable
+
+    def updateDatalog(self):
+        # Get the current list of FITS files in the location
+        self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
+        # If the length of the current listing is bigger than
+        #   the previous, then lets look at the new files.
+        #   This avoids the situation where files disappear
+        #   and cause off-by-one errors that we don't want to deal with
+        #   in this first early version.
+        if len(self.data_current) > len(self.data_previous):
+            self.datanew = []
+            # Make the unique listing of old files
+            s = set(self.data_previous)
+            # Compare the new listing to the unique set of the old ones
+            diff = [x for x in self.data_current if x not in s]
+            # Capture the last row position so we know where to start
+            self.lastdatarow = self.table_datalog.rowCount()
+            # Actually query the files for the desired headers
+            for newfile in diff:
+                # Save the filenames
+                self.datafilenames.append(os.path.basename(newfile))
+                # Add number of rows for files to go into first
+                rowPosition = self.table_datalog.rowCount()
+                self.table_datalog.insertRow(rowPosition)
+                # Actually get the header data
+                self.datanew.append(grab_header(newfile,
+                                                self.headers))
+
+            self.setTableData()
+            self.writedatalog()
+
+        self.data_previous = self.data_current
 
     def setTableData(self):
         if len(self.datanew[0]) != 0:
@@ -495,11 +502,13 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                                m+1, newitem)
 
             # Resize to minimum required, then display
-            self.table_datalog.resizeColumnsToContents()
+#            self.table_datalog.resizeColumnsToContents()
             self.table_datalog.resizeRowsToContents()
 
+            # Seems to be more trouble than it's worth, so keep this commented
+#            self.table_datalog.setSortingEnabled(True)
+
             # Reenable fun stuff
-            self.table_datalog.setSortingEnabled(True)
             self.table_datalog.horizontalHeader().setMovable(True)
             self.table_datalog.horizontalHeader().setDragEnabled(True)
             self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.InternalMove)

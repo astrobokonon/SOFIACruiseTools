@@ -148,10 +148,13 @@ p, li { white-space: pre-wrap; }
            <string>Data Log</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_3">
-           <item row="1" column="0">
-            <widget class="QPushButton" name="datalog_opendir">
-             <property name="text">
-              <string>Set Data Directory</string>
+           <item row="8" column="0" colspan="4">
+            <widget class="QTableWidget" name="table_datalog">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -162,31 +165,45 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
-            <widget class="QPushButton" name="datalog_forceupdate">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="datalog_opendir">
              <property name="text">
-              <string>Force Update</string>
+              <string>Set Data Directory</string>
              </property>
             </widget>
            </item>
-           <item row="5" column="1">
-            <widget class="QPushButton" name="datalog_forcewrite">
+           <item row="0" column="3">
+            <widget class="QCheckBox" name="datalog_autoupdate">
              <property name="text">
-              <string>Force Write</string>
+              <string>Autoupdate every</string>
              </property>
-            </widget>
-           </item>
-           <item row="5" column="2">
-            <widget class="QPushButton" name="datalog_editFITSKeys">
-             <property name="text">
-              <string>Edit FITS Keywords to Query...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0" colspan="3">
-            <widget class="QTableWidget" name="table_datalog">
-             <property name="alternatingRowColors">
+             <property name="checked">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="2">
+            <widget class="QLabel" name="txt_datalogdir">
+             <property name="font">
+              <font>
+               <italic>true</italic>
+              </font>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QSpinBox" name="datalog_updateinterval">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="suffix">
+              <string> seconds</string>
+             </property>
+             <property name="value">
+              <number>5</number>
              </property>
             </widget>
            </item>
@@ -202,15 +219,24 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="1" column="1" colspan="2">
-            <widget class="QLabel" name="txt_datalogdir">
-             <property name="font">
-              <font>
-               <italic>true</italic>
-              </font>
-             </property>
+           <item row="9" column="0">
+            <widget class="QPushButton" name="datalog_forceupdate">
              <property name="text">
-              <string/>
+              <string>Force Update</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QPushButton" name="datalog_forcewrite">
+             <property name="text">
+              <string>Force Write</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="2" colspan="2">
+            <widget class="QPushButton" name="datalog_editFITSKeys">
+             <property name="text">
+              <string>Edit FITS Keywords to Query...</string>
              </property>
             </widget>
            </item>
