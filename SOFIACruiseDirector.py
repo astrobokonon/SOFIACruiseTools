@@ -27,16 +27,16 @@ from PyQt4 import QtGui, QtCore
 
 import fp_helper as fpmis
 import SOFIACruiseDirectorPanel as scdp
-import FITSKeywordPanel as fkp
 
 
-def grab_header(infile, headerlist):
+def grab_header(infile, headerlist, HDU=0):
     """
     Given a FITS file and a list of header keywords of interest,
     parse those two together and return the result.
     """
     key = ''
     bname = os.path.basename(infile)
+    # NOW NEED TO ADD IN GRABBING THE RIGHT HDU
     try:
         hed = pyf.getheader(infile)
     except:
@@ -74,8 +74,8 @@ def grab_headers(inlist, headerlist):
             pass
     return ret
 
-class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow,
-                             fkp.Ui_FITSKWDialog):
+
+class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
@@ -110,11 +110,13 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow,
         self.datatable = []
         self.datafilenames = []
         self.logoutputname = ''
+        self.headers = []
 
-        self.headers = ['itime', 'co_adds', 'object', 'sibs_x', 'sibs_y',
-                        'telra', 'teldec', 'telel', 'tellos', 'alti_sta',
-                        'spectel1', 'slit', 'planid', 'aor_id',
-                        'instmode', 'instcfg', 'obstype', 'nodbeam']
+        self.updateheadlist()
+#        self.headers = ['itime', 'co_adds', 'object', 'sibs_x', 'sibs_y',
+#                        'telra', 'teldec', 'telel', 'tellos', 'alti_sta',
+#                        'spectel1', 'slit', 'planid', 'aor_id',
+#                        'instmode', 'instcfg', 'obstype', 'nodbeam']
         self.headers = [hlab.upper() for hlab in self.headers]
 
         # Notes position is first in the table
@@ -125,9 +127,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow,
             colPosition = self.table_datalog.columnCount()
             self.table_datalog.insertColumn(colPosition)
 
-        # IF notes is first in the table
+        # This always puts the NOTES col. right next to the filename
         self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
-        # IF notes are last in the table
+        # This always puts the NOTES col. at the end of all the other cols.
 #        self.table_datalog.setHorizontalHeaderLabels(self.headers + ['NOTES'])
 
         self.table_datalog.resizeColumnsToContents()
@@ -167,16 +169,17 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow,
         self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
         self.datalog_forcewrite.clicked.connect(self.writedatalog)
         self.datalog_forceupdate.clicked.connect(self.updateDatalog)
-        # INSERT WAY TO SPAWN NEW PANEL AND GET ITS DATA HERE
-#        subform =
-#        self.datalog_editFITSKeys.clicked.connect()
-#        self.datalog_editFITSKeys.clicked.connect(self.FITSKWDialog.show())
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.showlcd)
         timer.start(500)
         self.showlcd()
+
+    def updateheadlist(self):
+        for j in range(self.fitskw_listing.count()):
+            ched = self.fitskw_listing.item(j).text()
+            self.headers.append(ched)
 
     def selectDir(self):
         dtxt = 'Select Data Directory'
@@ -478,8 +481,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow,
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
+                # NEED TO ADD ADDITIONAL HDU ARGUMENT RIGHT HERE
                 self.datanew.append(grab_header(newfile,
-                                                self.headers))
+                                                self.headers),
+                                                HDU=self.fitskw_currenthdu.value())
 
             self.setTableData()
             self.writedatalog()
