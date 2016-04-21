@@ -19,9 +19,9 @@ import csv
 import pytz
 import glob
 import datetime
+import itertools
 
 import numpy as np
-#import astropy.io.fits as pyf
 import pyfits as pyf
 from PyQt4 import QtGui, QtCore
 
@@ -108,7 +108,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.data_previous = []
         self.datatable = []
         self.datafilenames = []
-        self.logoutputname = ''
+        self.logoutnme = ''
         self.headers = []
 
         self.updateheadlist()
@@ -177,8 +177,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.fitskw_moveup.clicked.connect(self.movekwupinlist)
         self.fitskw_movedown.clicked.connect(self.movekwdowninlist)
         self.fitskw_model = self.fitskw_listing.model()
-        self.fitskw_model.layoutChanged.connect(self.updateheadlist)
+        self.fitskw_model.layoutChanged.connect(self.reorderedheadlist)
         self.fitskw_hdulockbox.toggled.connect(self.togglehdulock)
+        self.fitskw_savelist.clicked.connect(self.kwsavelist)
+        self.fitskw_loadlist.clicked.connect(self.kwloadlist)
+        self.fitskw_reordertable.clicked.connect(self.kwforcereordertable)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
@@ -186,13 +189,65 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.showlcd()
 
+    def reorderedheadlist(self):
+        self.updateheadlist()
+        self.txt_fitskw_status.setText("Unsaved Changes!")
+
+    def kwsavelist(self):
+        self.selectKWFile(kind='save')
+        if self.kwname != '':
+            try:
+                f = open(self.kwname, 'w')
+                writer = csv.writer(f)
+                rowdata = []
+                for column in range(len(self.headers)):
+                    if column is not None:
+                        rowdata.append(self.headers[column])
+                    else:
+                        rowdata.append('')
+                writer.writerow(rowdata)
+                f.close()
+                statusline = "File Written: %s" % self.kwname
+                self.txt_fitskw_status.setText(statusline)
+            except Exception, why:
+                print str(why)
+                self.txt_fitskw_status.setText("ERROR WRITING TO FILE!")
+
+    def kwloadlist(self):
+        self.selectKWFile(kind='load')
+        if self.kwname != '':
+            try:
+                f = open(self.kwname, 'r')
+                self.headers = []
+                reader = csv.reader(f)
+                for row in reader:
+                    self.headers.append(row)
+                statusline = "File Loaded: %s" % self.kwname
+                self.txt_fitskw_status.setText(statusline)
+            except Exception, why:
+                print str(why)
+                self.txt_fitskw_status.setText("ERROR READING THE FILE!")
+            finally:
+                f.close()
+                # Loading could have left us with a list of lists, so flatten
+                self.headers = list(itertools.chain(*self.headers))
+                self.reorderkwwidget()
+
+    def reorderkwwidget(self):
+        self.fitskw_listing.clear()
+        for key in self.headers:
+            self.fitskw_listing.addItem(QtGui.QListWidgetItem(key))
+
+    def kwforcereordertable(self):
+        pass
+
     def togglehdulock(self):
         if self.fitskw_hdulockbox.isChecked() is True:
             self.fitskw_hdulocklabel.setText('LOCKED')
-            self.fitskw_currenthdu.setEnabled(False)
+            self.fitskw_hdu.setEnabled(False)
         else:
             self.fitskw_hdulocklabel.setText('UNLOCKED')
-            self.fitskw_currenthdu.setEnabled(True)
+            self.fitskw_hdu.setEnabled(True)
 
     def movekwupinlist(self):
         # Future work
@@ -291,11 +346,27 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         """
         defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.txt")
-        self.logoutputname = QtGui.QFileDialog.getSaveFileName(self,
-                                                               "Save File",
-                                                               defaultname)
+        self.logoutnme = QtGui.QFileDialog.getSaveFileName(self,
+                                                           "Save File",
+                                                           defaultname)
         self.txt_datalogsavefile.setText("Writing to: " +
-                                         os.path.basename(str(self.logoutputname)))
+                                         os.path.basename(str(self.logoutnme)))
+
+    def selectKWFile(self, kind='save'):
+        """
+        Spawn the file chooser diaglog box and return the result, attempting
+        to both open and write to the file.
+
+        """
+        defaultname = "KWList_" + self.utcnow.strftime("%Y%m%d.txt")
+        if kind == 'save':
+            self.kwname = QtGui.QFileDialog.getSaveFileName(self,
+                                                            "Save File",
+                                                            defaultname)
+        if kind == 'load':
+            self.kwname = QtGui.QFileDialog.getOpenFileName(self,
+                                                            "Load File",
+                                                            defaultname)
 
     def postlogline(self):
         line = self.log_inputline.text()
@@ -526,7 +597,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 # Actually get the header data
                 self.datanew.append(grab_header(newfile,
                                                 self.headers,
-                                                HDU=self.fitskw_currenthdu.value()))
+                                                HDU=self.fitskw_hdu.value()))
 
             self.setTableData()
             self.writedatalog()
@@ -535,7 +606,6 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
     def setTableData(self):
         if len(self.datanew[0]) != 0:
-
             # Disable fun stuff while we update
             self.table_datalog.setSortingEnabled(False)
             self.table_datalog.horizontalHeader().setMovable(False)
@@ -569,9 +639,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.table_datalog.show()
 
     def writedatalog(self):
-        if self.logoutputname != '':
+        if self.logoutnme != '':
             try:
-                f = open(self.logoutputname, 'w')
+                f = open(self.logoutnme, 'w')
                 writer = csv.writer(f)
                 for row in range(self.table_datalog.rowCount()):
                     rowdata = []
