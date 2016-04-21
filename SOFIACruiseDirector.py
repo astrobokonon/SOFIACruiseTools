@@ -112,10 +112,6 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.headers = []
 
         self.updateheadlist()
-#        self.headers = ['itime', 'co_adds', 'object', 'sibs_x', 'sibs_y',
-#                        'telra', 'teldec', 'telel', 'tellos', 'alti_sta',
-#                        'spectel1', 'slit', 'planid', 'aor_id',
-#                        'instmode', 'instcfg', 'obstype', 'nodbeam']
         self.headers = [hlab.upper() for hlab in self.headers]
 
         # Notes position is first in the table
@@ -202,12 +198,12 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 rowdata = []
                 for column in range(len(self.headers)):
                     if column is not None:
-                        rowdata.append(self.headers[column])
+                        rowdata.append(str(self.headers[column]))
                     else:
                         rowdata.append('')
                 writer.writerow(rowdata)
                 f.close()
-                statusline = "File Written: %s" % self.kwname
+                statusline = "File Written: %s" % str(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
             except Exception, why:
                 print str(why)
@@ -222,7 +218,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 reader = csv.reader(f)
                 for row in reader:
                     self.headers.append(row)
-                statusline = "File Loaded: %s" % self.kwname
+                statusline = "File Loaded: %s" % str(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
             except Exception, why:
                 print str(why)
@@ -239,6 +235,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.fitskw_listing.addItem(QtGui.QListWidgetItem(key))
 
     def kwforcereordertable(self):
+        # This is going to be ugly.  Might have to really turn the table
+        #  writing function into something that uses a dict or associative
+        #  array, rather than hoping that the columns get populated correctly
         pass
 
     def togglehdulock(self):
@@ -250,11 +249,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.fitskw_hdu.setEnabled(True)
 
     def movekwupinlist(self):
-        # Future work
+        # Future work...?
         pass
 
     def movekwdowninlist(self):
-        # Future work
+        # Future work...?
         pass
 
     def getkeywordfromuser(self):
@@ -262,9 +261,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                               "New Keyword:",
                                               QtGui.QLineEdit.Normal,
                                               QtCore.QDir.home().dirName())
-        text = text.strip()
-        text = text.upper()
+        text = str(text)
         if ok and text != '':
+            text = text.strip()
+            text = text.upper()
             self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
             self.updateheadlist()
 
@@ -277,13 +277,14 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.headers = []
         for j in range(self.fitskw_listing.count()):
             ched = self.fitskw_listing.item(j).text()
-            self.headers.append(ched)
+            self.headers.append(str(ched))
 
     def selectDir(self):
         dtxt = 'Select Data Directory'
         self.datalogdir = QtGui.QFileDialog.getExistingDirectory(self, dtxt)
-        self.txt_datalogdir.setText(self.datalogdir)
-        self.startdatalog = True
+        if self.datalogdir != '':
+            self.txt_datalogdir.setText(self.datalogdir)
+            self.startdatalog = True
 
     def linestamper(self, line):
         timestamp = datetime.datetime.utcnow()
@@ -336,8 +337,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         defaultname = "SILog_" + self.utcnow.strftime("%Y%m%d.txt")
         self.outputname = QtGui.QFileDialog.getSaveFileName(self, "Save File",
                                                             defaultname)
-        self.txt_logoutputname.setText("Writing to: " +
-                                       os.path.basename(str(self.outputname)))
+        if self.outputname != '':
+            self.txt_logoutputname.setText("Writing to: " +
+                                           os.path.basename(str(self.outputname)))
 
     def selectLogOutputFile(self):
         """
@@ -349,8 +351,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.logoutnme = QtGui.QFileDialog.getSaveFileName(self,
                                                            "Save File",
                                                            defaultname)
-        self.txt_datalogsavefile.setText("Writing to: " +
-                                         os.path.basename(str(self.logoutnme)))
+
+        if self.logoutnme != '':
+            self.txt_datalogsavefile.setText("Writing to: " +
+                                             os.path.basename(str(self.logoutnme)))
 
     def selectKWFile(self, kind='save'):
         """
