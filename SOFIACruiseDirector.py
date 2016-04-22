@@ -18,6 +18,7 @@ import sys
 import csv
 import pytz
 import glob
+import time
 import datetime
 import itertools
 
@@ -110,8 +111,22 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.datafilenames = []
         self.logoutnme = ''
         self.headers = []
+        self.instrument = 'HAWC'
 
-        self.updateheadlist()
+        self.headers = ['date-obs', 'spectel1', 'spectel2',
+                        'diagmode', 'diag_hz',
+                        'exptime',  'nhwp', 'hwpstart',
+                        'chpfreq', 'chpamp1', 'chpamp2',
+                        'chpcrsys', 'chpangle',
+                        'nodbeam', 'nodangle', 'nodcrsys',
+                        'dthunit', 'dthindex', 'dthnpos',
+                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+                        'scnra0', 'scndec0', 'scnrate', 'scndir',
+                        'scnraf', 'scndecf',
+                        'obs_id',
+                        'telra', 'teldec', 'telvpa',
+                        'missn-id', 'datasrc', 'instrume']
+#        self.updateheadlist()
         self.updatetablecols()
 
         # Notes position is first in the table
@@ -285,7 +300,6 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             ched = self.fitskw_listing.item(j).text()
             self.headers.append(str(ched))
         self.headers = [hlab.upper() for hlab in self.headers]
-
 
     def selectDir(self):
         dtxt = 'Select Data Directory'
@@ -585,7 +599,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
     def updateDatalog(self):
         # Get the current list of FITS files in the location
-        self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
+        if self.instrument == 'HAWC':
+            self.data_current = glob.glob(str(self.datalogdir) + "/*.grabme")
+        else:
+            self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
+
         # If the length of the current listing is bigger than
         #   the previous, then lets look at the new files.
         #   This avoids the situation where files disappear
@@ -607,7 +625,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
-                self.datanew.append(grab_header(newfile,
+                realfile = newfile[:-6] + 'fits'
+                self.datanew.append(grab_header(realfile,
                                                 self.headers,
                                                 HDU=self.fitskw_hdu.value()))
 
