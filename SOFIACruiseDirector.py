@@ -112,7 +112,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.headers = []
 
         self.updateheadlist()
-        self.headers = [hlab.upper() for hlab in self.headers]
+        self.updatetablecols()
 
         # Notes position is first in the table
         self.table_datalog.insertColumn(0)
@@ -177,13 +177,17 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.fitskw_hdulockbox.toggled.connect(self.togglehdulock)
         self.fitskw_savelist.clicked.connect(self.kwsavelist)
         self.fitskw_loadlist.clicked.connect(self.kwloadlist)
-        self.fitskw_reordertable.clicked.connect(self.kwforcereordertable)
+        self.fitskw_reordertable.clicked.connect(self.updatetablecols)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.showlcd)
         timer.start(500)
         self.showlcd()
+
+    def updatetablecols(self):
+        # This always puts the NOTES col. right next to the filename
+        self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
 
     def reorderedheadlist(self):
         self.updateheadlist()
@@ -267,17 +271,21 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             text = text.upper()
             self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
             self.updateheadlist()
+            self.txt_fitskw_status.setText("Unsaved Changes!")
 
     def removekeywordfromlist(self):
         for it in self.fitskw_listing.selectedItems():
             self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
         self.updateheadlist()
+        self.txt_fitskw_status.setText("Unsaved Changes!")
 
     def updateheadlist(self):
         self.headers = []
         for j in range(self.fitskw_listing.count()):
             ched = self.fitskw_listing.item(j).text()
             self.headers.append(str(ched))
+        self.headers = [hlab.upper() for hlab in self.headers]
+
 
     def selectDir(self):
         dtxt = 'Select Data Directory'
