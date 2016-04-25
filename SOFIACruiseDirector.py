@@ -27,6 +27,7 @@ import pyfits as pyf
 from PyQt4 import QtGui, QtCore
 
 import fp_helper as fpmis
+import FITSKeywordPanel as fkwp
 import SOFIACruiseDirectorPanel as scdp
 
 
@@ -75,6 +76,119 @@ def grab_headers(inlist, headerlist, HDU=0):
     return ret
 
 
+class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
+    def __init__(self, parent=None):
+        super(FITSKeyWordDialog, self).__init__(parent)
+#        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setupUi(self)
+
+        self.fitskw_add.clicked.connect(self.getkeywordfromuser)
+        self.fitskw_remove.clicked.connect(self.removekeywordfromlist)
+        self.fitskw_model = self.fitskw_listing.model()
+        self.fitskw_model.layoutChanged.connect(self.reorderedheadlist)
+        self.fitskw_savelist.clicked.connect(self.kwsavelist)
+        self.fitskw_loadlist.clicked.connect(self.kwloadlist)
+
+#        self.fitskw_dialogbutts.accepted.connect(self.accept)
+#        self.fitskw_dialogbutts.rejected.connect(self.reject)
+        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("accepted()"),
+                     self.accept)
+        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("rejected()"),
+                     self.reject)
+
+        self.utcnow = self.parent().utcnow
+        self.updateheadlist()
+
+    def reorderedheadlist(self):
+        self.txt_fitskw_status.setText("Unsaved Changes!")
+
+    def kwsavelist(self):
+        self.selectKWFile(kind='save')
+        if self.kwname != '':
+            try:
+                f = open(self.kwname, 'w')
+                writer = csv.writer(f)
+                rowdata = []
+                for column in range(len(self.headers)):
+                    if column is not None:
+                        rowdata.append(str(self.headers[column]))
+                    else:
+                        rowdata.append('')
+                writer.writerow(rowdata)
+                f.close()
+                statusline = "File Written: %s" % str(self.kwname)
+                self.txt_fitskw_status.setText(statusline)
+            except Exception, why:
+                print str(why)
+                self.txt_fitskw_status.setText("ERROR WRITING TO FILE!")
+
+    def kwloadlist(self):
+        self.selectKWFile(kind='load')
+        if self.kwname != '':
+            try:
+                f = open(self.kwname, 'r')
+                self.headers = []
+                reader = csv.reader(f)
+                for row in reader:
+                    self.headers.append(row)
+                statusline = "File Loaded: %s" % str(self.kwname)
+                self.txt_fitskw_status.setText(statusline)
+            except Exception, why:
+                print str(why)
+                self.txt_fitskw_status.setText("ERROR READING THE FILE!")
+            finally:
+                f.close()
+                # Loading could have left us with a list of lists, so flatten
+                self.headers = list(itertools.chain(*self.headers))
+                self.reorderkwwidget()
+
+    def reorderkwwidget(self):
+        self.fitskw_listing.clear()
+        for key in self.headers:
+            self.fitskw_listing.addItem(QtGui.QListWidgetItem(key))
+
+    def getkeywordfromuser(self):
+        text, ok = QtGui.QInputDialog.getText(self, "Add Keyword",
+                                              "New Keyword:",
+                                              QtGui.QLineEdit.Normal,
+                                              QtCore.QDir.home().dirName())
+        text = str(text)
+        if ok and text != '':
+            text = text.strip()
+            text = text.upper()
+            self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
+            self.updateheadlist()
+            self.txt_fitskw_status.setText("Unsaved Changes!")
+
+    def removekeywordfromlist(self):
+        for it in self.fitskw_listing.selectedItems():
+            self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
+        self.txt_fitskw_status.setText("Unsaved Changes!")
+
+    def selectKWFile(self, kind='save'):
+        """
+        Spawn the file chooser diaglog box and return the result, attempting
+        to both open and write to the file.
+
+        """
+        defaultname = "KWList_" + self.utcnow.strftime("%Y%m%d.txt")
+        if kind == 'save':
+            self.kwname = QtGui.QFileDialog.getSaveFileName(self,
+                                                            "Save File",
+                                                            defaultname)
+        if kind == 'load':
+            self.kwname = QtGui.QFileDialog.getOpenFileName(self,
+                                                            "Load File",
+                                                            defaultname)
+
+    def updateheadlist(self):
+        self.headers = []
+        for j in range(self.fitskw_listing.count()):
+            ched = self.fitskw_listing.item(j).text()
+            self.headers.append(str(ched))
+        self.headers = [hlab.upper() for hlab in self.headers]
+
+
 class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
@@ -111,14 +225,17 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.datafilenames = []
         self.logoutnme = ''
         self.headers = []
+#        self.instrument = 'HAWCFlight'
         self.instrument = 'HAWC'
+        self.fitshdu = 0
 
         self.headers = ['date-obs', 'spectel1', 'spectel2',
                         'diagmode', 'diag_hz',
                         'exptime',  'nhwp', 'hwpstart',
-                        'chpfreq', 'chpamp1', 'chpamp2',
-                        'chpcrsys', 'chpangle',
-                        'nodbeam', 'nodangle', 'nodcrsys',
+                        'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
+                        'chpangle',
+                        'nodcrsys', 'nodbeam',
+                        'nodangle',
                         'dthunit', 'dthindex', 'dthnpos',
                         'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
                         'scnra0', 'scndec0', 'scnrate', 'scndir',
@@ -126,7 +243,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                         'obs_id',
                         'telra', 'teldec', 'telvpa',
                         'missn-id', 'datasrc', 'instrume']
-#        self.updateheadlist()
+
         self.updatetablecols()
 
         # Notes position is first in the table
@@ -180,19 +297,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
         self.datalog_forcewrite.clicked.connect(self.writedatalog)
         self.datalog_forceupdate.clicked.connect(self.updateDatalog)
+        self.datalog_editkeywords.clicked.connect(self.spawnkwwindow)
+        self.datalog_addrow.clicked.connect(self.adddatalogrow)
+        self.datalog_deleterow.clicked.connect(self.deldatalogrow)
         # Add an action that detects when a cell is changed by the user
         #  in table_datalog!
-
-        self.fitskw_add.clicked.connect(self.getkeywordfromuser)
-        self.fitskw_remove.clicked.connect(self.removekeywordfromlist)
-        self.fitskw_moveup.clicked.connect(self.movekwupinlist)
-        self.fitskw_movedown.clicked.connect(self.movekwdowninlist)
-        self.fitskw_model = self.fitskw_listing.model()
-        self.fitskw_model.layoutChanged.connect(self.reorderedheadlist)
-        self.fitskw_hdulockbox.toggled.connect(self.togglehdulock)
-        self.fitskw_savelist.clicked.connect(self.kwsavelist)
-        self.fitskw_loadlist.clicked.connect(self.kwloadlist)
-        self.fitskw_reordertable.clicked.connect(self.updatetablecols)
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
@@ -200,106 +309,18 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.showlcd()
 
+    def spawnkwwindow(self):
+        window = FITSKeyWordDialog(self)
+        result = window.exec_()
+        if result == 1:
+            print "Clicked ok!"
+            print window.headers
+        # Explicitly kill it
+#        del window
+
     def updatetablecols(self):
         # This always puts the NOTES col. right next to the filename
         self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
-
-    def reorderedheadlist(self):
-        self.updateheadlist()
-        self.txt_fitskw_status.setText("Unsaved Changes!")
-
-    def kwsavelist(self):
-        self.selectKWFile(kind='save')
-        if self.kwname != '':
-            try:
-                f = open(self.kwname, 'w')
-                writer = csv.writer(f)
-                rowdata = []
-                for column in range(len(self.headers)):
-                    if column is not None:
-                        rowdata.append(str(self.headers[column]))
-                    else:
-                        rowdata.append('')
-                writer.writerow(rowdata)
-                f.close()
-                statusline = "File Written: %s" % str(self.kwname)
-                self.txt_fitskw_status.setText(statusline)
-            except Exception, why:
-                print str(why)
-                self.txt_fitskw_status.setText("ERROR WRITING TO FILE!")
-
-    def kwloadlist(self):
-        self.selectKWFile(kind='load')
-        if self.kwname != '':
-            try:
-                f = open(self.kwname, 'r')
-                self.headers = []
-                reader = csv.reader(f)
-                for row in reader:
-                    self.headers.append(row)
-                statusline = "File Loaded: %s" % str(self.kwname)
-                self.txt_fitskw_status.setText(statusline)
-            except Exception, why:
-                print str(why)
-                self.txt_fitskw_status.setText("ERROR READING THE FILE!")
-            finally:
-                f.close()
-                # Loading could have left us with a list of lists, so flatten
-                self.headers = list(itertools.chain(*self.headers))
-                self.reorderkwwidget()
-
-    def reorderkwwidget(self):
-        self.fitskw_listing.clear()
-        for key in self.headers:
-            self.fitskw_listing.addItem(QtGui.QListWidgetItem(key))
-
-    def kwforcereordertable(self):
-        # This is going to be ugly.  Might have to really turn the table
-        #  writing function into something that uses a dict or associative
-        #  array, rather than hoping that the columns get populated correctly
-        pass
-
-    def togglehdulock(self):
-        if self.fitskw_hdulockbox.isChecked() is True:
-            self.fitskw_hdulocklabel.setText('LOCKED')
-            self.fitskw_hdu.setEnabled(False)
-        else:
-            self.fitskw_hdulocklabel.setText('UNLOCKED')
-            self.fitskw_hdu.setEnabled(True)
-
-    def movekwupinlist(self):
-        # Future work...?
-        pass
-
-    def movekwdowninlist(self):
-        # Future work...?
-        pass
-
-    def getkeywordfromuser(self):
-        text, ok = QtGui.QInputDialog.getText(self, "Add Keyword",
-                                              "New Keyword:",
-                                              QtGui.QLineEdit.Normal,
-                                              QtCore.QDir.home().dirName())
-        text = str(text)
-        if ok and text != '':
-            text = text.strip()
-            text = text.upper()
-            self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
-            self.updateheadlist()
-            self.txt_fitskw_status.setText("Unsaved Changes!")
-
-    def removekeywordfromlist(self):
-        for it in self.fitskw_listing.selectedItems():
-            self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
-        self.updateheadlist()
-        self.txt_fitskw_status.setText("Unsaved Changes!")
-
-    def updateheadlist(self):
-        self.headers = []
-        for j in range(self.fitskw_listing.count()):
-            ched = self.fitskw_listing.item(j).text()
-            self.headers.append(str(ched))
-        self.headers = [hlab.upper() for hlab in self.headers]
 
     def selectDir(self):
         dtxt = 'Select Data Directory'
@@ -377,22 +398,6 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         if self.logoutnme != '':
             self.txt_datalogsavefile.setText("Writing to: " +
                                              os.path.basename(str(self.logoutnme)))
-
-    def selectKWFile(self, kind='save'):
-        """
-        Spawn the file chooser diaglog box and return the result, attempting
-        to both open and write to the file.
-
-        """
-        defaultname = "KWList_" + self.utcnow.strftime("%Y%m%d.txt")
-        if kind == 'save':
-            self.kwname = QtGui.QFileDialog.getSaveFileName(self,
-                                                            "Save File",
-                                                            defaultname)
-        if kind == 'load':
-            self.kwname = QtGui.QFileDialog.getOpenFileName(self,
-                                                            "Load File",
-                                                            defaultname)
 
     def postlogline(self):
         line = self.log_inputline.text()
@@ -597,9 +602,29 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.updateDatalog()
 #                print self.datatable
 
+    def adddatalogrow(self):
+        rowPosition = self.table_datalog.rowCount()
+        self.table_datalog.insertRow(rowPosition)
+        self.datafilenames.append('--> ')
+        # Actually set the labels for rows
+        self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
+        self.writedatalog()
+
+    def deldatalogrow(self):
+        bad = self.table_datalog.currentRow()
+        # -1 means we didn't select anything
+        if bad != -1:
+            # Clear the data we don't need anymore
+            del self.datafilenames[bad]
+            self.table_datalog.removeRow(self.table_datalog.currentRow())
+
+            # Redraw
+            self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
+            self.writedatalog()
+
     def updateDatalog(self):
         # Get the current list of FITS files in the location
-        if self.instrument == 'HAWC':
+        if self.instrument == 'HAWCFlight':
             self.data_current = glob.glob(str(self.datalogdir) + "/*.grabme")
         else:
             self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
@@ -619,16 +644,19 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.lastdatarow = self.table_datalog.rowCount()
             # Actually query the files for the desired headers
             for newfile in diff:
+                if self.instrument == "HAWCFlight":
+                    realfile = newfile[:-6] + 'fits'
+                else:
+                    realfile = newfile
                 # Save the filenames
-                self.datafilenames.append(os.path.basename(newfile))
+                self.datafilenames.append(os.path.basename(realfile))
                 # Add number of rows for files to go into first
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
-                realfile = newfile[:-6] + 'fits'
                 self.datanew.append(grab_header(realfile,
                                                 self.headers,
-                                                HDU=self.fitskw_hdu.value()))
+                                                HDU=self.fitshdu))
 
             self.setTableData()
             self.writedatalog()

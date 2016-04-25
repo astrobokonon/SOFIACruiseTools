@@ -15,474 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="0" colspan="5">
-     <widget class="QGroupBox" name="groupBox_2">
-      <property name="title">
-       <string>Logging</string>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QTabWidget" name="tabWidget">
-         <property name="currentIndex">
-          <number>2</number>
-         </property>
-         <widget class="QWidget" name="directorLogTab">
-          <attribute name="title">
-           <string>Cruise Director Log</string>
-          </attribute>
-          <layout class="QGridLayout" name="gridLayout_10">
-           <item row="0" column="0">
-            <widget class="QPushButton" name="log_quick_takeoff">
-             <property name="text">
-              <string>Takeoff</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="log_quick_onheading">
-             <property name="text">
-              <string>On Heading</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QPushButton" name="log_quick_ontarget">
-             <property name="text">
-              <string>On Target</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QPushButton" name="log_quick_turning">
-             <property name="text">
-              <string>Turning</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <widget class="QPushButton" name="log_quick_faultmccs">
-             <property name="text">
-              <string>MCCS Problem</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="5">
-            <widget class="QPushButton" name="log_quick_faultsi">
-             <property name="text">
-              <string>SI Problem</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="6" colspan="2">
-            <widget class="QPushButton" name="log_quick_landing">
-             <property name="text">
-              <string>Landing</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="8">
-            <widget class="QPushButton" name="log_save">
-             <property name="text">
-              <string>Choose Output Filename</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="9">
-            <widget class="QTextEdit" name="log_display">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-             <property name="html">
-              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.Lucida Grande UI'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0" colspan="7">
-            <widget class="QLineEdit" name="log_inputline"/>
-           </item>
-           <item row="2" column="7">
-            <widget class="QPushButton" name="log_post">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Post</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="8">
-            <widget class="QLabel" name="txt_logoutputname">
-             <property name="font">
-              <font>
-               <italic>true</italic>
-              </font>
-             </property>
-             <property name="text">
-              <string>No Output Filename!</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="textInteractionFlags">
-              <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="dataLogTab">
-          <attribute name="title">
-           <string>Data Log</string>
-          </attribute>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <item row="8" column="0" colspan="4">
-            <widget class="QTableWidget" name="table_datalog">
-             <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QPushButton" name="datalog_savefile">
-             <property name="text">
-              <string>Set Log Output File</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="datalog_opendir">
-             <property name="text">
-              <string>Set Data Directory</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QCheckBox" name="datalog_autoupdate">
-             <property name="text">
-              <string>Autoupdate every</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1" colspan="2">
-            <widget class="QLabel" name="txt_datalogdir">
-             <property name="font">
-              <font>
-               <italic>true</italic>
-              </font>
-             </property>
-             <property name="text">
-              <string>No Directory Chosen to Scan!</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="3">
-            <widget class="QSpinBox" name="datalog_updateinterval">
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="suffix">
-              <string> seconds</string>
-             </property>
-             <property name="value">
-              <number>5</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1" colspan="2">
-            <widget class="QLabel" name="txt_datalogsavefile">
-             <property name="font">
-              <font>
-               <italic>true</italic>
-              </font>
-             </property>
-             <property name="text">
-              <string>No Output Filename!</string>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="0">
-            <widget class="QPushButton" name="datalog_forceupdate">
-             <property name="text">
-              <string>Force Update</string>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="3">
-            <widget class="QPushButton" name="datalog_forcewrite">
-             <property name="text">
-              <string>Force Write</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="FITSKW">
-          <attribute name="title">
-           <string>FITS Keywords</string>
-          </attribute>
-          <layout class="QGridLayout" name="gridLayout_11">
-           <item row="4" column="4">
-            <widget class="QPushButton" name="fitskw_add">
-             <property name="text">
-              <string>Add Keyword</string>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="4">
-            <widget class="QPushButton" name="fitskw_remove">
-             <property name="text">
-              <string>Remove Keyword</string>
-             </property>
-            </widget>
-           </item>
-           <item row="12" column="4">
-            <widget class="QLabel" name="txt_fitskw_hint">
-             <property name="font">
-              <font>
-               <weight>75</weight>
-               <bold>true</bold>
-               <underline>true</underline>
-              </font>
-             </property>
-             <property name="text">
-              <string>Note: Drag and Drop Items to Reorder</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="4">
-            <widget class="QPushButton" name="fitskw_movedown">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="toolTip">
-              <string>Drag and drop instead!</string>
-             </property>
-             <property name="text">
-              <string>Move Down</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="4">
-            <widget class="QPushButton" name="fitskw_moveup">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="toolTip">
-              <string>Drag and drop instead!</string>
-             </property>
-             <property name="text">
-              <string>Move Up</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="4">
-            <widget class="QWidget" name="widget_4" native="true">
-             <layout class="QGridLayout" name="gridLayout_13">
-              <item row="1" column="0">
-               <widget class="QSpinBox" name="fitskw_hdu">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-                <property name="suffix">
-                 <string/>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QCheckBox" name="fitskw_hdulockbox">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="QLabel" name="fitskw_hdulocklabel">
-                <property name="text">
-                 <string>LOCKED</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0" colspan="3">
-               <widget class="QLabel" name="txt_hduchooser">
-                <property name="text">
-                 <string>HDU to Search for Keywords (0 indexed)</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="13" column="2" colspan="2">
-            <widget class="QPushButton" name="fitskw_savelist">
-             <property name="text">
-              <string>Save List ...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" rowspan="12" colspan="4">
-            <widget class="QListWidget" name="fitskw_listing">
-             <property name="font">
-              <font>
-               <pointsize>14</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="dragEnabled">
-              <bool>true</bool>
-             </property>
-             <property name="dragDropMode">
-              <enum>QAbstractItemView::InternalMove</enum>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::ExtendedSelection</enum>
-             </property>
-             <property name="selectionRectVisible">
-              <bool>true</bool>
-             </property>
-             <item>
-              <property name="text">
-               <string>DATE-OBS</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>OBS_ID</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>SPECTEL1</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>SPECTEL2</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>MISSN-ID</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>DATASRC</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>INSTRUME</string>
-              </property>
-              <property name="flags">
-               <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="13" column="0" colspan="2">
-            <widget class="QPushButton" name="fitskw_loadlist">
-             <property name="text">
-              <string>Load List ...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="14" column="0" colspan="4">
-            <widget class="QLabel" name="txt_fitskw_status">
-             <property name="font">
-              <font>
-               <italic>true</italic>
-              </font>
-             </property>
-             <property name="text">
-              <string>No file loaded or saved ...</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item row="13" column="4" rowspan="2">
-            <widget class="QPushButton" name="fitskw_reordertable">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Reorder Data Log Table</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
     <item row="0" column="3" rowspan="2" colspan="2">
      <widget class="QGroupBox" name="LegTimers">
       <property name="title">
@@ -1046,6 +578,288 @@ p, li { white-space: pre-wrap; }
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="5">
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="title">
+       <string>Logging</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <widget class="QWidget" name="directorLogTab">
+          <attribute name="title">
+           <string>Cruise Director Log</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_10">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="log_quick_takeoff">
+             <property name="text">
+              <string>Takeoff</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="log_quick_onheading">
+             <property name="text">
+              <string>On Heading</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="log_quick_ontarget">
+             <property name="text">
+              <string>On Target</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QPushButton" name="log_quick_turning">
+             <property name="text">
+              <string>Turning</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QPushButton" name="log_quick_faultmccs">
+             <property name="text">
+              <string>MCCS Problem</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QPushButton" name="log_quick_faultsi">
+             <property name="text">
+              <string>SI Problem</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="6" colspan="2">
+            <widget class="QPushButton" name="log_quick_landing">
+             <property name="text">
+              <string>Landing</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="8">
+            <widget class="QPushButton" name="log_save">
+             <property name="text">
+              <string>Choose Output Filename</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="9">
+            <widget class="QTextEdit" name="log_display">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="html">
+              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.Lucida Grande UI'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="7">
+            <widget class="QLineEdit" name="log_inputline"/>
+           </item>
+           <item row="2" column="7">
+            <widget class="QPushButton" name="log_post">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Post</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="8">
+            <widget class="QLabel" name="txt_logoutputname">
+             <property name="font">
+              <font>
+               <italic>true</italic>
+              </font>
+             </property>
+             <property name="text">
+              <string>No Output Filename!</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="dataLogTab">
+          <attribute name="title">
+           <string>Data Log</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_3">
+           <item row="9" column="0" colspan="6">
+            <widget class="QTableWidget" name="table_datalog">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="datalog_opendir">
+             <property name="text">
+              <string>Set Data Directory</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="3">
+            <widget class="QLabel" name="txt_datalogdir">
+             <property name="font">
+              <font>
+               <italic>true</italic>
+              </font>
+             </property>
+             <property name="text">
+              <string>No Directory Chosen to Scan!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1" colspan="3">
+            <widget class="QLabel" name="txt_datalogsavefile">
+             <property name="font">
+              <font>
+               <italic>true</italic>
+              </font>
+             </property>
+             <property name="text">
+              <string>No Output Filename!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QPushButton" name="datalog_savefile">
+             <property name="text">
+              <string>Set Log Output File</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0" colspan="6">
+            <widget class="QWidget" name="widget_6" native="true">
+             <layout class="QGridLayout" name="gridLayout_14">
+              <item row="0" column="4">
+               <widget class="QPushButton" name="datalog_editkeywords">
+                <property name="text">
+                 <string>Edit Keywords ...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QPushButton" name="datalog_forcewrite">
+                <property name="text">
+                 <string>Force Write</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QPushButton" name="datalog_addrow">
+                <property name="text">
+                 <string>Add a Blank Row</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QPushButton" name="datalog_deleterow">
+                <property name="text">
+                 <string>Remove Highlighted Row</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QPushButton" name="datalog_forceupdate">
+                <property name="text">
+                 <string>Force Update</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="0" column="4" rowspan="2" colspan="2">
+            <widget class="QWidget" name="widget_5" native="true">
+             <layout class="QGridLayout" name="gridLayout_12">
+              <item row="1" column="3">
+               <widget class="QComboBox" name="datalog_instrumentselect">
+                <item>
+                 <property name="text">
+                  <string>HAWC+ (Flight)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>HAWC+ (Ground)</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="datalog_autoupdate">
+                <property name="text">
+                 <string>Autoupdate every:</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="txt_datalog_instrument">
+                <property name="text">
+                 <string>Instrument:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QSpinBox" name="datalog_updateinterval">
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> seconds</string>
+                </property>
+                <property name="value">
+                 <number>5</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
