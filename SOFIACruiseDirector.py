@@ -79,7 +79,6 @@ def grab_headers(inlist, headerlist, HDU=0):
 class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
     def __init__(self, parent=None):
         super(FITSKeyWordDialog, self).__init__(parent)
-#        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setupUi(self)
 
         self.fitskw_add.clicked.connect(self.getkeywordfromuser)
@@ -89,8 +88,6 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
         self.fitskw_savelist.clicked.connect(self.kwsavelist)
         self.fitskw_loadlist.clicked.connect(self.kwloadlist)
 
-#        self.fitskw_dialogbutts.accepted.connect(self.accept)
-#        self.fitskw_dialogbutts.rejected.connect(self.reject)
         self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("accepted()"),
                      self.accept)
         self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("rejected()"),
@@ -315,6 +312,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         if result == 1:
             print "Clicked ok!"
             print window.headers
+            self.fitshdu = np.int(window.fitskw_hdu.value())
         # Explicitly kill it
 #        del window
 
@@ -560,7 +558,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
             elif self.ttl.total_seconds() < 7200 and\
                     self.ttl.total_seconds() >= 5400:
-                self.txt_ttl.setStyleSheet("QLabel { color : yellow; }")
+                self.txt_ttl.setStyleSheet("QLabel { color : darkyellow; }")
 
             elif self.ttl.total_seconds() < 5400:
                 self.txt_ttl.setStyleSheet("QLabel { color : red; }")
@@ -583,7 +581,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 elif self.legremain.total_seconds() < 3600 and\
                         self.legremain.total_seconds() >= 2400:
                     self.txt_leg_timer.setStyleSheet(
-                        "QLabel { color : yellow; }")
+                        "QLabel { color : darkyellow; }")
 
                 elif self.legremain.total_seconds() < 2400:
                     self.txt_leg_timer.setStyleSheet("QLabel { color : red; }")
