@@ -222,8 +222,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.datafilenames = []
         self.logoutnme = ''
         self.headers = []
-#        self.instrument = 'HAWCFlight'
-        self.instrument = 'HAWC'
+        self.instrument = 'HAWCFlight'
+#        self.instrument = 'HAWC'
         self.fitshdu = 0
 
         self.headers = ['date-obs', 'spectel1', 'spectel2',
@@ -238,8 +238,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                         'scnra0', 'scndec0', 'scnrate', 'scndir',
                         'scnraf', 'scndecf',
                         'obs_id',
-                        'telra', 'teldec', 'telvpa',
-                        'missn-id', 'datasrc', 'instrume']
+                        'telra', 'teldec', 'telvpa', 'bsite',
+                        'missn-id', 'datasrc', 'instcfg', 'instmode',
+                        'instrume']
 
         self.updatetablecols()
 
@@ -769,7 +770,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                     (self.lginfo.range_rof[0], self.lginfo.range_rof[1],
                      self.lginfo.range_rofrt[0], self.lginfo.range_rofrt[1])
                 self.leg_rofrofrt.setText(rof_label)
-                self.leg_obsblock.setText(self.lginfo.obsplan)
+                try:
+                    self.leg_obsblock.setText(self.lginfo.obsplan)
+                except:
+                    pass
             else:
                 # If it's a dead leg, update the leg number and we'll move on
                 # Clear values since they're probably crap
