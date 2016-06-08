@@ -1,10 +1,17 @@
-Built in python (probably requires >= 2.6, I use 2.7.something as my daily
-driver)
+Quickstart:
+===========
+- Change 'self.headers' to the FITS keyword headers you want.
+- Change 'self.instrument' to something OTHER than 'HAWCFlight' to search for 
+.FITS files normally; 'HAWCFlight' is a workaround for HAWC+ specifically.
+- Make sure the flight plan file is readable before flight; see below.
+- FITS keyword panel is notional at this time and doesn't change anything.
+- python SOFIACruiseDirector.py
 
+Slowstart:
+===========
 Python packages required:
-(shouldn't have to install): re, os, sys, csv, copy, glob, datetime, itertools
-Might have to install: pytz, numpy, scipy
-Will likely have to install: astropy, PyQt4
+python >= 2.7 (but I haven't tested Python 3)
+pytz, numpy, scipy, astropy, PyQt4
 NOTE: If you use anaconda, you're probably already set.
 
 Start it by:
@@ -30,6 +37,30 @@ Elev: [37.1, 45.8]  ROF: [331.4, 326.5] rate: [-0.09, -0.07] deg/min  Moon Angle
 That "NAIF ID: ..." line is the one that has to go.  I should probably add a
 check to do that automatically but I've obviously haven't.
 
+Recent (2016) flight plans now also change the way departure/arrival legs are 
+denoted; make sure that the ( ) next to "Leg N" say "Departure" or "Arrival" 
+rather than the waypoint names (such as "ROSIN").
+
+Basically, the .mis files are a house of cards at this point.  During the last
+round of comments on flight planning products I made a clear case for a more 
+structured/regular document, but it was completely ignored.
+
+The FITS keyword panel is functional within itself, but at this point
+purely aspirational and does nothing of use.  I struggled in my head with how
+to deal with changing keywords if the log is already written/started, or
+at least changing the order of the keywords.  That struggle never was resolved,
+so it's non-functional.  So if you want to change the FITS headers that are 
+queried, look at SOFIACruiseDirector.py:229 and change what you need there.  It
+should be commented enough to read through briefly and at least find the
+relevant section if you need/want to tinker with something but that varies
+greatly since I wrote the bulk of this while transitioning to a night schedule
+in the day or two before flights.
+
+Also, change self.instrument to what you'd like.  The dropdown menu to choose
+the instrument is there but disconnected.  'HAWCFlight' is a special
+case that queries/looks for files in the specific way to get around how
+HAWC+ writes fits files
+
 It works best if you "Choose Output Filename" for the Cruise Director Log tab
 before you put anything in it to make sure your first comments are saved.
 Additionally, the "Data Log Output" file will only be written when new files
@@ -39,14 +70,8 @@ Any notes that you add won't be added until it finds a new file and adds that
 file to the list, which just needs some simple rewiring of the logic flow to
 make that not a pain like that.
 
-If you want to change the FITS headers that are queried, look at
-SOFIACruiseDirector.py line 111 and change what you need for FORCAST there.  It
-should be commented enough to read through briefly and at least find the
-relevant section if you need/want to tinker with something but that varies
-greatly since I wrote the bulk of this while transitioning to a night schedule
-in the day or two before flights.
-
 Description:
+============
 The main package is PyQt4, that handles all of the window and GUI things.  The
 nice thing about that is there's a GUI for making GUIs, QtDesigner, that offers
 a drag-and-drop interface to do stuff.  Once you have your design you can use a
