@@ -5,6 +5,8 @@ Quickstart:
 .FITS files normally; 'HAWCFlight' is a workaround for HAWC+ specifically.
 - Make sure the flight plan file is readable before flight; see below.
 - FITS keyword panel is notional at this time and doesn't change anything.
+- I'm importing pyfits rather than (my preferred) astropy.io.fits to keep it
+  compatible with py2app.
 - python SOFIACruiseDirector.py
 
 Slowstart:
@@ -86,3 +88,7 @@ equivalent, and 'SOFIACruiseDirector.py' is where all the actions/magic
 happens.  There's an additional file 'fp_helper.py' that I wrote a while back
 to read and parse .mis files into python structures that I rolled into this as
 well since it was convenient.
+
+The 'makeapp' file gives the commands to use with py2app that I experimented 
+with previously; it requires pyfits, *not* astropy.io.fits as the latter 
+is unbundleable due to choices made by astropy.
