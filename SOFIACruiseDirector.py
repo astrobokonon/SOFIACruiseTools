@@ -222,25 +222,40 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.datafilenames = []
         self.logoutnme = ''
         self.headers = []
-        self.instrument = 'HAWCFlight'
-#        self.instrument = 'HAWC'
         self.fitshdu = 0
 
-        self.headers = ['date-obs', 'spectel1', 'spectel2',
-                        'diagmode', 'diag_hz',
-                        'exptime',  'nhwp', 'hwpstart',
-                        'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
-                        'chpangle',
-                        'nodcrsys', 'nodbeam',
-                        'nodangle',
-                        'dthunit', 'dthindex', 'dthnpos',
-                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-                        'scnra0', 'scndec0', 'scnrate', 'scndir',
-                        'scnraf', 'scndecf',
-                        'obs_id',
-                        'telra', 'teldec', 'telvpa', 'bsite',
-                        'missn-id', 'datasrc', 'instcfg', 'instmode',
-                        'instrume']
+        # HAWC instrument name and headers
+        # Use HAWCFlight to support current SI file storage method
+        #
+        #self.instrument = 'HAWCFlight'
+        #self.instrument = 'HAWC'
+        #self.headers = ['date-obs', 'spectel1', 'spectel2',
+        #                'diagmode', 'diag_hz',
+        #                'exptime',  'nhwp', 'hwpstart',
+        #                'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
+        #                'chpangle',
+        #                'nodcrsys', 'nodbeam',
+        #                'nodangle',
+        #                'dthunit', 'dthindex', 'dthnpos',
+        #                'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+        #                'scnra0', 'scndec0', 'scnrate', 'scndir',
+        #                'scnraf', 'scndecf',
+        #                'obs_id',
+        #                'telra', 'teldec', 'telvpa', 'bsite',
+        #                'missn-id', 'datasrc', 'instcfg', 'instmode',
+        #                'instrume']
+
+        # FIFI-LS instrument name and headers
+        self.instrument = 'FIFI-LS'
+        self.headers = ["MISSN-ID", "DATE-OBS", "OBS_ID", "PLANID",
+                        "AOR_ID", "OBJECT", "EXPTIME", "TELRA",
+                        "TELDEC", "OBSRA", "OBSDEC", "DATATYPE", "INSTCFG",
+                        "INSTMODE", "DETCHAN", "DICHROIC",
+                        "OBSTYPE", "ALTI_STA", "ALTI_END",
+                        "ZA_START", "ZA_END", "NODSTYLE", "NODBEAM",
+                        "DLAM_MAP", "DBET_MAP", "DET_ANGL",
+                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R",
+                        "FILEGPID"]
 
         self.updatetablecols()
 
