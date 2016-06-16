@@ -903,6 +903,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
 def main():
     app = QtGui.QApplication(sys.argv)
+    QtGui.QFontDatabase.addApplicationFont("resources/fonts/digital_7/digital-7_mono.ttf")
     form = SOFIACruiseDirectorApp()
     form.show()  # Show the form
     app.exec_()  # and execute the app
