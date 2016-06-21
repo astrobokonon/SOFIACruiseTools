@@ -21,7 +21,7 @@ UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt
 05:24:47 68.9  81.1  N34 31.6 W118 03.1 183/026  3    12:26:39 N/A   N/A   N/A   N/A     -28.6   CLIMB
 
 
-Leg 2 (Departure)       Start: 05:26:55     Leg Dur: 00:02:02   Req. Alt: 35000 ft                      
+Leg 2 (FISCH)       Start: 05:26:55     Leg Dur: 00:02:02   Req. Alt: 35000 ft                      
 End lat: N34 47.4   End Lon: W118 16.2 
 
 
@@ -32,7 +32,7 @@ UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt
 05:28:57 280.0 292.3 N34 47.8 W118 15.8 205/096  -52  12:29:59 N/A   N/A   N/A   N/A     -28.9   CLIMB
 
 
-Leg 3 (Departure)       Start: 05:29:03     Leg Dur: 00:17:00   Req. Alt: 38000 ft                      
+Leg 3 (climb)       Start: 05:29:03     Leg Dur: 00:17:00   Req. Alt: 38000 ft                      
 Init Hdg: 300.0 deg 
 
 
@@ -42,9 +42,10 @@ UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt
 05:46:03 277.7 290.6 N35 56.6 W120 45.5 197/070  -52  12:37:09 N/A   N/A   N/A   N/A     -28.9   
 
 
-Leg 4 (Jupiter Setup)   Start: 05:46:49     Leg Dur: 00:30:00   Req. Alt: 39000 ft                      
+Leg 4 (TA set-up)   Start: 05:46:49     Leg Dur: 00:30:00   Req. Alt: 39000 ft                      
 ObspID: 88_0002     Blk: OB_88_0002_02  Priority:           Obs Dur: 00:01:00   
 Target: Jupiter Barycenter RA: 10h59m39.35s    Dec: 07d55m51.5s    Equinox: J2000.0    
+NAIF ID: 5          
 Elev: [54.1, 49.3]  ROF: [39.1, 38.5] rate: [-0.02, -0.02] deg/min
 Moon Angle: 140     THdg: [317.9, 319.7] rate: [+0.06, +0.06] deg/min
 
@@ -65,6 +66,7 @@ UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt
 Leg 5 ( Jupiter)    Start: 06:16:49     Leg Dur: 02:07:00   Req. Alt: 41000 ft                      
 ObspID: 88_0002     Blk: OB_88_0002_02  Priority:           Obs Dur: 02:07:00   
 Target: Jupiter Barycenter RA: 10h59m39.21s    Dec: 07d55m51.8s    Equinox: J2000.0    
+NAIF ID: 5          
 Elev: [49.3, 31.2]  ROF: [38.5, 34.2] rate: [-0.02, -0.05] deg/min
 Moon Angle: 139     THdg: [319.7, 329.6] rate: [+0.06, +0.09] deg/min
 
@@ -151,7 +153,7 @@ UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt
 11:13:43 141.2 153.6 N31 42.2 W123 07.0 235/037  -51  17:56:17 56.0  269.8 -0.41 3.9     -24.6   
 
 
-Leg 7 (Approach)       Start: 11:15:43     Leg Dur: 00:14:51   Req. Alt: 41000 ft  "Science Leg"       
+Leg 7 (ROSIN)       Start: 11:15:43     Leg Dur: 00:14:51   Req. Alt: 41000 ft  "Science Leg"       
 End lat: N31 56.4   End Lon: W120 16.2 
 
 
