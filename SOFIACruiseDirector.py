@@ -247,15 +247,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         # FIFI-LS instrument name and headers
         self.instrument = 'FIFI-LS'
-        self.headers = ["MISSN-ID", "DATE-OBS", "OBS_ID", "PLANID",
-                        "AOR_ID", "OBJECT", "EXPTIME", "TELRA",
-                        "TELDEC", "OBSRA", "OBSDEC", "DATATYPE", "INSTCFG",
-                        "INSTMODE", "DETCHAN", "DICHROIC",
-                        "OBSTYPE", "ALTI_STA", "ALTI_END",
-                        "ZA_START", "ZA_END", "NODSTYLE", "NODBEAM",
+        self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME", 
+                        "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
+                        "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
                         "DLAM_MAP", "DBET_MAP", "DET_ANGL",
-                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R",
-                        "FILEGPID"]
+                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
 
         self.updatetablecols()
 
