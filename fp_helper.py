@@ -245,8 +245,11 @@ def parse_fpmis_new_new(infile):
 
     # Read the file into memory so we can quickly parse stuff
     f = open(infile, 'r')
-    contents = np.array(f.readlines())
+    contents = np.array(f.read().splitlines())
     f.close()
+
+    idx = np.array(['NAIF' not in c for c in contents])
+    contents = contents[idx]
 
     flight.filename = contents[0].split()[1]
     flight.saved = ' '.join(contents[0].split()[3:6])
@@ -255,8 +258,10 @@ def parse_fpmis_new_new(infile):
     flight.nlegs = np.int(contents[4].split()[5])
 
     flight.takeoff = ' '.join(contents[5].split()[1:4])
+
     # Turn takeoff into a datetime type object
     flight.takeoff = datetime.strptime(flight.takeoff, "%Y-%b-%d %H:%M:%S %Z")
+
     # datetime ALL THE THINGS
     ts = contents[6].split()[2].split(':')
     flight.obstime = timedelta(days=0, weeks=0,
@@ -276,7 +281,7 @@ def parse_fpmis_new_new(infile):
     # Locate where each leg description begins in the file
     legidx = []
     for i in np.arange(8, len(contents)):
-        if contents[i] != '\n' and contents[i].split()[0] == 'Leg':
+        if contents[i].strip() != '' and contents[i].split()[0] == 'Leg':
             legidx.append(i)
 
     # Make sure we found all the legs that were advertised, or else bail
@@ -299,9 +304,13 @@ def parse_fpmis_new_new(infile):
             leg.legtype = 'Dead'
         elif 'Approach' in contents[idx]:
             leg.legtype = 'Approach'
+        elif 'climb' in contents[idx]:
+            leg.legtype = 'Climb'
+        elif 'setup' in contents[idx]:
+            leg.legtype = 'Setup'
         else:
             leg.legtype = 'Observing'
-
+            
         # Finish grabbing the leg header information
         leg.start = contents[idx].split('Start:')[1].strip().split()[0]
         leg.duration = contents[idx].split('Dur:')[1].strip().split()[0]
@@ -318,6 +327,7 @@ def parse_fpmis_new_new(infile):
             leg.ra = partial.split('RA:')[1].split()[0]
             leg.dec = partial.split('Dec:')[1].split()[0]
             leg.epoch = partial.split('Equinox:')[1].split()[0]
+
             # Leg header row 4
             if "orbital" in leg.target:
                 leg.nonsiderial = nonsiderial()
@@ -346,7 +356,7 @@ def parse_fpmis_new_new(infile):
                                      dtype=np.float)
             leg.range_rofrt = np.array(range_rofrt[1:-1].strip().split(','),
                                        dtype=np.float)
-
+            
         # Parse the rest of this leg, which cosists of N lines of comments
         #  and then a table (with header) followed by any warnings, which
         #  are added to the comments property for completeness.

@@ -404,7 +404,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         to both open and write to the file.
 
         """
-        defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.txt")
+        defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.csv")
         self.logoutnme = QtGui.QFileDialog.getSaveFileName(self,
                                                            "Save File",
                                                            defaultname)
