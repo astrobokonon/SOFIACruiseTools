@@ -18,6 +18,7 @@ import sys
 import csv
 import pytz
 import glob
+import fnmatch
 import time
 import datetime
 import itertools
@@ -636,6 +637,12 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Get the current list of FITS files in the location
         if self.instrument == 'HAWCFlight':
             self.data_current = glob.glob(str(self.datalogdir) + "/*.grabme")
+        elif self.instrument == 'FIFI-LS':
+            curdata = []
+            for root, dirnames, filenames in os.walk(str(self.datalogdir)):
+                for filename in fnmatch.filter(filenames, '*.fits'):
+                    curdata.append(os.path.join(root, filename))
+            self.data_current = curdata
         else:
             self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
 
