@@ -35,7 +35,7 @@ def findLegHeaders(words, header, how='match'):
     return locs
 
 
-def keyValuePair(line, key, delim=":", dtype=None, linelen=None):
+def keyValuePair(line, key, delim=":", dtype=None, linelen=None, pos=1):
     """
     Given a line and a key supposedly occuring on that line, return its
     value in the given dtype (if dtype is not None).  If the value isn't
@@ -50,7 +50,7 @@ def keyValuePair(line, key, delim=":", dtype=None, linelen=None):
     else:
         # Split on the ':' following the keyword
         try:
-            val = line[loc:].strip().split(":")[1].split()[0].strip()
+            val = line[loc:].strip().split(delim)[pos].split()[0].strip()
         except:
             val = None
     if dtype is int:
@@ -254,15 +254,19 @@ class legprofile(object):
         """
         Returns a nice summary string about the current leg
         """
+        txtSummary = ''
+
         if self.legtype == 'Takeoff':
-            txtSummary = "%s %02d: " %\
+            txtSummary = "%s %02d" %\
                          (self.legtype, self.legno)
         elif self.legtype == 'Landing':
-            pass
+            txtSummary = "%s %02d" %\
+                         (self.legtype, self.legno)
         elif self.legtype == 'Other':
-            pass
+            txtSummary = "%s %02d" %\
+                         (self.legtype, self.legno)
         elif self.legtype == 'Observing':
-            txtSummary = "%s, RA: %s Dec: %s, Dur: %02.2f ObsDur: %02.2f" %\
+            txtSummary = "%s, RA: %s Dec: %s, Dur: %s ObsDur: %s" %\
                          (self.target, self.ra, self.dec,
                           str(self.duration),
                           str(self.obsdur))
@@ -270,60 +274,6 @@ class legprofile(object):
             pass
 
         return txtSummary
-
-
-def legHeaderPuller(i, words, ltype=None):
-    """
-    Given a block of lines from the .MIS file that contain the leg's
-    metadata and actual data starting lines, parse all the crap in between
-    that's important and useful and return the leg class for further use.
-    """
-    newleg = legprofile()
-    newleg.legno = i + 1
-
-    # Use the regexp setup used in parseMISPreamble
-    #   to make this not an awful, awful time
-
-
-
-    lineone = firstrexp.findall(words[0].strip())[0]
-    # Magic parsing of what the regexp returns rather than a more sensible
-    #   dictionary/assignment approach.  Whatever.
-    newleg.target = lineone[2]
-    newleg.start = keyValuePairTD(lineone[3], "Start")
-    newleg.duration = keyValuePairTD(lineone[4], "Leg Dur")
-    newleg.altitude = keyValuePair(lineone[5], "Req. Alt", dtype=float)
-
-    # Now we begin the itterative approach to parsing (with some help)
-    if ltype is 'Takeoff':
-        runway = keyValuePair(words[1], "Runway", dtype=int)
-        newleg.target = 'Takeoff'
-        newleg.legtype = 'Takeoff'
-        return newleg, runway
-    elif ltype is 'Landing':
-        airport = keyValuePair(words[1], "Runway")
-        sunrise = keyValuePairTD(words[1], "Sunrise")
-        newleg.target = 'Landing'
-        return newleg, airport, sunrise
-    else:
-        # If the Obsplan keyword is there, it's an observing leg
-        newleg.obsplan = keyValuePair(words[1], "ObspID")
-        if newleg.obsplan is None:
-            newleg.legtype = 'Other'
-        else:
-            newleg.legtype = 'Observing'
-
-    if newleg.legtype == 'Observing':
-        newleg.obsdur = keyValuePairTD(words[1], "Obs Dur")
-        newleg.ra = keyValuePair(words[2], "RA")
-        newleg.dec = keyValuePair(words[2], "Dec")
-        newleg.epoch = keyValuePair(words[2], "Equinox")
-        newleg.target = keyValuePair(words[2], "Target")
-        newleg.range_elev = keyValuePair(words[3], "Elev")
-        newleg.range_rof = keyValuePair(words[3], "ROF")
-        newleg.range_rofrt = keyValuePair(words[3], "rate")
-
-    return newleg
 
 
 def regExper(lines, key, keytype='key:val', howmany=1):
@@ -334,24 +284,41 @@ def regExper(lines, key, keytype='key:val', howmany=1):
     cmatch = None
     mask = ''
 
-    if keytype == 'key:val':
+    # Leg 4 (HIP 84379)   Start: 04:06:22     Leg Dur: 00:30:00   Req. Alt: 37000 ft
+    # ObspID:             Blk:                Priority: C         Obs Dur: 00:00:00
+    # Target: HIP 84379   RA: 17h15m01.91s    Dec: 24d50m21.1s    Equinox: J2000.0
+    # Elev: [40.9, 34.7]  ROF: [64.9, 59.0] rate: [-0.20, -0.19] deg/min
+    # Moon Angle: 50      Moon Illum: 9%      THdg: [4.6, 6.0] rate: [+0.02, +0.06] deg/min
+    # https://regex101.com/
+
+    if keytype == 'legtarg':
+        mask = u'(%s\s+\d+\s*\(.*\))' % (key)
+    elif keytype == 'key:val':
         mask = u'(%s\s*\:\s*\S*)' % (key)
-    if keytype == 'key:dtime':
+    elif keytype == 'threeline':
+        mask = u'((%s\s*\:.*)\s*(%s\s*\:.*)\s*(%s\s*\:.*))' %\
+            (key[0], key[1], key[2])
+    elif keytype == 'key:dtime':
         mask = u'(%s\s*\:\s*\S*\s*\S*\s*\S*)' % (key)
-    if keytype == 'Vinz Clortho':
+    elif keytype == 'Vinz':
         print "I am Vinz, Vinz Clortho, Keymaster of Gozer..."
         print "Volguus Zildrohoar, Lord of the Seboullia."
         print "Are you the Gatekeeper?"
 
     for each in lines:
-        cmatch = re.search(mask, each)
+        if keytype == 'threeline':
+            cmatch = re.findall(mask, each.strip())
+            if cmatch == []:
+                cmatch = None
+        else:
+            cmatch = re.search(mask, each.strip())
+
         if cmatch is not None:
             found += 1
             matches.append(cmatch)
 
     # Some sensible ways to return things to not get overly frustrated later
     if found == 0:
-        print "WARNING: Failed to find anything matching %s!" % (key)
         return None
     elif found == 1:
         return matches[0]
@@ -363,16 +330,78 @@ def regExper(lines, key, keytype='key:val', howmany=1):
         return matches[0:howmany]
 
 
+def parseLegMetadata(i, words, ltype=None):
+    """
+    Given a block of lines from the .MIS file that contain the leg's
+    metadata and actual data starting lines, parse all the crap in between
+    that's important and useful and return the leg class for further use.
+    """
+    print "Parsing leg %d" % (i)
+    newleg = legprofile()
+    newleg.legno = i + 1
+
+    # Use the regexp setup used in parseMISPreamble to make this not awful
+    legtarg = regExper(words, 'Leg', howmany=1, keytype='legtarg')
+    # NOTE: need pos=2 here because it's splitting on the spaces, and the
+    #   format is "Leg N (stuff)" and [1:-1] excludes the parentheses
+    newleg.target = keyValuePair(legtarg.group(),
+                                 "Leg", delim=' ', pos=2, dtype=str)[1:-1]
+
+    start = regExper(words, 'Start', howmany=1, keytype='key:val')
+    newleg.start = keyValuePairTD(start.group(), "Start")
+
+    dur = regExper(words, 'Leg Dur', howmany=1, keytype='key:val')
+    newleg.duration = keyValuePairTD(dur.group(), "Leg Dur")
+
+    alt = regExper(words, 'Req. Alt', howmany=1, keytype='key:val')
+    newleg.altitude = keyValuePair(alt.group(), "Req. Alt", dtype=float)
+
+    # Now we begin the itterative approach to parsing (with some help)
+    if ltype == 'Takeoff':
+        newleg.target = 'Takeoff'
+        newleg.legtype = 'Takeoff'
+        return newleg
+    elif ltype == 'Landing':
+        newleg.target = 'Landing'
+        newleg.legtype = 'Landing'
+        return newleg
+    else:
+        # This generally means it's an observing leg
+        # If the target keyword is there, it's an observing leg
+        print "Lookng for target"
+        target = regExper(words, 'Target', howmany=1, keytype='key:val')
+        if target is None:
+            newleg.legtype = 'Other'
+        else:
+            newleg.legtype = 'Observing'
+
+            newleg.target = keyValuePair(target.group(), 'Target', dtype=str)
+            opidline = regExper(words, ['ObspID', 'Blk', 'Priority'],
+                                howmany=1, keytype='threeline')
+            opid = opidline
+            print newleg.target
+
+#    if newleg.legtype == 'Observing':
+#        newleg.obsdur = keyValuePairTD(words[1], "Obs Dur")
+#        newleg.ra = keyValuePair(words[2], "RA")
+#        newleg.dec = keyValuePair(words[2], "Dec")
+#        newleg.epoch = keyValuePair(words[2], "Equinox")
+#        newleg.target = keyValuePair(words[2], "Target")
+#        newleg.range_elev = keyValuePair(words[3], "Elev")
+#        newleg.range_rof = keyValuePair(words[3], "ROF")
+#        newleg.range_rofrt = keyValuePair(words[3], "rate")
+
+        return newleg
+
+
 def parseMISPreamble(lines, flight):
     """
     Returns valuable parameters from the preamble section, such as flight
     duration, locations, etc. directly to the flight class and returns it.
 
     Does it all with the magic of regular expressions searching across the
-    preamble block each time, customizing the searches based on whether
-    we're looking for:
-        key:value (note: this also works for key:HH:MM:SS)
-        key:YYYY-MM-DD HH:MM:SS TZINFO
+    preamble block each time, customizing the searches based on what
+    we're actually looking for (keytype).
 
     """
     # Grab the filename and date of MIS file creation
@@ -416,7 +445,15 @@ def parseMISPreamble(lines, flight):
     landing = regExper(lines, 'Landing', howmany=1, keytype='key:dtime')
     flight.landing = keyValuePairDT(landing.group(), "Landing")
 
+    sunset = regExper(lines, 'Sunset', howmany=1, keytype='key:val')
+    flight.sunset = keyValuePairTD(sunset.group(), "Sunset")
+
+    sunrise = regExper(lines, 'Sunrise', howmany=1, keytype='key:val')
+    flight.sunrise = keyValuePairTD(sunrise.group(), "Sunrise")
+
     print flight.summarize()
+
+    return flight
 
 
 def parseMIS(infile):
@@ -436,6 +473,8 @@ def parseMIS(infile):
     #  Note: regexp searches can be awful no matter what
     head1 = "Leg \d* \(.*\)"
     lhed = findLegHeaders(cont, re.compile(head1))
+
+    # Guarantee that the loop matches the number of legs found
     flight.nlegs = len(lhed)
 
     head2 = "UTC\s*MHdg"
@@ -448,10 +487,6 @@ def parseMIS(infile):
         print "Looking for '%s' and '%s'" % (head1, head2)
         return -1
 
-    # Now the annoying bits. Whomever decreed this format is a maniac.
-    #   Why the hell is the "Landing" line different than the "Takeoff" one?
-    #   Why the hell isn't everything just written as a "key: value" pair?
-
     # Since we know where the first leg line is, we can define the preamble.
     #   Takes the flight class as an argument and returns it all filled up.
     flight = parseMISPreamble(cont[0:lhed[0]], flight)
@@ -459,17 +494,14 @@ def parseMIS(infile):
     for i, datastart in enumerate(lhed):
         if i == 0:
             # First leg is always takeoff
-            leg = legHeaderPuller(i, cont[lhed[i]:ldat[i]], ltype='Takeoff')
-
-            print leg.summarize(takeofftime=flight.takeoff,
-                                flightdur=flight.flighttime,
-                                obsdur=flight.obstime)
+            leg = parseLegMetadata(i, cont[lhed[i]:ldat[i]], ltype='Takeoff')
         elif i == (flight.nlegs - 1):
             # Last is always landing
-            leg, flight.destination, flight.sunrise = legHeaderPuller(i, cont[lhed[i]:ldat[i]], ltype='Landing')
+            leg = parseLegMetadata(i, cont[lhed[i]:ldat[i]], ltype='Landing')
         else:
             # Middle legs can be almost anything
-            leg = legHeaderPuller(i, cont[lhed[i]:ldat[i]])
+            leg = parseLegMetadata(i, cont[lhed[i]:ldat[i]])
+        print leg.summarize()
 
 
 if __name__ == "__main__":
