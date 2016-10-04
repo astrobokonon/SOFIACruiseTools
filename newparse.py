@@ -63,6 +63,8 @@ def keyValuePair(line, key, delim=":", dtype=None, linelen=None, pos=1):
             val = np.float(val)
         except:
             val = val
+    elif dtype is 'bracketed':
+        pass
 
     return val
 
@@ -229,7 +231,12 @@ class legprofile(object):
         self.range_elev = []
         self.range_rof = []
         self.range_rofrt = []
+        self.range_rofrtu = ''
+        self.range_thdg = []
+        self.range_thdgrt = []
+        self.range_thdgrtu = ''
         self.moonangle = 0
+        self.moonillum = ''
         self.utc = []
         self.utcdt = None
         self.elapsedtime = []
@@ -249,31 +256,54 @@ class legprofile(object):
         self.sunelev = []
         self.comments = []
         self.obsplan = ''
+        self.obsblk = ''
 
     def summarize(self):
         """
         Returns a nice summary string about the current leg
         """
-        txtSummary = ''
+        txtSumm = ''
 
         if self.legtype == 'Takeoff':
-            txtSummary = "%s %02d" %\
-                         (self.legtype, self.legno)
+            txtSumm = "%02d -- %s" %\
+                         (self.legno, self.legtype)
         elif self.legtype == 'Landing':
-            txtSummary = "%s %02d" %\
-                         (self.legtype, self.legno)
+            txtSumm = "%02d -- %s" %\
+                         (self.legno, self.legtype)
         elif self.legtype == 'Other':
-            txtSummary = "%s %02d" %\
-                         (self.legtype, self.legno)
+            txtSumm = "%02d -- %s" %\
+                         (self.legno, self.legtype)
         elif self.legtype == 'Observing':
-            txtSummary = "%s, RA: %s Dec: %s, Dur: %s ObsDur: %s" %\
-                         (self.target, self.ra, self.dec,
-                          str(self.duration),
-                          str(self.obsdur))
+            txtSumm = "%02d -- %s, RA: %s, Dec: %s, LegDur: %s, ObsDur: %s" %\
+                       (self.legno, self.target, self.ra, self.dec,
+                        str(self.duration),
+                        str(self.obsdur))
+            txtSumm += "\n"
+            txtSumm += "ObsPlan: %s, ObsBlk: %s" % (self.obsplan, self.obsblk)
+            txtSumm += "\n"
+            txtSumm += "ElevRnge: %.1f, %.1f" % (self.range_elev[0],
+                                                 self.range_elev[1])
+            txtSumm += "\n"
+            txtSumm += "ROFRnge: %.1f, %.1f" % (self.range_rof[0],
+                                                self.range_rof[1])
+            txtSumm += "\n"
+            txtSumm += "ROFRngeRate: %.1f, %.1f %s" % (self.range_rofrt[0],
+                                                       self.range_rofrt[1],
+                                                       self.range_rofrtu)
+            txtSumm += "THeadRange: %.1f, %.1f" % (self.range_thdg[0],
+                                                   self.range_thdg[1])
+            txtSumm += "\n"
+            txtSumm += "THeadRngeRate: %.1f, %.1f %s" % (self.range_thdgrt[0],
+                                                         self.range_thdgrt[1],
+                                                         self.range_thdgrtu)
+            txtSumm += "\n"
+            txtSumm += "MoonAngle: %.1f, MoonIllumination: %s" %\
+                (self.moonangle, self.moonillum)
+
         else:
             pass
 
-        return txtSummary
+        return txtSumm
 
 
 def regExper(lines, key, keytype='key:val', howmany=1):
@@ -284,12 +314,15 @@ def regExper(lines, key, keytype='key:val', howmany=1):
     cmatch = None
     mask = ''
 
+    # Oh god I'm sorry it's like it's suddenly all PERL up in here.
+    #   Use something like https://regex101.com/ and the test block here
+    #
     # Leg 4 (HIP 84379)   Start: 04:06:22     Leg Dur: 00:30:00   Req. Alt: 37000 ft
     # ObspID:             Blk:                Priority: C         Obs Dur: 00:00:00
     # Target: HIP 84379   RA: 17h15m01.91s    Dec: 24d50m21.1s    Equinox: J2000.0
     # Elev: [40.9, 34.7]  ROF: [64.9, 59.0] rate: [-0.20, -0.19] deg/min
     # Moon Angle: 50      Moon Illum: 9%      THdg: [4.6, 6.0] rate: [+0.02, +0.06] deg/min
-    # https://regex101.com/
+    #
 
     if keytype == 'legtarg':
         mask = u'(%s\s+\d+\s*\(.*\))' % (key)
@@ -298,6 +331,10 @@ def regExper(lines, key, keytype='key:val', howmany=1):
     elif keytype == 'threeline':
         mask = u'((%s\s*\:.*)\s*(%s\s*\:.*)\s*(%s\s*\:.*))' %\
             (key[0], key[1], key[2])
+    elif keytype == 'bracketvals':
+        mask = u'(%s*\:\s*(\[.{0,5}\,\s*.{0,5}\]))' % (key)
+    elif keytype == 'bracketvalsunits':
+        mask = u'(%s\s*\:\s*(\[.{0,5}\,\s*.{0,5}\])\s*(\w*\/\w*))' % (key)
     elif keytype == 'key:dtime':
         mask = u'(%s\s*\:\s*\S*\s*\S*\s*\S*)' % (key)
     elif keytype == 'Vinz':
@@ -330,13 +367,39 @@ def regExper(lines, key, keytype='key:val', howmany=1):
         return matches[0:howmany]
 
 
+def isItBlankOrNot(stupidkeyval):
+    """
+    Blank values are never an acceptable value because then you have to do
+    stupid crap like this to parse/work with it later.
+
+    """
+    # Annoying magic, but there's no easy way to deal with
+    #   completely blank/missing values so we do what we can
+    result = stupidkeyval.split(':')
+    if len(result) == 1:
+        # Can we even get here? Not in any good way
+        result = 'Undefined'
+    elif len(result) == 2:
+        # Expected entry point
+        # Check the place where we expect to find the obsplan.
+        #   If it's blank, put *something* in it.
+        if result[1].strip() == '':
+            result = 'Undefined'
+        else:
+            result = result[1].strip()
+    elif result is None:
+        result = 'Undefined'
+
+    return result
+
+
 def parseLegMetadata(i, words, ltype=None):
     """
     Given a block of lines from the .MIS file that contain the leg's
     metadata and actual data starting lines, parse all the crap in between
     that's important and useful and return the leg class for further use.
     """
-    print "Parsing leg %d" % (i)
+    print "\nParsing leg %d" % (i + 1)
     newleg = legprofile()
     newleg.legno = i + 1
 
@@ -368,28 +431,66 @@ def parseLegMetadata(i, words, ltype=None):
     else:
         # This generally means it's an observing leg
         # If the target keyword is there, it's an observing leg
-        print "Lookng for target"
         target = regExper(words, 'Target', howmany=1, keytype='key:val')
         if target is None:
             newleg.legtype = 'Other'
+
         else:
             newleg.legtype = 'Observing'
+
+            odur = regExper(words, 'Obs Dur', howmany=1, keytype='key:val')
+            newleg.obsdur = keyValuePairTD(odur.group(), "Obs Dur")
+
+            ra = regExper(words, 'RA', howmany=1, keytype='key:val')
+            newleg.ra = keyValuePair(ra.group(), "RA", dtype=str)
+
+            epoch = regExper(words, 'Equinox', howmany=1, keytype='key:val')
+            newleg.epoch = keyValuePair(epoch.group(), "Equinox", dtype=str)
+
+            dec = regExper(words, 'Dec', howmany=1, keytype='key:val')
+            newleg.dec = keyValuePair(dec.group(), "Dec", dtype=str)
 
             newleg.target = keyValuePair(target.group(), 'Target', dtype=str)
             opidline = regExper(words, ['ObspID', 'Blk', 'Priority'],
                                 howmany=1, keytype='threeline')
-            opid = opidline
-            print newleg.target
 
-#    if newleg.legtype == 'Observing':
-#        newleg.obsdur = keyValuePairTD(words[1], "Obs Dur")
-#        newleg.ra = keyValuePair(words[2], "RA")
-#        newleg.dec = keyValuePair(words[2], "Dec")
-#        newleg.epoch = keyValuePair(words[2], "Equinox")
-#        newleg.target = keyValuePair(words[2], "Target")
-#        newleg.range_elev = keyValuePair(words[3], "Elev")
-#        newleg.range_rof = keyValuePair(words[3], "ROF")
-#        newleg.range_rofrt = keyValuePair(words[3], "rate")
+            newleg.obsplan = isItBlankOrNot(opidline[0][1])
+            newleg.obsblk = isItBlankOrNot(opidline[0][2])
+
+            # Big of manual magic to deal with the stupid brackets
+            rnge_e = regExper(words, 'Elev', howmany=1, keytype='bracketvals')
+            rnge_e = rnge_e.groups()[1][1:-1].split(',')
+            newleg.range_elev = [np.float(each) for each in rnge_e]
+
+            rnge_rof = regExper(words, 'ROF', howmany=1, keytype='bracketvals')
+            rnge_rof = rnge_rof.groups()[1][1:-1].split(',')
+            newleg.range_rof = [np.float(each) for each in rnge_rof]
+
+            # Yet another madman decision - using the same keyword twice!
+            #   This will return both the rate for the ROF [0] and the
+            #   change in true heading [1]
+            rnge_rates = regExper(words, 'rate', howmany=2,
+                                  keytype='bracketvalsunits')
+            rnge_rofrt = rnge_rates[0].groups()[1][1:-1].split(',')
+            newleg.range_rofrt = [np.float(each) for each in rnge_rofrt]
+            newleg.range_rofrtu = rnge_rates[0].groups()[2]
+
+            rnge_thdg = regExper(words, 'THdg', howmany=1,
+                                 keytype='bracketvals')
+            rnge_thdg = rnge_thdg.groups()[1][1:-1].split(',')
+            newleg.range_thdg = [np.float(each) for each in rnge_thdg]
+
+            rnge_thdgrt = rnge_rates[1].groups()[1][1:-1].split(',')
+            newleg.range_thdgrt = [np.float(each) for each in rnge_thdgrt]
+            newleg.range_thdgrtu = rnge_rates[1].groups()[2]
+
+            moon = regExper(words, 'Moon Angle', howmany=1, keytype='key:val')
+            newleg.moonangle = keyValuePair(moon.group(), "Moon", dtype=float)
+
+            moonillum = regExper(words, 'Moon Illum',
+                                 howmany=1, keytype='key:val')
+            newleg.moonillum = keyValuePair(moonillum.group(),
+                                            "Moon Illum", dtype=str)
 
         return newleg
 
