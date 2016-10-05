@@ -568,10 +568,12 @@ def parseLegMetadata(i, words, ltype=None):
             moon = regExper(words, 'Moon Angle', howmany=1, keytype='key:val')
             newleg.moonangle = keyValuePair(moon.group(), "Moon", dtype=float)
 
+            # Moon illumination isn't always there
             moonillum = regExper(words, 'Moon Illum',
                                  howmany=1, keytype='key:val')
-            newleg.moonillum = keyValuePair(moonillum.group(),
-                                            "Moon Illum", dtype=str)
+            if moonillum is not None:
+                newleg.moonillum = keyValuePair(moonillum.group(),
+                                                "Moon Illum", dtype=str)
 
         return newleg
 

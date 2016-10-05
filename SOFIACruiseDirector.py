@@ -27,7 +27,8 @@ import numpy as np
 import pyfits as pyf
 from PyQt4 import QtGui, QtCore
 
-import fp_helper as fpmis
+import newparse as fpmis
+#import fp_helper as fpmis
 import FITSKeywordPanel as fkwp
 import SOFIACruiseDirectorPanel as scdp
 
@@ -228,31 +229,31 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method
         #
-        #self.instrument = 'HAWCFlight'
-        #self.instrument = 'HAWC'
-        #self.headers = ['date-obs', 'spectel1', 'spectel2',
-        #                'diagmode', 'diag_hz',
-        #                'exptime',  'nhwp', 'hwpstart',
-        #                'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
-        #                'chpangle',
-        #                'nodcrsys', 'nodbeam',
-        #                'nodangle',
-        #                'dthunit', 'dthindex', 'dthnpos',
-        #                'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-        #                'scnra0', 'scndec0', 'scnrate', 'scndir',
-        #                'scnraf', 'scndecf',
-        #                'obs_id',
-        #                'telra', 'teldec', 'telvpa', 'bsite',
-        #                'missn-id', 'datasrc', 'instcfg', 'instmode',
-        #                'instrume']
+        # self.instrument = 'HAWC'
+        self.instrument = 'HAWCFlight'
+        self.headers = ['date-obs', 'spectel1', 'spectel2',
+                       'diagmode', 'diag_hz',
+                       'exptime',  'nhwp', 'hwpstart',
+                       'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
+                       'chpangle',
+                       'nodcrsys', 'nodbeam',
+                       'nodangle',
+                       'dthunit', 'dthindex', 'dthnpos',
+                       'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+                       'scnra0', 'scndec0', 'scnrate', 'scndir',
+                       'scnraf', 'scndecf',
+                       'obs_id',
+                       'telra', 'teldec', 'telvpa', 'bsite',
+                       'missn-id', 'datasrc', 'instcfg', 'instmode',
+                       'instrume']
 
         # FIFI-LS instrument name and headers
-        self.instrument = 'FIFI-LS'
-        self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME", 
-                        "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
-                        "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
-                        "DLAM_MAP", "DBET_MAP", "DET_ANGL",
-                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
+        # self.instrument = 'FIFI-LS'
+        # self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
+        #                 "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
+        #                 "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
+        #                 "DLAM_MAP", "DBET_MAP", "DET_ANGL",
+        #                 "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
 
         self.updatetablecols()
 
@@ -801,7 +802,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.leg_number.setText(legtxt)
 
             # Now take the duration and autoset our timer duration
-            timeparts = self.lginfo.duration.split(":")
+            timeparts = str(self.lginfo.duration)
+            timeparts = timeparts.split(":")
             timeparts = [np.int(x) for x in timeparts]
             durtime = QtCore.QTime(timeparts[0], timeparts[1], timeparts[2])
             self.leg_duration.setTime(durtime)
@@ -875,7 +877,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
         self.flightplan_filename.setText(os.path.basename(str(self.fname)))
         try:
-            self.flightinfo = fpmis.parse_fpmis(self.fname)
+            self.flightinfo = fpmis.parseMIS(self.fname)
             self.lginfo = self.flightinfo.legs[self.legpos]
             self.successparse = True
             self.updateLegInfoWindow()
@@ -883,7 +885,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.updateTakeoffTime()
             if self.set_landingFP.isChecked() is True:
                 self.updateLandingTime()
-        except Exception:
+        except Exception, why:
+            print str(why)
             self.flightinfo = ''
             self.errmsg = 'ERROR: Failure Parsing File!'
             self.flightplan_filename.setStyleSheet("QLabel { color : red; }")
