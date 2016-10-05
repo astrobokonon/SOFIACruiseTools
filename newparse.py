@@ -6,138 +6,13 @@ Created on Mon Jun 20 16:21:44 2016
 """
 
 import re
-import sys
-import copy
 import itertools
 import numpy as np
-import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
 
 go_dt = lambda x: timedelta(seconds=x)
 go_iso = lambda x: x.isoformat()
-
-
-def findLegHeaders(words, header, how='match'):
-    """
-    Given a file (already opened and read via readlines()),
-    return the line number locations where the given header lines occur.
-
-    Use the 'how' keyword to control the searching;
-        header.match() checks the BEGINNING of the words string only
-    """
-    locs = []
-    for i, line in enumerate(words):
-        match = header.match(line)
-        if match is not None:
-            locs.append(i)
-
-    return locs
-
-
-def keyValuePair(line, key, delim=":", dtype=None, linelen=None, pos=1):
-    """
-    Given a line and a key supposedly occuring on that line, return its
-    value in the given dtype (if dtype is not None).  If the value isn't
-    found, or there's an error, return None.
-
-    Assumes that the value has no spaces in it
-    """
-    # Search for the keyword in the line
-    loc = line.strip().lower().find(key.lower())
-    if loc == -1:
-        val = None
-    else:
-        # Split on the ':' following the keyword
-        try:
-            val = line[loc:].strip().split(delim)[pos].split()[0].strip()
-        except:
-            val = None
-    if dtype is int:
-        try:
-            val = np.int(val)
-        except:
-            val = val
-    elif dtype is float:
-        try:
-            val = np.float(val)
-        except:
-            val = val
-    elif dtype is 'bracketed':
-        pass
-
-    return val
-
-
-def keyValuePairDT(line, key, delim=":", length=24):
-    """
-    Given a line and a key supposedly occuring on that line, return its
-    value and turn it into a datetime object.  Need a seperate function since
-    the parsing rule has to be a bit more customized to get all the parts.
-    """
-    # Search for the keyword in the line
-    loc = line.strip().lower().find(key.lower())
-    if loc == -1:
-        val = None
-    else:
-        # Split on the ':' following the keyword
-        try:
-            val = ':'.join(line[loc:].split(":")[1:]).strip()[:length]
-        except:
-            val = None
-
-    dtobj = datetime.strptime(val, "%Y-%b-%d %H:%M:%S %Z")
-    return dtobj
-
-
-def keyValuePairTDintoDT(line, key, basedt, delim=":", length=8):
-    """
-    Given a line and a key supposedly occuring on that line, return its
-    value and turn it into a datetime object using another as a starting point.
-    This is useful since times are frequently given without an accompanying
-    date so we have to be a bit more clever.
-    """
-    # Search for the keyword in the line
-    loc = line.strip().lower().find(key.lower())
-    if loc == -1:
-        val = None
-    else:
-        # Split on the ':' following the keyword
-        try:
-            val = ':'.join(line[loc:].split(":")[1:]).strip()[:length]
-        except:
-            val = None
-
-    # Replace the hours, minutes, seconds of the basedt with those
-    #   we read/parse
-    dtobj = basedt(hours=np.float(val[0:2]), minutes=np.float(val[3:5]),
-                   seconds=np.float(val[7:]))
-    return dtobj
-
-
-def keyValuePairTD(line, key, delim=":", length=8):
-    """
-    Given a line and a key supposedly occuring on that line, return its
-    value and turn it into a timedelta object.  Need a seperate function since
-    the parsing rule has to be a bit more customized to get all the parts.
-    """
-    # Search for the keyword in the line
-    loc = line.strip().lower().find(key.lower())
-    if loc == -1:
-        val = None
-    else:
-        # Split on the ':' following the keyword
-        try:
-            val = ':'.join(line[loc:].split(":")[1:]).strip()[:length]
-        except:
-            val = None
-
-    # Can't figure out how to go from a string to a timedelta object so
-    #   we're going to go the annoying way around
-    dtobj = timedelta(days=0, weeks=0,
-                      hours=np.float(val[0:2]), minutes=np.float(val[3:5]),
-                      seconds=np.float(val[7:]))
-    return dtobj
 
 
 class nonsiderial(object):
@@ -238,7 +113,7 @@ class legprofile(object):
         self.moonangle = 0
         self.moonillum = ''
         self.utc = []
-        self.utcdt = None
+        self.utcdt = []
         self.elapsedtime = []
         self.mhdg = []
         self.thdg = []
@@ -257,6 +132,8 @@ class legprofile(object):
         self.comments = []
         self.obsplan = ''
         self.obsblk = ''
+        self.nonsid = False
+        self.naifid = -1
 
     def summarize(self):
         """
@@ -279,6 +156,9 @@ class legprofile(object):
                         str(self.duration),
                         str(self.obsdur))
             txtSumm += "\n"
+            if self.nonsid is True:
+                txtSumm += "NONSIDERIAL TARGET -- NAIFID: %d" % (self.naifid)
+                txtSumm += "\n"
             txtSumm += "ObsPlan: %s, ObsBlk: %s" % (self.obsplan, self.obsblk)
             txtSumm += "\n"
             txtSumm += "ElevRnge: %.1f, %.1f" % (self.range_elev[0],
@@ -290,6 +170,7 @@ class legprofile(object):
             txtSumm += "ROFRngeRate: %.1f, %.1f %s" % (self.range_rofrt[0],
                                                        self.range_rofrt[1],
                                                        self.range_rofrtu)
+            txtSumm += "\n"
             txtSumm += "THeadRange: %.1f, %.1f" % (self.range_thdg[0],
                                                    self.range_thdg[1])
             txtSumm += "\n"
@@ -300,13 +181,107 @@ class legprofile(object):
             txtSumm += "MoonAngle: %.1f, MoonIllumination: %s" %\
                 (self.moonangle, self.moonillum)
 
-        else:
-            pass
-
         return txtSumm
 
 
-def regExper(lines, key, keytype='key:val', howmany=1):
+def findLegHeaders(words, header, how='match'):
+    """
+    Given a file (already opened and read via readlines()),
+    return the line number locations where the given header lines occur.
+
+    Use the 'how' keyword to control the searching;
+        header.match() checks the BEGINNING of the words string only
+    """
+    locs = []
+    for i, line in enumerate(words):
+        match = header.match(line)
+        if match is not None:
+            locs.append(i)
+
+    return locs
+
+
+def keyValuePair(line, key, delim=":", dtype=None, linelen=None, pos=1):
+    """
+    Given a line and a key supposedly occuring on that line, return its
+    value in the given dtype (if dtype is not None).  If the value isn't
+    found, or there's an error, return None.
+
+    Assumes that the value has no spaces in it
+    """
+    # Search for the keyword in the line
+    loc = line.strip().lower().find(key.lower())
+    if loc == -1:
+        val = None
+    else:
+        # Split on the ':' following the keyword
+        try:
+            val = line[loc:].strip().split(delim)[pos].split()[0].strip()
+        except:
+            val = None
+    if dtype is int:
+        try:
+            val = np.int(val)
+        except:
+            val = val
+    elif dtype is float:
+        try:
+            val = np.float(val)
+        except:
+            val = val
+    elif dtype is 'bracketed':
+        pass
+
+    return val
+
+
+def keyValuePairDT(line, key, delim=":", length=24):
+    """
+    Given a line and a key supposedly occuring on that line, return its
+    value and turn it into a datetime object.  Need a seperate function since
+    the parsing rule has to be a bit more customized to get all the parts.
+    """
+    # Search for the keyword in the line
+    loc = line.strip().lower().find(key.lower())
+    if loc == -1:
+        val = None
+    else:
+        # Split on the ':' following the keyword
+        try:
+            val = ':'.join(line[loc:].split(":")[1:]).strip()[:length]
+        except:
+            val = None
+
+    dtobj = datetime.strptime(val, "%Y-%b-%d %H:%M:%S %Z")
+    return dtobj
+
+
+def keyValuePairTD(line, key, delim=":", length=8):
+    """
+    Given a line and a key supposedly occuring on that line, return its
+    value and turn it into a timedelta object.  Need a seperate function since
+    the parsing rule has to be a bit more customized to get all the parts.
+    """
+    # Search for the keyword in the line
+    loc = line.strip().lower().find(key.lower())
+    if loc == -1:
+        val = None
+    else:
+        # Split on the ':' following the keyword
+        try:
+            val = ':'.join(line[loc:].split(":")[1:]).strip()[:length]
+        except:
+            val = None
+
+    # Can't figure out how to go from a string to a timedelta object so
+    #   we're going to go the annoying way around
+    dtobj = timedelta(days=0, weeks=0,
+                      hours=np.float(val[0:2]), minutes=np.float(val[3:5]),
+                      seconds=np.float(val[7:]))
+    return dtobj
+
+
+def regExper(lines, key, keytype='key:val', howmany=1, nextkey=None):
     """
     """
     found = 0
@@ -328,6 +303,18 @@ def regExper(lines, key, keytype='key:val', howmany=1):
         mask = u'(%s\s+\d+\s*\(.*\))' % (key)
     elif keytype == 'key:val':
         mask = u'(%s\s*\:\s*\S*)' % (key)
+    elif keytype == 'key+nextkey':
+        #
+        #
+        #
+        #
+        # UNFINISHED!!!
+        mask = u'(%s*\:.*%s)' % (key, nextkey)
+        # UNFINISHED!!!
+        #
+        #
+        #
+        #
     elif keytype == 'threeline':
         mask = u'((%s\s*\:.*)\s*(%s\s*\:.*)\s*(%s\s*\:.*))' %\
             (key[0], key[1], key[2])
@@ -393,13 +380,97 @@ def isItBlankOrNot(stupidkeyval):
     return result
 
 
+def parseLegData(i, contents, leg, flight):
+    """
+
+    """
+#    print "\nParsing leg %d" % (i + 1)
+#    print contents
+    # I probably should learn to do stuff better than this someday.
+    #  Today is not that day, FOR TONIGHT WE DINE IN HELL.
+    ptime = 0.
+    for j, line in enumerate(contents):
+        if line.strip() != '':
+            if line.split()[0] == 'UTC':
+                start = True
+                k = 0
+        if start is True:
+            line = line.strip().split()
+            # If it's a full line (plus maybe a comment)
+            if len(line) > 14:
+                tobj = datetime.strptime(line[0], "%H:%M:%S")
+                # Might contain wrong day, but we'll correct for it
+                utcdt = flight.takeoff.replace(hour=tobj.hour,
+                                               minute=tobj.minute,
+                                               second=tobj.second)
+                if k == 0:
+                    startdtobj = utcdt
+                    leg.elapsedtime.append(0)
+                else:
+                    # When reconstructing an ISO timestamp, check for a
+                    #  change of day that we'll have to set manually
+                    if ptime.hour == 23 and utcdt.hour == 0:
+                        utcdt.replace(day=flight.takeoff.day + 1)
+                        print "Bastard day change"
+                    # Start trackin the relative time from start too
+                    leg.elapsedtime.append((utcdt-startdtobj).seconds)
+                leg.utcdt.append(utcdt)
+                leg.relative_time.append((utcdt -
+                                          flight.takeoff).seconds)
+                leg.utc.append(utcdt.isoformat())
+
+                leg.mhdg.append(np.float(line[1]))
+                leg.thdg.append(np.float(line[2]))
+#                    leg.lat.append(line[3:5])
+                leg.lat.append(np.float(line[3][1:]) +
+                               np.float(line[4])/60.)
+                if line[3][0] == 'S':
+                    leg.lat[-1] *= -1
+                leg.long.append(np.float(line[5][1:]) +
+                                np.float(line[6])/60.)
+                if line[5][0] == 'W':
+                    leg.long[-1] *= -1
+
+                leg.wind_dir.append(np.float(line[7].split('/')[0]))
+                leg.wind_speed.append(np.float(line[7].split('/')[1]))
+                leg.temp.append(np.float(line[8]))
+                leg.lst.append(line[9])
+                if line[10] == "N/A":
+                    leg.elev.append(np.NaN)
+                else:
+                    leg.elev.append(np.float(line[10]))
+                if line[11] == 'N/A':
+                    leg.rof.append(np.NaN)
+                else:
+                    leg.rof.append(np.float(line[11]))
+                if line[12] == 'N/A':
+                    leg.rofrt.append(np.NaN)
+                else:
+                    leg.rofrt.append(np.float(line[12]))
+                if line[13] == 'N/A':
+                    leg.loswv.append(np.NaN)
+                else:
+                    leg.loswv.append(np.float(line[13]))
+                leg.sunelev.append(np.float(line[14]))
+                if len(line) == 16:
+                    leg.comments.append(line[15])
+                else:
+                    leg.comments.append('')
+
+                # Store the current datetime for comparison to the next
+                ptime = utcdt
+                k += 1
+
+    return leg
+
+
 def parseLegMetadata(i, words, ltype=None):
     """
     Given a block of lines from the .MIS file that contain the leg's
     metadata and actual data starting lines, parse all the crap in between
     that's important and useful and return the leg class for further use.
     """
-    print "\nParsing leg %d" % (i + 1)
+#    print "\nParsing leg %d" % (i + 1)
     newleg = legprofile()
     newleg.legno = i + 1
 
@@ -436,6 +507,8 @@ def parseLegMetadata(i, words, ltype=None):
             newleg.legtype = 'Other'
 
         else:
+            # NOTE: Bug here! Doesn't work since spaces suck.
+            newleg.target = keyValuePair(target.group(), 'Target', dtype=str)
             newleg.legtype = 'Observing'
 
             odur = regExper(words, 'Obs Dur', howmany=1, keytype='key:val')
@@ -450,9 +523,17 @@ def parseLegMetadata(i, words, ltype=None):
             dec = regExper(words, 'Dec', howmany=1, keytype='key:val')
             newleg.dec = keyValuePair(dec.group(), "Dec", dtype=str)
 
-            newleg.target = keyValuePair(target.group(), 'Target', dtype=str)
             opidline = regExper(words, ['ObspID', 'Blk', 'Priority'],
                                 howmany=1, keytype='threeline')
+
+            naif = regExper(words, 'NAIF ID', howmany=1, keytype='key:val')
+            if naif is None:
+                newleg.nonsid = False
+                newleg.naifid = -1
+            else:
+                newleg.nonsid = True
+                newleg.naifid = keyValuePair(naif.group(), 'NAIF ID',
+                                             dtype=int)
 
             newleg.obsplan = isItBlankOrNot(opidline[0][1])
             newleg.obsblk = isItBlankOrNot(opidline[0][2])
@@ -602,9 +683,18 @@ def parseMIS(infile):
         else:
             # Middle legs can be almost anything
             leg = parseLegMetadata(i, cont[lhed[i]:ldat[i]])
-        print leg.summarize()
+#        print leg.summarize()
+        if i < len(lhed) - 1:
+            leg = parseLegData(i, cont[ldat[i]:lhed[i+1]], leg, flight)
+        else:
+            leg = parseLegData(i, cont[ldat[i]:], leg, flight)
+
+        flight.legs.append(leg)
+
+    print "Done!"
 
 
 if __name__ == "__main__":
-    infile = '/Users/rhamilton/Desktop/HAWCCom2Flights/Draft5/201609_HA_01_SCI.mis'
+#    infile = '/Users/rhamilton/Desktop/HAWCCom2Flights/Draft5/201609_HA_01_SCI.mis'
+    infile = '/Users/rhamilton/Desktop/201609_HA_01_WX12.mis'
     parseMIS(infile)
