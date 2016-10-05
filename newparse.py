@@ -692,6 +692,7 @@ def parseMIS(infile):
         flight.legs.append(leg)
 
     print "Done!"
+    return flight
 
 
 if __name__ == "__main__":
