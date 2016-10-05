@@ -550,20 +550,35 @@ def parseLegMetadata(i, words, ltype=None):
             # Yet another madman decision - using the same keyword twice!
             #   This will return both the rate for the ROF [0] and the
             #   change in true heading [1]
-            rnge_rates = regExper(words, 'rate', howmany=2,
-                                  keytype='bracketvalsunits')
-            rnge_rofrt = rnge_rates[0].groups()[1][1:-1].split(',')
-            newleg.range_rofrt = [np.float(each) for each in rnge_rofrt]
-            newleg.range_rofrtu = rnge_rates[0].groups()[2]
+            # NOTE: Flight plans didn't always have THdg in the metadata,
+            #   so if we can't find two, try to just use the one (ROF)
+            try:
+                rnge_rates = regExper(words, 'rate', howmany=2,
+                                      keytype='bracketvalsunits')
+                if type(rnge_rates) is not list:
+                    # If there's only ROF, it'll find three things and be
+                    #   a match re type, not a list of match re types
+                    rnge_rofrt = rnge_rates.groups()[1][1:-1].split(',')
+                    newleg.range_rofrt = [np.float(ech) for ech in rnge_rofrt]
+                    newleg.range_rofrtu = rnge_rates.group()[2]
+                else:
+                    rnge_rofrt = rnge_rates[0].groups()[1][1:-1].split(',')
+                    newleg.range_rofrt = [np.float(ech) for ech in rnge_rofrt]
+                    newleg.range_rofrtu = rnge_rates[0].groups()[2]
 
-            rnge_thdg = regExper(words, 'THdg', howmany=1,
-                                 keytype='bracketvals')
-            rnge_thdg = rnge_thdg.groups()[1][1:-1].split(',')
-            newleg.range_thdg = [np.float(each) for each in rnge_thdg]
+                    rnge_thdg = regExper(words, 'THdg', howmany=1,
+                                         keytype='bracketvals')
+                    rnge_thdg = rnge_thdg.groups()[1][1:-1].split(',')
+                    newleg.range_thdg = [np.float(each) for each in rnge_thdg]
 
-            rnge_thdgrt = rnge_rates[1].groups()[1][1:-1].split(',')
-            newleg.range_thdgrt = [np.float(each) for each in rnge_thdgrt]
-            newleg.range_thdgrtu = rnge_rates[1].groups()[2]
+                    rnge_thdgrt = rnge_rates[1].groups()[1][1:-1].split(',')
+                    newleg.range_thdgrt = [np.float(eh) for eh in rnge_thdgrt]
+                    newleg.range_thdgrtu = rnge_rates[1].groups()[2]
+            except:
+                newleg.range_rofrt = "Undefined"
+                newleg.range_rofrtu = "Undefined"
+                newleg.range_thdgrt = "Undefined"
+                newleg.range_thdgrtu = "Undefined"
 
             moon = regExper(words, 'Moon Angle', howmany=1, keytype='key:val')
             newleg.moonangle = keyValuePair(moon.group(), "Moon", dtype=float)
