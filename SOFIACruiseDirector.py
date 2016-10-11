@@ -226,16 +226,15 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.instrument = 'FLITECAM'
         self.headers = ['aor_id', 'exptime', 'itime', 'co_adds',
                         'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
-                        'date-obs', 'time_gps', 
+                        'date-obs', 'time_gps',
                         'sibs_x', 'sibs_y',
                         'nodcrsys', 'nodangle', 'nodamp', 'nodbeam',
                         'dthpatt', 'dthnpos', 'dthindex', 'ditherx', 'dithery',
                         'dthoffs', 'dthcrsys',
                         'telra', 'teldec', 'tellos', 'telrof', 'telvpa',
-                        "BBMODE", "CBMODE", 
+                        "BBMODE", "CBMODE",
                         "BGRESETS", "GRSTCNT", "GPSTIMEFLAG",
                         'missn-id', 'instcfg', 'instmode']
-
 
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method

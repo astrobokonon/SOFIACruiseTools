@@ -6,8 +6,10 @@ Created on Mon Jun 20 16:21:44 2016
 """
 
 import re
+import copy
 import itertools
 import numpy as np
+import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
 
@@ -186,6 +188,93 @@ class legprofile(object):
                 (self.moonangle, self.moonillum)
 
         return txtSumm
+
+
+def interp_flight(oflight, npts, timestep=55):
+    """
+    Fill out a leg into a set number of equally spaced points, since the
+    .mis file is minimally sparse.
+
+    Interpolate to a baseline of timestep sampling.
+    """
+
+    # Let's start with a full copy of the original, and update it as we go
+    iflight = copy.deepcopy(oflight)
+
+    rough_delta = iflight.flighttime.seconds/np.float(npts)
+    delta = np.around(rough_delta, decimals=0)
+    # i == number of legs
+    # j == total number of points in flight plan
+    i = 0
+    j = 0
+    for leg in iflight.legs:
+        if len(leg.utcdt) > 1:
+            # Construct our point timings, done poorly but quickly
+            filler = np.arange(leg.relative_time[0],
+                               leg.relative_time[-1]+delta,
+                               delta)
+            # If we popped over, just stop at the leg boundary regardless
+            if filler[-1] > leg.relative_time[-1]:
+                filler[-1] = leg.relative_time[-1]
+
+            # Check if mhdg or thdg has a zero point crossing that will confuse
+            #  the simple minded interpolation that's about to happen
+
+#            print "ORIG THDG:", leg.mhdg
+#            print "ORIG MHDG:", leg.thdg
+            # This is some pretty dirty logic for right now. Needs cleaning up.
+            uprange = False
+            for k, hdg in enumerate(leg.mhdg):
+                if k != 0:
+                    # Check the previous and the current; if it crosses zero,
+                    #  then add 360 to keep it monotonicly increasing
+                    #  Do this for both magnetic and true headings
+                    if leg.mhdg[k-1] >= 350. and leg.mhdg[k] < 10:
+                        uprange = True
+                    if uprange is True:
+                        leg.mhdg[k] += 360.
+                    if leg.thdg[k-1] >= 350. and leg.thdg[k] < 10:
+                        uprange = True
+                    if uprange is True:
+                        leg.thdg[k] += 360.
+            if uprange is True:
+                pass
+
+            # Actually interpolate the points...add more in this style as need
+            latprimer = spi.interp1d(leg.relative_time,
+                                     leg.lat, kind='linear')
+            lonprimer = spi.interp1d(leg.relative_time,
+                                     leg.long, kind='linear')
+            thdgprimer = spi.interp1d(leg.relative_time,
+                                      leg.thdg, kind='linear')
+            mhdgprimer = spi.interp1d(leg.relative_time,
+                                      leg.mhdg, kind='linear')
+
+            # Replacing the existing stuff with the interpolated values
+            leg.lat = latprimer(filler)
+            leg.long = lonprimer(filler)
+            leg.thdg = thdgprimer(filler) % 360.
+            leg.mhdg = mhdgprimer(filler) % 360.
+
+            # Use a stubby little lambda function instead of a loop. Better?
+            filler = map(go_dt, filler)
+            leg.relative_time = filler
+
+            # Recreate timestamps for the new interpolated set, both dt and iso
+            #  formatted objects for easy interactions
+            leg.utcdt = leg.relative_time + np.repeat(iflight.takeoff,
+                                                      len(filler))
+            leg.utc = map(go_iso, leg.utcdt)
+
+            j += len(leg.long)
+            i += 1
+
+#    print "Interpolated %s to roughly fit %d points total," % \
+#          (oflight.filename, npts)
+#    print "with a delta_t of %06.1f; ended up with %d points total." % \
+#          (delta, j)
+
+    return iflight
 
 
 def findLegHeaders(words, header, how='match'):
