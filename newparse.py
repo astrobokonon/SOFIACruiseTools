@@ -159,26 +159,30 @@ class legprofile(object):
             if self.nonsid is True:
                 txtSumm += "NONSIDERIAL TARGET -- NAIFID: %d" % (self.naifid)
                 txtSumm += "\n"
+                txtSumm += "(The SOFIA project sincerely hopes you enjoy "
+                txtSumm += "your observing breaks due to XFORMS crashes)"
+                txtSumm += "\n"
             txtSumm += "ObsPlan: %s, ObsBlk: %s" % (self.obsplan, self.obsblk)
+            txtSumm += "\n\n"
+            txtSumm += "Elevation Range: %.1f, %.1f" % (self.range_elev[0],
+                                                        self.range_elev[1])
+            txtSumm += "\n\n"
+            txtSumm += "ROF Range: %.1f, %.1f" % (self.range_rof[0],
+                                                  self.range_rof[1])
             txtSumm += "\n"
-            txtSumm += "ElevRnge: %.1f, %.1f" % (self.range_elev[0],
-                                                 self.range_elev[1])
+            txtSumm += "ROF Rate Range: %.1f, %.1f %s" % (self.range_rofrt[0],
+                                                          self.range_rofrt[1],
+                                                          self.range_rofrtu)
+            txtSumm += "\n\n"
+            txtSumm += "True Heading Range: %.1f, %.1f" % (self.range_thdg[0],
+                                                           self.range_thdg[1])
             txtSumm += "\n"
-            txtSumm += "ROFRnge: %.1f, %.1f" % (self.range_rof[0],
-                                                self.range_rof[1])
+            txtSumm += "True Heading Rate Range: %.1f, %.1f %s" %\
+                (self.range_thdgrt[0],
+                 self.range_thdgrt[1],
+                 self.range_thdgrtu)
             txtSumm += "\n"
-            txtSumm += "ROFRngeRate: %.1f, %.1f %s" % (self.range_rofrt[0],
-                                                       self.range_rofrt[1],
-                                                       self.range_rofrtu)
-            txtSumm += "\n"
-            txtSumm += "THeadRange: %.1f, %.1f" % (self.range_thdg[0],
-                                                   self.range_thdg[1])
-            txtSumm += "\n"
-            txtSumm += "THeadRngeRate: %.1f, %.1f %s" % (self.range_thdgrt[0],
-                                                         self.range_thdgrt[1],
-                                                         self.range_thdgrtu)
-            txtSumm += "\n"
-            txtSumm += "MoonAngle: %.1f, MoonIllumination: %s" %\
+            txtSumm += "Moon Angle: %.1f, Moon Illumination: %s" %\
                 (self.moonangle, self.moonillum)
 
         return txtSumm
@@ -593,7 +597,7 @@ def parseLegMetadata(i, words, ltype=None):
         return newleg
 
 
-def parseMISPreamble(lines, flight):
+def parseMISPreamble(lines, flight, summarize=False):
     """
     Returns valuable parameters from the preamble section, such as flight
     duration, locations, etc. directly to the flight class and returns it.
@@ -650,12 +654,13 @@ def parseMISPreamble(lines, flight):
     sunrise = regExper(lines, 'Sunrise', howmany=1, keytype='key:val')
     flight.sunrise = keyValuePairTD(sunrise.group(), "Sunrise")
 
-    print flight.summarize()
+    if summarize is True:
+        print flight.summarize()
 
     return flight
 
 
-def parseMIS(infile):
+def parseMIS(infile, summarize=False):
     """
     Read a SOFIA .MIS file, parse it, and return a nice thing we can work with
     """
@@ -688,7 +693,7 @@ def parseMIS(infile):
 
     # Since we know where the first leg line is, we can define the preamble.
     #   Takes the flight class as an argument and returns it all filled up.
-    flight = parseMISPreamble(cont[0:lhed[0]], flight)
+    flight = parseMISPreamble(cont[0:lhed[0]], flight, summarize=summarize)
 
     for i, datastart in enumerate(lhed):
         if i == 0:
@@ -708,7 +713,6 @@ def parseMIS(infile):
 
         flight.legs.append(leg)
 
-    print "Done!"
     return flight
 
 
