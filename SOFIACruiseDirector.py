@@ -19,7 +19,6 @@ import csv
 import pytz
 import glob
 import fnmatch
-import time
 import datetime
 import itertools
 
@@ -28,7 +27,6 @@ import pyfits as pyf
 from PyQt4 import QtGui, QtCore
 
 import newparse as fpmis
-#import fp_helper as fpmis
 import FITSKeywordPanel as fkwp
 import SOFIACruiseDirectorPanel as scdp
 
@@ -225,27 +223,39 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.logoutnme = ''
         self.headers = []
         self.fitshdu = 0
+        self.instrument = 'FLITECAM'
+        self.headers = ['aor_id', 'exptime', 'itime', 'co_adds',
+                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
+                        'date-obs', 'time_gps', 
+                        'sibs_x', 'sibs_y',
+                        'nodcrsys', 'nodangle', 'nodamp', 'nodbeam',
+                        'dthpatt', 'dthnpos', 'dthindex', 'ditherx', 'dithery',
+                        'dthoffs', 'dthcrsys',
+                        'telra', 'teldec', 'tellos', 'telrof', 'telvpa',
+                        "BBMODE", "CBMODE", 
+                        "BGRESETS", "GRSTCNT", "GPSTIMEFLAG",
+                        'missn-id', 'instcfg', 'instmode']
+
 
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method
-        #
         # self.instrument = 'HAWC'
-        self.instrument = 'HAWCFlight'
-        self.headers = ['date-obs', 'spectel1', 'spectel2',
-                       'diagmode', 'diag_hz',
-                       'exptime',  'nhwp', 'hwpstart',
-                       'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
-                       'chpangle',
-                       'nodcrsys', 'nodbeam',
-                       'nodangle',
-                       'dthunit', 'dthindex', 'dthnpos',
-                       'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-                       'scnra0', 'scndec0', 'scnrate', 'scndir',
-                       'scnraf', 'scndecf',
-                       'obs_id',
-                       'telra', 'teldec', 'telvpa', 'bsite',
-                       'missn-id', 'datasrc', 'instcfg', 'instmode',
-                       'instrume']
+        # self.instrument = 'HAWCFlight'
+        # self.headers = ['date-obs', 'spectel1', 'spectel2',
+        #                'diagmode', 'diag_hz',
+        #                'exptime',  'nhwp', 'hwpstart',
+        #                'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
+        #                'chpangle',
+        #                'nodcrsys', 'nodbeam',
+        #                'nodangle',
+        #                'dthunit', 'dthindex', 'dthnpos',
+        #                'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+        #                'scnra0', 'scndec0', 'scnrate', 'scndir',
+        #                'scnraf', 'scndecf',
+        #                'obs_id',
+        #                'telra', 'teldec', 'telvpa', 'bsite',
+        #                'missn-id', 'datasrc', 'instcfg', 'instmode',
+        #                'instrume']
 
         # FIFI-LS instrument name and headers
         # self.instrument = 'FIFI-LS'
