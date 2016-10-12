@@ -14,6 +14,7 @@ flight = fpmis.parseMIS(infile)
 print "Flight Plan Filename: %s, Vintage: %s" % (flight.filename, flight.saved)
 print flight.summarize()
 print ""
+print "-------------------------------------"
 
 for each in flight.legs:
     print each.summarize()

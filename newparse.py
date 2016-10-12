@@ -382,7 +382,7 @@ def regExper(lines, key, keytype='key:val', howmany=1, nextkey=None):
     cmatch = None
     mask = ''
 
-    # Oh god I'm sorry it's like it's suddenly all PERL up in here.
+    # Oh god I'm sorry it's like it's suddenly all Perl up in here.
     #   Use something like https://regex101.com/ and the test block here
     #
     # Leg 4 (HIP 84379)   Start: 04:06:22     Leg Dur: 00:30:00   Req. Alt: 37000 ft
@@ -397,17 +397,7 @@ def regExper(lines, key, keytype='key:val', howmany=1, nextkey=None):
     elif keytype == 'key:val':
         mask = u'(%s\s*\:\s*\S*)' % (key)
     elif keytype == 'key+nextkey':
-        #
-        #
-        #
-        #
-        # UNFINISHED!!!
-        mask = u'(%s*\:.*%s)' % (key, nextkey)
-        # UNFINISHED!!!
-        #
-        #
-        #
-        #
+        mask = u'((%s*\:.*)%s\:)' % (key, nextkey)
     elif keytype == 'threeline':
         mask = u'((%s\s*\:.*)\s*(%s\s*\:.*)\s*(%s\s*\:.*))' %\
             (key[0], key[1], key[2])
@@ -595,13 +585,17 @@ def parseLegMetadata(i, words, ltype=None):
     else:
         # This generally means it's an observing leg
         # If the target keyword is there, it's an observing leg
-        target = regExper(words, 'Target', howmany=1, keytype='key:val')
+        target = regExper(words, 'Target', howmany=1, nextkey="RA",
+                          keytype='key+nextkey')
         if target is None:
+            target = ''
             newleg.legtype = 'Other'
-
         else:
-            # NOTE: Bug here! Doesn't work since spaces suck.
-            newleg.target = keyValuePair(target.group(), 'Target', dtype=str)
+            target = isItBlankOrNot(target.groups()[1])
+#            target = target.groups()[1].split(':')[1].strip()
+            if target == '':
+                target = 'Undefined'
+            newleg.target = target
             newleg.legtype = 'Observing'
 
             odur = regExper(words, 'Obs Dur', howmany=1, keytype='key:val')
@@ -616,8 +610,21 @@ def parseLegMetadata(i, words, ltype=None):
             dec = regExper(words, 'Dec', howmany=1, keytype='key:val')
             newleg.dec = keyValuePair(dec.group(), "Dec", dtype=str)
 
-            opidline = regExper(words, ['ObspID', 'Blk', 'Priority'],
-                                howmany=1, keytype='threeline')
+            # First shot at parsing blank values. Was a bit hokey.
+#            opidline = regExper(words, ['ObspID', 'Blk', 'Priority'],
+#                                howmany=1, keytype='threeline')
+
+            opid = regExper(words, 'ObspID', howmany=1, nextkey='Blk',
+                            keytype='key+nextkey')
+            obsblk = regExper(words, 'Blk', howmany=1, nextkey='Priority',
+                              keytype='key+nextkey')
+
+            # Note: these are for the original (threeline) parsing method
+#            newleg.obsplan = isItBlankOrNot(opidline[0][1])
+#            newleg.obsblk = isItBlankOrNot(opidline[0][2])
+
+            newleg.obsplan = isItBlankOrNot(opid.groups()[1])
+            newleg.obsblk = isItBlankOrNot(obsblk.groups()[1])
 
             naif = regExper(words, 'NAIF ID', howmany=1, keytype='key:val')
             if naif is None:
@@ -627,9 +634,6 @@ def parseLegMetadata(i, words, ltype=None):
                 newleg.nonsid = True
                 newleg.naifid = keyValuePair(naif.group(), 'NAIF ID',
                                              dtype=int)
-
-            newleg.obsplan = isItBlankOrNot(opidline[0][1])
-            newleg.obsblk = isItBlankOrNot(opidline[0][2])
 
             # Big of manual magic to deal with the stupid brackets
             rnge_e = regExper(words, 'Elev', howmany=1, keytype='bracketvals')
@@ -808,4 +812,4 @@ def parseMIS(infile, summarize=False):
 if __name__ == "__main__":
 #    infile = '/Users/rhamilton/Desktop/HAWCCom2Flights/Draft5/201609_HA_01_SCI.mis'
     infile = '/Users/rhamilton/Desktop/201609_HA_01_WX12.mis'
-    parseMIS(infile)
+    parseMIS(infile, summarize=True)
