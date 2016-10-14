@@ -13,7 +13,6 @@ Created on Wed Sep 16 16:40:05 2015
 #  or it doesn't actually write to the new location?
 
 
-import os
 import sys
 import csv
 import pytz
@@ -21,6 +20,8 @@ import glob
 import fnmatch
 import datetime
 import itertools
+from os import listdir
+from os.path import walk, join, basename
 
 import numpy as np
 import pyfits as pyf
@@ -37,7 +38,7 @@ def grab_header(infile, headerlist, HDU=0):
     parse those two together and return the result.
     """
     key = ''
-    bname = os.path.basename(infile)
+    bname = basename(infile)
     try:
         hed = pyf.getheader(infile, ext=HDU)
     except:
@@ -61,7 +62,7 @@ def grab_headers(inlist, headerlist, HDU=0):
     ret = []
     key = ''
     for each in inlist:
-        bname = os.path.basename(each)
+        bname = basename(each)
         try:
             hed = pyf.getheader(each, ext=HDU)
             item = []
@@ -403,7 +404,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                                             defaultname)
         if self.outputname != '':
             self.txt_logoutputname.setText("Writing to: " +
-                                           os.path.basename(str(self.outputname)))
+                                           basename(str(self.outputname)))
 
     def selectLogOutputFile(self):
         """
@@ -418,7 +419,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         if self.logoutnme != '':
             self.txt_datalogsavefile.setText("Writing to: " +
-                                             os.path.basename(str(self.logoutnme)))
+                                             basename(str(self.logoutnme)))
 
     def postlogline(self):
         line = self.log_inputline.text()
@@ -649,34 +650,51 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.data_current = glob.glob(str(self.datalogdir) + "/*.grabme")
         elif self.instrument == 'FIFI-LS':
             curdata = []
-            for root, dirnames, filenames in os.walk(str(self.datalogdir)):
+            for root, dirnames, filenames in walk(str(self.datalogdir)):
                 for filename in fnmatch.filter(filenames, '*.fits'):
-                    curdata.append(os.path.join(root, filename))
+                    curdata.append(join(root, filename))
             self.data_current = curdata
         else:
             self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
 
-        # If the length of the current listing is bigger than
-        #   the previous, then lets look at the new files.
-        #   This avoids the situation where files disappear
-        #   and cause off-by-one errors that we don't want to deal with
-        #   in this first early version.
-        if len(self.data_current) > len(self.data_previous):
+        # Ok, lets try this beast again.
+        #   Main difference here is the addition of a basename'd version
+        #   of current and previous data. Maybe it's a network path bug?
+        #   (grasping at any and all straws here)
+        bncur = [basename(x) for x in self.data_current]
+        bnpre = [basename(x) for x in self.data_previous]
+
+        if len(bncur) != len(bnpre):
             self.datanew = []
             # Make the unique listing of old files
-            s = set(self.data_previous)
+            s = set(bnpre)
+
             # Compare the new listing to the unique set of the old ones
-            diff = [x for x in self.data_current if x not in s]
+            #   Previous logic was:
+#            diff = [x for x in self.data_current if x not in s]
+            # Unrolled logic (might be easier to spot a goof-up)
+            diff = []
+            idxs = []
+            for i, x in enumerate(bncur):
+                if x not in s:
+                    idxs.append(i)
+                    diff.append(x)
+
             # Capture the last row position so we know where to start
             self.lastdatarow = self.table_datalog.rowCount()
+
+            print "PreviousFileList:", bnpre
+            print "CurrentFileList:", bncur
             # Actually query the files for the desired headers
-            for newfile in diff:
+            for idx in idxs:
+                # REMEMBER: THIS NEEDS TO REFERENCE THE ORIGINAL LIST!
                 if self.instrument == "HAWCFlight":
-                    realfile = newfile[:-6] + 'fits'
+                    realfile = self.data_current[idx][:-6] + 'fits'
                 else:
-                    realfile = newfile
+                    realfile = self.data_current[idx]
+                print "Newfile: %s" % (realfile)
                 # Save the filenames
-                self.datafilenames.append(os.path.basename(realfile))
+                self.datafilenames.append(basename(realfile))
                 # Add number of rows for files to go into first
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
@@ -684,6 +702,36 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.datanew.append(grab_header(realfile,
                                                 self.headers,
                                                 HDU=self.fitshdu))
+
+#        # If the length of the current listing is bigger than
+#        #   the previous, then lets look at the new files.
+#        #   This avoids the situation where files disappear
+#        #   and cause off-by-one errors that we don't want to deal with
+#        #   in this first early version.
+#        if len(self.data_current) > len(self.data_previous):
+#            self.datanew = []
+#            # Make the unique listing of old files
+#            s = set(self.data_previous)
+#            # Compare the new listing to the unique set of the old ones
+#            diff = [x for x in self.data_current if x not in s]
+#            # Capture the last row position so we know where to start
+#            self.lastdatarow = self.table_datalog.rowCount()
+#            # Actually query the files for the desired headers
+#            for newfile in diff:
+#                if self.instrument == "HAWCFlight":
+#                    realfile = newfile[:-6] + 'fits'
+#                else:
+#                    realfile = newfile
+#                print "Newfile: %s" % (realfile)
+#                # Save the filenames
+#                self.datafilenames.append(basename(realfile))
+#                # Add number of rows for files to go into first
+#                rowPosition = self.table_datalog.rowCount()
+#                self.table_datalog.insertRow(rowPosition)
+#                # Actually get the header data
+#                self.datanew.append(grab_header(realfile,
+#                                                self.headers,
+#                                                HDU=self.fitshdu))
 
             self.setTableData()
             self.writedatalog()
@@ -884,7 +932,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
-        self.flightplan_filename.setText(os.path.basename(str(self.fname)))
+        self.flightplan_filename.setText(basename(str(self.fname)))
         try:
             self.flightinfo = fpmis.parseMIS(self.fname)
             self.lginfo = self.flightinfo.legs[self.legpos]
@@ -911,7 +959,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # if user didn't pick a directory don't continue
         if directory:
             # for all files, if any, in the directory
-            for file_name in os.listdir(directory):
+            for file_name in listdir(directory):
                 # add file to the listWidget
                 self.listWidget.addItem(file_name)
 
