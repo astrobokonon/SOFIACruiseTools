@@ -225,16 +225,13 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.headers = []
         self.fitshdu = 0
         self.instrument = 'FLITECAM'
-        self.headers = ['aor_id', 'exptime', 'itime', 'co_adds',
-                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
-                        'date-obs', 'time_gps',
-                        'sibs_x', 'sibs_y',
-                        'nodcrsys', 'nodangle', 'nodamp', 'nodbeam',
-                        'dthpatt', 'dthnpos', 'dthindex', 'ditherx', 'dithery',
-                        'dthoffs', 'dthcrsys',
-                        'telra', 'teldec', 'tellos', 'telrof', 'telvpa',
-                        "BBMODE", "CBMODE",
-                        "BGRESETS", "GRSTCNT", "GPSTIMEFLAG",
+        self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
+                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb', 
+                        'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
+                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos', 
+                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs', 
+                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof', 
+                        'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
                         'missn-id', 'instcfg', 'instmode']
 
         # HAWC instrument name and headers
@@ -699,6 +696,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
+                # INSERT WAIT HERE.
                 self.datanew.append(grab_header(realfile,
                                                 self.headers,
                                                 HDU=self.fitshdu))
