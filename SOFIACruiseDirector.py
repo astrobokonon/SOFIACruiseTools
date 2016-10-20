@@ -32,10 +32,11 @@ import FITSKeywordPanel as fkwp
 import SOFIACruiseDirectorPanel as scdp
 
 
-def grab_header(infile, headerlist, HDU=0):
+def headerList(infile, headerlist, HDU=0):
     """
     Given a FITS file and a list of header keywords of interest,
-    parse those two together and return the result.
+    parse those two together and return the result as a tuple of
+    base filename and an sequential list of the keywords.
     """
     key = ''
     bname = basename(infile)
@@ -54,27 +55,34 @@ def grab_header(infile, headerlist, HDU=0):
     return bname, item
 
 
-def grab_headers(inlist, headerlist, HDU=0):
+def headerDict(infile, headerlist, HDU=0):
     """
-    Given a list of FITS files and a list of header keywords of interest,
-    parse those two together and return the result.
+    Given a filename (with path), return a dict of the desired header
+    keywords.
     """
-    ret = []
-    key = ''
-    for each in inlist:
-        bname = basename(each)
-        try:
-            hed = pyf.getheader(each, ext=HDU)
-            item = []
-            for key in headerlist:
-                try:
-                    item.append(hed[key])
-                except:
-                    item.append('')
-            ret.append([bname, item])
-        except:
-            pass
-    return ret
+    item = {}
+    bname = basename(infile)
+
+    # NOTE: This isn't just called 'filename' beacuse I didn't want to risk
+    #   it getting clobbered if the user was actually interested in
+    #   a FITS keyword called "FILENAME" at some point in the future...
+    item['PhysicalFilename'] = bname
+    try:
+        hed = pyf.getheader(infile, ext=HDU)
+        failed = False
+    except:
+        failed = True
+
+    for key in headerlist:
+        if failed is False:
+            try:
+                item[key] = hed[key]
+            except:
+                item[key] = ''
+        else:
+            item[key] = ''
+
+    return item
 
 
 class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
@@ -699,9 +707,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
-                self.datanew.append(grab_header(realfile,
-                                                self.headers,
-                                                HDU=self.fitshdu))
+                self.datanew.append(headerList(realfile,
+                                               self.headers,
+                                               HDU=self.fitshdu))
 
 #        # If the length of the current listing is bigger than
 #        #   the previous, then lets look at the new files.
