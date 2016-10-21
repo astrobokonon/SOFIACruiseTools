@@ -88,6 +88,7 @@ def headerDict(infile, headerlist, HDU=0):
 class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
     def __init__(self, parent=None):
         super(FITSKeyWordDialog, self).__init__(parent)
+
         self.setupUi(self)
 
         self.fitskw_add.clicked.connect(self.getkeywordfromuser)
@@ -103,9 +104,15 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
                      self.reject)
 
         self.utcnow = self.parent().utcnow
+
+        # Grab a few things from the parent widget to use here
+        self.headers = self.parentWidget().headers
+        self.fitshdu = self.parentWidget().fitshdu
+        self.reorderkwwidget()
         self.updateheadlist()
 
     def reorderedheadlist(self):
+        self.updateheadlist()
         self.txt_fitskw_status.setText("Unsaved Changes!")
 
     def kwsavelist(self):
@@ -163,6 +170,7 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
             text = text.strip()
             text = text.upper()
             self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
+            self.reorderkwwidget()
             self.updateheadlist()
             self.txt_fitskw_status.setText("Unsaved Changes!")
 
@@ -170,6 +178,8 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
         for it in self.fitskw_listing.selectedItems():
             self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
         self.txt_fitskw_status.setText("Unsaved Changes!")
+        self.updateheadlist()
+        self.reorderkwwidget()
 
     def selectKWFile(self, kind='save'):
         """
@@ -177,7 +187,8 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
         to both open and write to the file.
 
         """
-        defaultname = "KWList_" + self.utcnow.strftime("%Y%m%d.txt")
+        defaultname = "KWList_" + self.parentWidget().instrument +\
+            self.utcnow.strftime("_%Y%m%d.txt")
         if kind == 'save':
             self.kwname = QtGui.QFileDialog.getSaveFileName(self,
                                                             "Save File",
@@ -284,8 +295,6 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         # This always puts the NOTES col. right next to the filename
         self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
-        # This always puts the NOTES col. at the end of all the other cols.
-#        self.table_datalog.setHorizontalHeaderLabels(self.headers + ['NOTES'])
 
         self.table_datalog.resizeColumnsToContents()
         self.table_datalog.resizeRowsToContents()
@@ -341,9 +350,24 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         window = FITSKeyWordDialog(self)
         result = window.exec_()
         if result == 1:
-            print "Clicked ok!"
-            print window.headers
             self.fitshdu = np.int(window.fitskw_hdu.value())
+            self.headers = window.headers
+            print self.headers
+
+            # Clear out the old data, since we could have rearranged columns
+            self.table_datalog.clear()
+
+            # Update with the new number of colums
+            self.table_datalog.setColumnCount(len(self.headers) + 1)
+
+            # Update with the new column labels
+            self.updatetablecols()
+
+            # NOT WORKING YET
+            # Update the column data itself if we're actually logging
+            if self.startdatalog is True:
+                self.updateDatalog()
+
         # Explicitly kill it
 #        del window
 
