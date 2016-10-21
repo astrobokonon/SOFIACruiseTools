@@ -679,7 +679,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         #   of current and previous data. Maybe it's a network path bug?
         #   (grasping at any and all straws here)
         bncur = [basename(x) for x in self.data_current]
-        bnpre = [basename(x) for x in self.data_previous]
+        bnpre = [basename(x) for x in self.datafilenames]
 
         if len(bncur) != len(bnpre):
             self.datanew = []
@@ -721,40 +721,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                                                self.headers,
                                                HDU=self.fitshdu))
 
-#        # If the length of the current listing is bigger than
-#        #   the previous, then lets look at the new files.
-#        #   This avoids the situation where files disappear
-#        #   and cause off-by-one errors that we don't want to deal with
-#        #   in this first early version.
-#        if len(self.data_current) > len(self.data_previous):
-#            self.datanew = []
-#            # Make the unique listing of old files
-#            s = set(self.data_previous)
-#            # Compare the new listing to the unique set of the old ones
-#            diff = [x for x in self.data_current if x not in s]
-#            # Capture the last row position so we know where to start
-#            self.lastdatarow = self.table_datalog.rowCount()
-#            # Actually query the files for the desired headers
-#            for newfile in diff:
-#                if self.instrument == "HAWCFlight":
-#                    realfile = newfile[:-6] + 'fits'
-#                else:
-#                    realfile = newfile
-#                print "Newfile: %s" % (realfile)
-#                # Save the filenames
-#                self.datafilenames.append(basename(realfile))
-#                # Add number of rows for files to go into first
-#                rowPosition = self.table_datalog.rowCount()
-#                self.table_datalog.insertRow(rowPosition)
-#                # Actually get the header data
-#                self.datanew.append(grab_header(realfile,
-#                                                self.headers,
-#                                                HDU=self.fitshdu))
-
             self.setTableData()
             self.writedatalog()
-
-        self.data_previous = self.data_current
 
     def setTableData(self):
         if len(self.datanew[0]) != 0:
@@ -790,6 +758,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 #            self.table_datalog.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
 
             self.table_datalog.show()
+
+            # Should add this as a checkbox option to always scroll to bottom
+            #   whenever a new file comes in...
+            self.table_datalog.scrollToBottom()
 
     def writedatalog(self):
         if self.logoutnme != '':
