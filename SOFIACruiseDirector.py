@@ -21,7 +21,7 @@ import fnmatch
 import datetime
 import itertools
 from os import listdir
-from os.path import walk, join, basename
+from os.path import walk, join, basename, getmtime
 
 import numpy as np
 import pyfits as pyf
@@ -234,11 +234,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.fitshdu = 0
         self.instrument = 'FLITECAM'
         self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
-                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb', 
+                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
                         'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
-                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos', 
-                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs', 
-                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof', 
+                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
+                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
+                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
                         'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
                         'missn-id', 'instcfg', 'instmode']
 
@@ -270,6 +270,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         #                 "DLAM_MAP", "DBET_MAP", "DET_ANGL",
         #                 "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
 
+        # Things are easier if the keywords are always in CAPS
+        self.headers = [each.upper() for each in self.headers]
         self.updatetablecols()
 
         # Notes position is first in the table
@@ -650,6 +652,13 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.writedatalog()
 
     def updateDatalog(self):
+        """
+        General notes:
+          glob.glob returns a randomly ordered result, so that can lead
+            to jumbled results if you just use it blindly. Sort by modification
+            time to get a sensible listing.
+            (can't use creation time cross-platform)
+        """
         # Get the current list of FITS files in the location
         if self.instrument == 'HAWCFlight':
             self.data_current = glob.glob(str(self.datalogdir) + "/*.grabme")
@@ -661,6 +670,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.data_current = curdata
         else:
             self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
+
+        # Correct the file listing to be ordered by modification time
+        self.data_current.sort(key=getmtime)
 
         # Ok, lets try this beast again.
         #   Main difference here is the addition of a basename'd version
@@ -705,7 +717,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
                 # INSERT WAIT HERE.
-                self.datanew.append(headerList(realfile,
+                self.datanew.append(headerDict(realfile,
                                                self.headers,
                                                HDU=self.fitshdu))
 
@@ -754,11 +766,12 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
             # Actually set the labels for rows
             self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
-            # Create the data table items and populate things
 
+            # Create the data table items and populate things
+            #   Note! This is for use with headerDict style of grabbing stuff
             for n, row in enumerate(self.datanew):
-                for m, col in enumerate(row[1]):
-                    newitem = QtGui.QTableWidgetItem(str(col))
+                for m, hkey in enumerate(self.headers):
+                    newitem = QtGui.QTableWidgetItem(str(row[hkey]))
                     self.table_datalog.setItem(n + self.lastdatarow,
                                                m+1, newitem)
 
@@ -783,6 +796,10 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             try:
                 f = open(self.logoutnme, 'w')
                 writer = csv.writer(f)
+                # Write the column labels first...assumes that the
+                #   filename and notes column are first and second
+                clabs = ['FILENAME', 'NOTES'] + self.headers
+                writer.writerow(clabs)
                 for row in range(self.table_datalog.rowCount()):
                     rowdata = []
                     rowdata.append(self.datafilenames[row])
