@@ -749,7 +749,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.writedatalog()
 
     def setTableData(self):
-        if len(self.datanew[0]) != 0:
+        if len(self.datanew) != 0:
             # Disable fun stuff while we update
             self.table_datalog.setSortingEnabled(False)
             self.table_datalog.horizontalHeader().setMovable(False)
@@ -786,6 +786,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             # Should add this as a checkbox option to always scroll to bottom
             #   whenever a new file comes in...
             self.table_datalog.scrollToBottom()
+        else:
+            print "No new files!"
 
     def writedatalog(self):
         if self.logoutnme != '':
