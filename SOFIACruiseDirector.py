@@ -24,7 +24,8 @@ from os import listdir
 from os.path import walk, join, basename, getmtime
 
 import numpy as np
-import pyfits as pyf
+#import pyfits as pyf
+import astropy.io.fits as pyf
 from PyQt4 import QtGui, QtCore
 
 import newparse as fpmis
@@ -283,21 +284,14 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
+        # The addition of the NOTES column happens in here
         self.updatetablecols()
 
-        # Notes position is first in the table
-        self.table_datalog.insertColumn(0)
-
-        # Add the number of columns we'll need for the header keys given
-        for hkey in self.headers:
-            colPosition = self.table_datalog.columnCount()
-            self.table_datalog.insertColumn(colPosition)
-
-        # This always puts the NOTES col. right next to the filename
-        self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
-
+        # Looks prettier with this stuff
         self.table_datalog.resizeColumnsToContents()
         self.table_datalog.resizeRowsToContents()
+
+        # Actually show the table
         self.table_datalog.show()
 
         # Hooking up the various buttons to their actions to take
@@ -351,28 +345,25 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         result = window.exec_()
         if result == 1:
             self.fitshdu = np.int(window.fitskw_hdu.value())
-            self.headers = window.headers
-            print self.headers
-
-            # Clear out the old data, since we could have rearranged columns
-            self.table_datalog.clear()
-
-            # Update with the new number of colums
-            self.table_datalog.setColumnCount(len(self.headers) + 1)
-
-            # Update with the new column labels
-            self.updatetablecols()
+            self.newheaders = window.headers
+            print self.newheaders
 
             # NOT WORKING YET
             # Update the column data itself if we're actually logging
             if self.startdatalog is True:
-                self.updateDatalog()
+                self.repopulateDatalog(rescan=False)
 
         # Explicitly kill it
 #        del window
 
     def updatetablecols(self):
         # This always puts the NOTES col. right next to the filename
+        self.table_datalog.insertColumn(0)
+
+        # Add the number of columns we'll need for the header keys given
+        for hkey in self.headers:
+            colPosition = self.table_datalog.columnCount()
+            self.table_datalog.insertColumn(colPosition)
         self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
 
     def selectDir(self):
@@ -579,6 +570,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
     def showlcd(self):
         """
+        The main loop for the code.
+
         Contains the clock logic code for all the various timers.
 
         MET: Mission Elapsed Time
@@ -607,7 +600,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.ttlstr = self.totalsec_to_hms_str(self.ttl) + " TTL"
             self.txt_ttl.setText(self.ttlstr)
 
-            # Visual indicators setup
+            # Visual indicators setup; times are in seconds
             if self.ttl.total_seconds() >= 7200:
                 self.txt_ttl.setStyleSheet("QLabel { color : black; }")
 
@@ -675,6 +668,80 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
             self.writedatalog()
 
+    def repopulateDatalog(self, rescan=False):
+        """
+        After changing the column ordering or adding/removing keywords,
+        use this to redraw the table in the new positions.
+        """
+        # Disable fun stuff while we update
+        self.table_datalog.setSortingEnabled(False)
+        self.table_datalog.horizontalHeader().setMovable(False)
+        self.table_datalog.horizontalHeader().setDragEnabled(False)
+        self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+
+        thedlist = ['NOTES'] + self.headers
+
+        # First, grab the data
+        tablist = []
+        for n in xrange(0, self.table_datalog.rowCount()):
+            rowdata = {}
+            for m, hkey in enumerate(thedlist):
+                if rescan is True:
+                    # Need to somehow remap the basename'd row label to the
+                    #   original listing of files (with path) to go rescan
+                    fname = ''
+                    rowdata = headerDict(fname, self.headers,
+                                         HDU=self.fitshdu)
+                else:
+                    rdat = self.table_datalog.item(n, m)
+                    if rdat is not None:
+                        rowdata[hkey] = rdat.text()
+                    else:
+                        rowdata[hkey] = ''
+            tablist.append(rowdata)
+
+        # Clear out the old data, since we could have rearranged columns
+        self.table_datalog.clear()
+
+        # Actually assign the new headers
+        self.headers = self.newheaders
+
+        # Update with the new number of colums
+        self.table_datalog.setColumnCount(len(self.headers) + 1)
+
+        # Update with the new column labels
+        self.updatetablecols()
+
+        # Actually set the labels for rows
+        self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
+
+        # Create the data table items and populate things
+        #   Note! This is for use with headerDict style of grabbing stuff
+        for n, row in enumerate(tablist):
+            for m, hkey in enumerate(self.headers):
+                print n, m, row, hkey, row[hkey]
+                newitem = QtGui.QTableWidgetItem(str(row[hkey]))
+                self.table_datalog.setItem(n, m+1, newitem)
+
+        # Resize to minimum required, then display
+        self.table_datalog.resizeRowsToContents()
+
+        # Seems to be more trouble than it's worth, so keep this commented
+#        self.table_datalog.setSortingEnabled(True)
+
+        # Reenable fun stuff
+        self.table_datalog.horizontalHeader().setMovable(True)
+        self.table_datalog.horizontalHeader().setDragEnabled(True)
+        self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+#        self.table_datalog.setDragEnabled(True)
+#        self.table_datalog.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+
+        self.table_datalog.show()
+
+        # Should add this as a checkbox option to always scroll to bottom
+        #   whenever a new file comes in...
+        self.table_datalog.scrollToBottom()
+
     def updateDatalog(self):
         """
         General notes:
@@ -741,9 +808,9 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
                 # INSERT WAIT HERE.
-                self.datanew.append(headerDict(realfile,
-                                               self.headers,
-                                               HDU=self.fitshdu))
+                theData = headerDict(realfile, self.headers, HDU=self.fitshdu)
+#                self.allData.append(theData)
+                self.datanew.append(theData)
 
             self.setTableData()
             self.writedatalog()
