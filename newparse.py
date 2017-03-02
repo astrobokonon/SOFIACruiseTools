@@ -741,11 +741,18 @@ def parseMISPreamble(lines, flight, summarize=False):
     landing = regExper(lines, 'Landing', howmany=1, keytype='key:dtime')
     flight.landing = keyValuePairDT(landing.group(), "Landing")
 
+    # NOTE: I hate fp. It sometimes doesn't write sunrise info.
     sunset = regExper(lines, 'Sunset', howmany=1, keytype='key:val')
-    flight.sunset = keyValuePairTD(sunset.group(), "Sunset")
+    try:
+        flight.sunset = keyValuePairTD(sunset.group(), "Sunset")
+    except:
+        flight.sunset = "NONE"
 
     sunrise = regExper(lines, 'Sunrise', howmany=1, keytype='key:val')
-    flight.sunrise = keyValuePairTD(sunrise.group(), "Sunrise")
+    try:
+        flight.sunrise = keyValuePairTD(sunrise.group(), "Sunrise")
+    except:
+        flight.sunrise = "NONE"
 
     if summarize is True:
         print flight.summarize()

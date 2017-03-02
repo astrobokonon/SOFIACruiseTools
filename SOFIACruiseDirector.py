@@ -20,17 +20,20 @@ import glob
 import fnmatch
 import datetime
 import itertools
-from os import listdir
-from os.path import walk, join, basename, getmtime
+from os import listdir, walk
+from os.path import join, basename, getmtime
 
 import numpy as np
-#import pyfits as pyf
-import astropy.io.fits as pyf
 from PyQt4 import QtGui, QtCore
 
 import newparse as fpmis
 import FITSKeywordPanel as fkwp
 import SOFIACruiseDirectorPanel as scdp
+
+try:
+    import astropy.io.fits as pyf
+except ImportError:
+    import pyfits as pyf
 
 
 def headerList(infile, headerlist, HDU=0):
@@ -244,35 +247,39 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.logoutnme = ''
         self.headers = []
         self.fitshdu = 0
-        self.instrument = 'FLITECAM'
-        self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
-                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
-                        'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
-                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
-                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
-                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
-                        'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
-                        'missn-id', 'instcfg', 'instmode']
+#        self.instrument = 'FLITECAM'
+#        self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
+#                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
+#                        'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
+#                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
+#                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
+#                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
+#                        'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
+#                        'missn-id', 'instcfg', 'instmode']
 
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method
-        # self.instrument = 'HAWC'
-        # self.instrument = 'HAWCFlight'
-        # self.headers = ['date-obs', 'spectel1', 'spectel2',
-        #                'diagmode', 'diag_hz',
-        #                'exptime',  'nhwp', 'hwpstart',
-        #                'chpcrsys', 'chpfreq', 'chpamp1', 'chpamp2',
-        #                'chpangle',
-        #                'nodcrsys', 'nodbeam',
-        #                'nodangle',
-        #                'dthunit', 'dthindex', 'dthnpos',
-        #                'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-        #                'scnra0', 'scndec0', 'scnrate', 'scndir',
-        #                'scnraf', 'scndecf',
-        #                'obs_id',
-        #                'telra', 'teldec', 'telvpa', 'bsite',
-        #                'missn-id', 'datasrc', 'instcfg', 'instmode',
-        #                'instrume']
+#        self.instrument = 'HAWC'
+        self.instrument = 'HAWCFlightG'
+        self.headers = ['date-obs', 'object', 'mccsmode',
+                        'spectel1', 'spectel2',
+                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
+                        'calmode', 'exptime', 'nodtime', 'fcstoff',
+                        'chpamp1', 'chpamp2', 'chpfreq',
+                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
+                        'aor_id', 'dthindex', 'dthnpos',
+                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
+                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
+                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
+                        'scnstep', 'scnsteps', 'scncross',
+                        'intcalv', 'diag_hz',
+                        'nhwp', 'hwpstart',
+                        'telra', 'teldec', 'telvpa',
+                        'obsra', 'obsdec', 'objra', 'objdec',
+                        'za_start', 'za_end', 'focus_st', 'focus_en',
+                        'utcstart', 'utcend',
+                        'missn-id']
 
         # FIFI-LS instrument name and headers
         # self.instrument = 'FIFI-LS'
@@ -770,7 +777,11 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         #   of current and previous data. Maybe it's a network path bug?
         #   (grasping at any and all straws here)
         bncur = [basename(x) for x in self.data_current]
-        bnpre = [basename(x) for x in self.datafilenames]
+
+        if self.instrument == "HAWCFlight":
+            bnpre = [basename(x)[:-4] + 'grabme' for x in self.datafilenames]
+        else:
+            bnpre = [basename(x) for x in self.datafilenames]
 
         if len(bncur) != len(bnpre):
             self.datanew = []
