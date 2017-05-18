@@ -72,9 +72,11 @@ class Observation(object):
         # HAWC+ Chop-Nod (C2N NMC) options
         self.chopcrsys = 'Sky'
         self.chopangle = 0.
+        self.chopanglesofia = 0.
         self.chopthrow = 0.
         self.nodcrsys = 'Sky'
         self.nodangle = 0.
+        self.nodanglesofia = 0.
         self.nodthrow = 0.
         self.nodtime = 0.
         self.chopfreq = 0.
@@ -116,9 +118,9 @@ class Observation(object):
         if output == 'reST':
             pass
         else:
-            txtSumm = "%s %s: '%s' %s" % (self.instrument, self.aorid,
+            txtSumm = "%s %s: '%s' %s\n" % (self.instrument, self.aorid,
                                           self.aname, self.target)
-            txtSumm += "%s + %s, %s" % (self.spectel1,
+            txtSumm += "%s + %s, %s\n" % (self.spectel1,
                                         self.spectel2,
                                         self.obsplanconfig)
 
@@ -163,6 +165,8 @@ def parseAOR(infile, summarize=False):
         tar = each.target
         tartype = tar['class']
         obs.target = tar.name.cdata
+        # added to help with confluence exporting
+        obs.target = obs.target.replace('[', '').replace(']', '')
 
         if tartype == "SofiaTargetMovingSingle":
             obs.naifID = np.int(tar.ephemeris.naifID.cdata)
@@ -240,6 +244,7 @@ def parseHAWCpObs(root, aobs):
             # General chopping stuff...might work for other instruments
             aobs.chopcrsys = root.ChopAngleCoordinate.cdata
             aobs.chopangle = np.float(root.ChopAngle.cdata)
+            aobs.chopanglesofia = (180. - aobs.chopangle)
             aobs.chopthrow = np.float(root.ChopThrow.cdata)
             aobs.chopfreq = np.float(root.ChopFreq.cdata)
             aobs.choptype = root.ChopType.cdata
@@ -247,6 +252,7 @@ def parseHAWCpObs(root, aobs):
             aobs.choponfpa = np.bool(root.ChopOnFPA.cdata)
             aobs.nodcrsys = root.NodAngleCoordinate.cdata
             aobs.nodangle = np.float(root.NodAngle.cdata)
+            aobs.nodanglesofia = (aobs.chopanglesofia - 180.)
             aobs.nodthrow = np.float(root.NodThrow.cdata)
             aobs.nodtime = np.float(root.NodTime.cdata)
 
@@ -374,20 +380,20 @@ def hawcAORConfluencer(AORgroup, key1, key2=''):
             print "||*Target*||*Spectel1*||*Spectel2",
             print "||*RA (2000)*||*Dec (2000)*",
             print "||*ExpTime*",
-            print "||*ScanAmp*||*ScanIters*||*AngLow*||*AngHigh*|"
+            print "||*ScanAmp*||*ScanIters*|"
             for taor in AORgroup:
                 os = "|%s|%s|%s|%s|%s|%s|%s|%05.2f|" %\
                     (taor.aorid, taor.aname, taor.target,
                      taor.spectel1, taor.spectel2, taor.coord2,
                      taor.coord1,
                      taor.duration-taor.overhead)
-                os += "%04.1f|%02d|%+03.1f|%+03.1f|" %\
+                os += "%04.1f|%02d|" %\
                     (taor.scanamp, taor.repeats,
                      taor.scananglow, taor.scananghigh)
                 print os
 
 
-def hawcAORreSTer(AORgroup, key1, key2=''):
+def hawcAORreSTer(AORgroup, key1, key2='', outie=sys.stdout):
     """
     Given a sorted grouping of AORs in a dictionary, print a reST
     formatted blob of text for use elsewhere.
@@ -395,18 +401,20 @@ def hawcAORreSTer(AORgroup, key1, key2=''):
     if key1 == "POLARIZATION" and AORgroup != []:
         hed = ["AORID", "AOR Name", "Target",
                "Spectel1", "Spectel2", "RA (2000)", "Dec (2000)",
-               "ExpTime", "ChopSys", "ChopAngle",
-               "NodAngle", "ChopThrow", "DthScale"]
+               "ExpTime", "ChopSys", "ChopAngle", "Nod Angle",
+               "ChopAngle-WoN", "NodAngle-WoN",
+               "ChopThrow", "DthScale"]
         tabdat = []
         for taor in AORgroup:
             tabdat.append([taor.aorid, taor.aname, taor.target,
                           taor.spectel1, taor.spectel2,
                           taor.coord2, taor.coord1,
                           taor.duration-taor.overhead,
-                          taor.chopcrsys, taor.chopangle,
-                          taor.nodangle, taor.chopthrow, taor.ditherscale])
+                          taor.chopcrsys, taor.chopangle, taor.nodangle,
+                          taor.chopanglesofia, taor.nodanglesofia,
+                          taor.chopthrow, taor.ditherscale])
         tabbie = aptable.Table(rows=tabdat, names=hed)
-        tabbie.write(sys.stdout, format='ascii.rst')
+        tabbie.write(outie, format='ascii.rst')
         print ""
     if key1 == 'OTFMAP' and AORgroup != []:
         if key2 == 'Box':
@@ -425,23 +433,21 @@ def hawcAORreSTer(AORgroup, key1, key2=''):
                                taor.scananglow, taor.scananghigh,
                                taor.subscans])
             tabbie = aptable.Table(rows=tabdat, names=hed)
-            tabbie.write(sys.stdout, format='ascii.rst')
+            tabbie.write(outie, format='ascii.rst')
             print ""
         if key2 == 'Lissajous':
             hed = ["AORID", "AOR Name", "Target",
                    "Spectel1", "Spectel2", "RA (2000)", "Dec (2000)",
-                   "ExpTime", "ScanRate", "ScanAmp", "ScanIters", "ScanPhase",
-                   "AngLow", "AngHigh"]
+                   "ExpTime", "ScanRate", "ScanAmp", "ScanIters", "ScanPhase"]
             tabdat = []
             for taor in AORgroup:
                 tabdat.append([taor.aorid, taor.aname, taor.target,
                                taor.spectel1, taor.spectel2, taor.coord2,
                                taor.coord1, taor.duration-taor.overhead,
                                taor.scanrate,
-                               taor.scanamp, taor.repeats, taor.scanphase,
-                               taor.scananglow, taor.scananghigh])
+                               taor.scanamp, taor.repeats, taor.scanphase])
             tabbie = aptable.Table(rows=tabdat, names=hed)
-            tabbie.write(sys.stdout, format='ascii.rst')
+            tabbie.write(outie, format='ascii.rst')
             print ""
 
 
@@ -503,7 +509,7 @@ def hawcAORtabber(AORgroup, key1, key2=''):
             print ""
 
 
-def HAWCAORSorter(infile, aorids=[], output='rst'):
+def HAWCAORSorter(infile, aorids=[], output='rst', silent=False):
     """
     Given an AOR file and an optional list of AOR IDs to summarize,
     parse the AOR and return either all or the specific AOR IDs in a nicely
@@ -539,8 +545,10 @@ def HAWCAORSorter(infile, aorids=[], output='rst'):
                 taor.obsplanmode == 'OTFMAP':
             hawcgroups[taor.obsplanconfig][taor.obsplanmode][taor.scantype].append(taor)
 
-    print aor.summarize(output='reST')
-    summarizeObsGroups(hawcgroups, output=output)
+    if silent is False:
+        print aor.summarize(output='reST')
+        summarizeObsGroups(hawcgroups, output=output)
+
     return aor, hawcgroups
 
 if __name__ == "__main__":

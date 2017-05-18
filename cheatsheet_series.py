@@ -228,7 +228,8 @@ def confluencer(inlist):
 
 
 seriestitle = 'HAWC+ OC5-E'
-inloc = '/Users/rhamilton/Desktop/201705_HA_FirstRealSet/'
+#inloc = '/Users/rhamilton/Desktop/201705_HA_FirstRealSet/'
+inloc = '/Users/rhamilton/Research/HAWC/201705/Flights/PostSci/'
 inlist = np.array(sorted(glob.glob(inloc + "/*.mis")))
 
 # Cheap hacky way to reorder the flight sequence by hand. Usually better to

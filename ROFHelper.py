@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import newparse as fpmis
 
 
-infile = '/Users/rhamilton/Desktop/201609_HA_02_ALT_WX12.mis'
+infile = '/Users/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX36.mis'
 
 # Read the .mis into a helpful class
 flight = fpmis.parseMIS(infile, summarize=True)
@@ -24,7 +24,7 @@ iflight = fpmis.interp_flight(flight, 2000)
 # Interval between LOS rewinds, in degrees of LOS
 #   this is the most sensible total range from one end to when the MD starts
 #   getting antsy and asking if anyone is going to rewind
-los_int = 2.3
+los_int = 1.5
 los_angle = np.arange(oleg.rof[0], oleg.rof[-1]-los_int, -los_int)
 
 # WARNING WARNING WARNING

@@ -582,10 +582,12 @@ def parseLegMetadata(i, words, ltype=None):
     if ltype == 'Takeoff':
         newleg.target = 'Takeoff'
         newleg.legtype = 'Takeoff'
+        newleg.obsblk = 'None'
         return newleg
     elif ltype == 'Landing':
         newleg.target = 'Landing'
         newleg.legtype = 'Landing'
+        newleg.obsblk = 'None'
         return newleg
     else:
         # This generally means it's an observing leg
@@ -593,14 +595,16 @@ def parseLegMetadata(i, words, ltype=None):
         target = regExper(words, 'Target', howmany=1, nextkey="RA",
                           keytype='key+nextkey')
         if target is None:
-            target = ''
+            target = 'Undefined'
             newleg.legtype = 'Other'
         else:
             target = isItBlankOrNot(target.groups()[1])
 #            target = target.groups()[1].split(':')[1].strip()
             if target == '':
                 target = 'Undefined'
-            newleg.target = target
+#            newleg.target = target
+            # Added this to help with exporting to confluence down the line
+            newleg.target = target.replace('[', '').replace(']', '')
             newleg.legtype = 'Observing'
 
             odur = regExper(words, 'Obs Dur', howmany=1, keytype='key:val')

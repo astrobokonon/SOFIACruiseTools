@@ -260,7 +260,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method
 #        self.instrument = 'HAWC'
-        self.instrument = 'HAWCFlightG'
+        self.instrument = 'HAWCFlight'
         self.headers = ['date-obs', 'object', 'mccsmode',
                         'spectel1', 'spectel2',
                         'instcfg', 'instmode', 'obsmode', 'scnpatt',
@@ -818,7 +818,6 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 rowPosition = self.table_datalog.rowCount()
                 self.table_datalog.insertRow(rowPosition)
                 # Actually get the header data
-                # INSERT WAIT HERE.
                 theData = headerDict(realfile, self.headers, HDU=self.fitshdu)
 #                self.allData.append(theData)
                 self.datanew.append(theData)
