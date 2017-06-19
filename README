@@ -5,15 +5,14 @@ Quickstart:
 .FITS files normally; 'HAWCFlight' is a workaround for HAWC+ specifically.
 - Make sure the flight plan file is readable before flight; see below.
 - FITS keyword panel is notional at this time and doesn't change anything.
-- I'm importing pyfits rather than (my preferred) astropy.io.fits to keep it
-  compatible with py2app.
 - python SOFIACruiseDirector.py
 
 Slowstart:
 ===========
 Python packages required:
-python >= 2.7 (but I haven't tested Python 3)
-pytz, numpy, scipy, astropy, PyQt4
+    python >= 2.7 (should work ok in Python >= 3.6)
+    pytz, numpy, scipy, astropy, PyQt5
+
 NOTE: If you use anaconda, you're probably already set.
 
 Start it by:
@@ -43,10 +42,6 @@ Recent (2016) flight plans now also change the way departure/arrival legs are
 denoted; make sure that the ( ) next to "Leg N" say "Departure" or "Arrival" 
 rather than the waypoint names (such as "ROSIN").
 
-Basically, the .mis files are a house of cards at this point.  During the last
-round of comments on flight planning products I made a clear case for a more 
-structured/regular document, but it was completely ignored.
-
 The FITS keyword panel is functional within itself, but at this point
 purely aspirational and does nothing of use.  I struggled in my head with how
 to deal with changing keywords if the log is already written/started, or
@@ -74,8 +69,8 @@ make that not a pain like that.
 
 Description:
 ============
-The main package is PyQt4, that handles all of the window and GUI things.  The
-nice thing about that is there's a GUI for making GUIs, QtDesigner, that offers
+The main package is PyQt5, that handles all of the window and GUI things.  The
+nice thing about that is there's a GUI for making GUIs, QtCreator, that offers
 a drag-and-drop interface to do stuff.  Once you have your design you can use a
 simple command-line tool to take that GUI output and turn it into a python file
 that you can import into your project, and *then* and assign actions to all the
@@ -85,10 +80,6 @@ move stuff around without having to actually change the meat of your code.
 'SOFIACruiseDirectorPanel.ui' is the actual GUI design file,
 'SOFIACruiseDirectorPanel.py' is the python automatically translated
 equivalent, and 'SOFIACruiseDirector.py' is where all the actions/magic
-happens.  There's an additional file 'fp_helper.py' that I wrote a while back
+happens.  There's an additional file 'newparse.py' that I wrote 
 to read and parse .mis files into python structures that I rolled into this as
 well since it was convenient.
-
-The 'makeapp' file gives the commands to use with py2app that I experimented 
-with previously; it requires pyfits, *not* astropy.io.fits as the latter 
-is unbundleable due to choices made by astropy.
