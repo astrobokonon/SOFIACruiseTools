@@ -5,13 +5,11 @@ Created on Wed Sep 16 16:40:05 2015
 @author: rhamilton
 """
 # Regen the UI Py file via:
-#   pyuic4-2.7 SOFIACruiseDirectorPanel.ui -o SOFIACruiseDirectorPanel.py
+#   pyuicX SOFIACruiseDirectorPanel.ui -o SOFIACruiseDirectorPanel.py
+# Where X = your Qt version
 
-# Current bug:
-#  If you put the output file in the wrong place and try to redefine it,
-#  screwy things result and either the name updates underneath of you
-#  or it doesn't actually write to the new location?
-
+# Trying to ensure Python 2/3 coexistance ...
+from __future__ import division, print_function
 
 import sys
 import csv
@@ -24,7 +22,7 @@ from os import listdir, walk
 from os.path import join, basename, getmtime
 
 import numpy as np
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import newparse as fpmis
 import FITSKeywordPanel as fkwp
@@ -89,7 +87,7 @@ def headerDict(infile, headerlist, HDU=0):
     return item
 
 
-class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
+class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     def __init__(self, parent=None):
         super(FITSKeyWordDialog, self).__init__(parent)
 
@@ -135,8 +133,8 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
                 f.close()
                 statusline = "File Written: %s" % str(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
-            except Exception, why:
-                print str(why)
+            except Exception as why:
+                print(str(why))
                 self.txt_fitskw_status.setText("ERROR WRITING TO FILE!")
 
     def kwloadlist(self):
@@ -150,8 +148,8 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
                     self.headers.append(row)
                 statusline = "File Loaded: %s" % str(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
-            except Exception, why:
-                print str(why)
+            except Exception as why:
+                print(str(why))
                 self.txt_fitskw_status.setText("ERROR READING THE FILE!")
             finally:
                 f.close()
@@ -210,7 +208,7 @@ class FITSKeyWordDialog(QtGui.QDialog, fkwp.Ui_FITSKWDialog):
         self.headers = [hlab.upper() for hlab in self.headers]
 
 
-class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
+class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
@@ -353,7 +351,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         if result == 1:
             self.fitshdu = np.int(window.fitskw_hdu.value())
             self.newheaders = window.headers
-            print self.newheaders
+            print(self.newheaders)
 
             # NOT WORKING YET
             # Update the column data itself if we're actually logging
@@ -375,7 +373,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
     def selectDir(self):
         dtxt = 'Select Data Directory'
-        self.datalogdir = QtGui.QFileDialog.getExistingDirectory(self, dtxt)
+        self.datalogdir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt)
         if self.datalogdir != '':
             self.txt_datalogdir.setText(self.datalogdir)
             self.startdatalog = True
@@ -429,7 +427,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         """
         defaultname = "SILog_" + self.utcnow.strftime("%Y%m%d.txt")
-        self.outputname = QtGui.QFileDialog.getSaveFileName(self, "Save File",
+        self.outputname = QtWidgets.QFileDialog.getSaveFileName(self, "Save File",
                                                             defaultname)
         if self.outputname != '':
             self.txt_logoutputname.setText("Writing to: " +
@@ -442,7 +440,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
         """
         defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.csv")
-        self.logoutnme = QtGui.QFileDialog.getSaveFileName(self,
+        self.logoutnme = QtWidgets.QFileDialog.getSaveFileName(self,
                                                            "Save File",
                                                            defaultname)
 
@@ -684,7 +682,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         self.table_datalog.setSortingEnabled(False)
         self.table_datalog.horizontalHeader().setMovable(False)
         self.table_datalog.horizontalHeader().setDragEnabled(False)
-        self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+        self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
 
         thedlist = ['NOTES'] + self.headers
 
@@ -726,8 +724,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         #   Note! This is for use with headerDict style of grabbing stuff
         for n, row in enumerate(tablist):
             for m, hkey in enumerate(self.headers):
-                print n, m, row, hkey, row[hkey]
-                newitem = QtGui.QTableWidgetItem(str(row[hkey]))
+                print(n, m, row, hkey, row[hkey])
+                newitem = QtWidgets.QTableWidgetItem(str(row[hkey]))
                 self.table_datalog.setItem(n, m+1, newitem)
 
         # Resize to minimum required, then display
@@ -739,9 +737,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # Reenable fun stuff
         self.table_datalog.horizontalHeader().setMovable(True)
         self.table_datalog.horizontalHeader().setDragEnabled(True)
-        self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.InternalMove)
-#        self.table_datalog.setDragEnabled(True)
-#        self.table_datalog.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
         self.table_datalog.show()
 
@@ -802,8 +798,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             # Capture the last row position so we know where to start
             self.lastdatarow = self.table_datalog.rowCount()
 
-            print "PreviousFileList:", bnpre
-            print "CurrentFileList:", bncur
+            print("PreviousFileList:", bnpre)
+            print("CurrentFileList:", bncur)
             # Actually query the files for the desired headers
             for idx in idxs:
                 # REMEMBER: THIS NEEDS TO REFERENCE THE ORIGINAL LIST!
@@ -811,7 +807,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                     realfile = self.data_current[idx][:-6] + 'fits'
                 else:
                     realfile = self.data_current[idx]
-                print "Newfile: %s" % (realfile)
+                print("Newfile: %s" % (realfile))
                 # Save the filenames
                 self.datafilenames.append(basename(realfile))
                 # Add number of rows for files to go into first
@@ -831,7 +827,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             self.table_datalog.setSortingEnabled(False)
             self.table_datalog.horizontalHeader().setMovable(False)
             self.table_datalog.horizontalHeader().setDragEnabled(False)
-            self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+            self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
 
             # Actually set the labels for rows
             self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
@@ -840,7 +836,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             #   Note! This is for use with headerDict style of grabbing stuff
             for n, row in enumerate(self.datanew):
                 for m, hkey in enumerate(self.headers):
-                    newitem = QtGui.QTableWidgetItem(str(row[hkey]))
+                    newitem = QtWidgets.QTableWidgetItem(str(row[hkey]))
                     self.table_datalog.setItem(n + self.lastdatarow,
                                                m+1, newitem)
 
@@ -854,9 +850,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             # Reenable fun stuff
             self.table_datalog.horizontalHeader().setMovable(True)
             self.table_datalog.horizontalHeader().setDragEnabled(True)
-            self.table_datalog.horizontalHeader().setDragDropMode(QtGui.QAbstractItemView.InternalMove)
-#            self.table_datalog.setDragEnabled(True)
-#            self.table_datalog.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+            self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
             self.table_datalog.show()
 
@@ -864,7 +858,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
             #   whenever a new file comes in...
             self.table_datalog.scrollToBottom()
         else:
-            print "No new files!"
+            print("No new files!")
 
     def writedatalog(self):
         if self.logoutnme != '':
@@ -886,8 +880,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                             rowdata.append('')
                     writer.writerow(rowdata)
                 f.close()
-            except Exception, why:
-                print str(why)
+            except Exception as why:
+                print(str(why))
                 self.txt_datalogsavefile.setText("ERROR WRITING TO FILE!")
 
     def toggle_legparam_labels_off(self):
@@ -1026,7 +1020,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         If unsuccessful, make the label text red and angry and give the
         user another chance
         """
-        self.fname = QtGui.QFileDialog.getOpenFileName()
+        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
@@ -1040,8 +1034,8 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
                 self.updateTakeoffTime()
             if self.set_landingFP.isChecked() is True:
                 self.updateLandingTime()
-        except Exception, why:
-            print str(why)
+        except Exception as why:
+            print(str(why))
             self.flightinfo = ''
             self.errmsg = 'ERROR: Failure Parsing File!'
             self.flightplan_filename.setStyleSheet("QLabel { color : red; }")
@@ -1052,7 +1046,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
         # In case there are any existing elements in the list
         self.listWidget.clear()
         titlestr = "Choose a SOFIA mission file (.mis)"
-        directory = QtGui.QFileDialog.getExistingDirectory(self, titlestr)
+        directory = QtWidgets.QFileDialog.getExistingDirectory(self, titlestr)
 
         # if user didn't pick a directory don't continue
         if directory:
@@ -1063,7 +1057,7 @@ class SOFIACruiseDirectorApp(QtGui.QMainWindow, scdp.Ui_MainWindow):
 
 
 def main():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     QtGui.QFontDatabase.addApplicationFont("resources/fonts/digital_7/digital-7_mono.ttf")
     form = SOFIACruiseDirectorApp()
     form.show()  # Show the form

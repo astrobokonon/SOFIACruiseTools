@@ -5,6 +5,9 @@ Created on Mon Jun 20 16:21:44 2016
 @author: rhamilton
 """
 
+# Trying to ensure Python 2/3 coexistance ...
+from __future__ import division, print_function
+
 import re
 import copy
 import itertools
@@ -408,9 +411,9 @@ def regExper(lines, key, keytype='key:val', howmany=1, nextkey=None):
     elif keytype == 'key:dtime':
         mask = u'(%s\s*\:\s*\S*\s*\S*\s*\S*)' % (key)
     elif keytype == 'Vinz':
-        print "I am Vinz, Vinz Clortho, Keymaster of Gozer..."
-        print "Volguus Zildrohoar, Lord of the Seboullia."
-        print "Are you the Gatekeeper?"
+        print("I am Vinz, Vinz Clortho, Keymaster of Gozer...")
+        print("Volguus Zildrohoar, Lord of the Seboullia.")
+        print("Are you the Gatekeeper?")
 
     for each in lines:
         if keytype == 'threeline':
@@ -432,8 +435,8 @@ def regExper(lines, key, keytype='key:val', howmany=1, nextkey=None):
     elif howmany > 1 and found == howmany:
         return matches
     elif found > howmany or found < howmany:
-        print "Ambigious search! Asked for %d, but found %d" % (howmany, found)
-        print "Returning the first %d..." % (howmany)
+        print("Ambigious search! Asked for %d but found %d" % (howmany, found))
+        print("Returning the first %d..." % (howmany))
         return matches[0:howmany]
 
 
@@ -494,7 +497,7 @@ def parseLegData(i, contents, leg, flight):
                     #  change of day that we'll have to set manually
                     if ptime.hour == 23 and utcdt.hour == 0:
                         utcdt.replace(day=flight.takeoff.day + 1)
-                        print "Bastard day change"
+                        print("Bastard day change")
                     # Start trackin the relative time from start too
                     leg.elapsedtime.append((utcdt-startdtobj).seconds)
                 leg.utcdt.append(utcdt)
@@ -725,7 +728,7 @@ def parseMISPreamble(lines, flight, summarize=False):
         flight.destination = keyValuePair(airports[1].group(),
                                           "Airport", dtype=str)
     elif len(airports) != 2 or airports is None:
-        print "WARNING: Couldn't find departure/arrival information!"
+        print("WARNING: Couldn't find departure/arrival information!")
         flight.origin = "Unknown"
         flight.destination = "Unknown"
 
@@ -764,7 +767,7 @@ def parseMISPreamble(lines, flight, summarize=False):
         flight.sunrise = "NONE"
 
     if summarize is True:
-        print flight.summarize()
+        print(flight.summarize())
 
     return flight
 
@@ -794,10 +797,10 @@ def parseMISlightly(infile):
     ldat = findLegHeaders(cont, re.compile(head2))
 
     if len(lhed) != len(ldat):
-        print "FATAL ERROR: Couldn't find the same amount of legs and data!"
-        print "Check the formatting of the file?  Or the regular expressions"
-        print "need updating because they changed the file format?"
-        print "Looking for '%s' and '%s'" % (head1, head2)
+        print("FATAL ERROR: Couldn't find the same amount of legs and data!")
+        print("Check the formatting of the file?  Or the regular expressions")
+        print("need updating because they changed the file format?")
+        print("Looking for '%s' and '%s'" % (head1, head2))
         return -1
 
     # Since we know where the first leg line is, we can define the preamble.
@@ -832,10 +835,10 @@ def parseMIS(infile, summarize=False):
     ldat = findLegHeaders(cont, re.compile(head2))
 
     if len(lhed) != len(ldat):
-        print "FATAL ERROR: Couldn't find the same amount of legs and data!"
-        print "Check the formatting of the file?  Or the regular expressions"
-        print "need updating because they changed the file format?"
-        print "Looking for '%s' and '%s'" % (head1, head2)
+        print("FATAL ERROR: Couldn't find the same amount of legs and data!")
+        print("Check the formatting of the file?  Or the regular expressions")
+        print("need updating because they changed the file format?")
+        print("Looking for '%s' and '%s'" % (head1, head2))
         return -1
 
     # Since we know where the first leg line is, we can define the preamble.
