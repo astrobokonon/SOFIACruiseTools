@@ -194,11 +194,11 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         if kind == 'save':
             self.kwname = QtGui.QFileDialog.getSaveFileName(self,
                                                             "Save File",
-                                                            defaultname)
+                                                            defaultname)[0]
         if kind == 'load':
             self.kwname = QtGui.QFileDialog.getOpenFileName(self,
                                                             "Load File",
-                                                            defaultname)
+                                                            defaultname)[0]
 
     def updateheadlist(self):
         self.headers = []
@@ -428,10 +428,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         defaultname = "SILog_" + self.utcnow.strftime("%Y%m%d.txt")
         self.outputname = QtWidgets.QFileDialog.getSaveFileName(self, "Save File",
-                                                            defaultname)
+                                                            defaultname)[0]
         if self.outputname != '':
             self.txt_logoutputname.setText("Writing to: " +
-                                           basename(str(self.outputname)))
+                                           basename(str(self.outputname)))[0]
 
     def selectLogOutputFile(self):
         """
@@ -442,7 +442,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.csv")
         self.logoutnme = QtWidgets.QFileDialog.getSaveFileName(self,
                                                            "Save File",
-                                                           defaultname)
+                                                           defaultname)[0]
 
         if self.logoutnme != '':
             self.txt_datalogsavefile.setText("Writing to: " +
@@ -1046,7 +1046,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # In case there are any existing elements in the list
         self.listWidget.clear()
         titlestr = "Choose a SOFIA mission file (.mis)"
-        directory = QtWidgets.QFileDialog.getExistingDirectory(self, titlestr)
+        directory = QtWidgets.QFileDialog.getExistingDirectory(self, titlestr)[0]
 
         # if user didn't pick a directory don't continue
         if directory:
