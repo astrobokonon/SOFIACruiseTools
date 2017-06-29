@@ -198,13 +198,13 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         defaultname = "KWList_" + self.parentWidget().instrument +\
             self.utcnow.strftime("_%Y%m%d.txt")
         if kind == 'save':
-            self.kwname = QtGui.QFileDialog.getSaveFileName(self,
-                                                            "Save File",
-                                                            defaultname)[0]
+            self.kwname = QtWidgets.QFileDialog.getSaveFileName(self,
+                                                                "Save File",
+                                                                defaultname)[0]
         if kind == 'load':
-            self.kwname = QtGui.QFileDialog.getOpenFileName(self,
-                                                            "Load File",
-                                                            defaultname)[0]
+            self.kwname = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                                "Load File",
+                                                                defaultname)[0]
 
     def updateheadlist(self):
         self.headers = []
