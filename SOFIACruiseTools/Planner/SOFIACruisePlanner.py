@@ -14,8 +14,8 @@ import astropy.table as apt
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, \
     QAbstractItemView, QTableWidgetItem
 
-import Main as scpp
-import newparse as fpmis
+import MainWindow as scpp
+import SOFIACruiseTools.support.newparse as fpmis
 
 
 def scrapeMIS(filename):

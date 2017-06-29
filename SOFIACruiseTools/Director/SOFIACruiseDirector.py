@@ -9,7 +9,7 @@ Created on Wed Sep 16 16:40:05 2015
 # Where X = your Qt version
 
 # Trying to ensure Python 2/3 coexistance ...
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 import sys
 import csv
@@ -24,9 +24,11 @@ from os.path import join, basename, getmtime
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
 
-import newparse as fpmis
-import FITSKeywordPanel as fkwp
-import SOFIACruiseDirectorPanel as scdp
+#from ..support import newparse as fpmis
+from .. import support as fpmis
+
+from . import FITSKeywordPanel as fkwp
+from . import SOFIACruiseDirectorPanel as scdp
 
 try:
     import astropy.io.fits as pyf
@@ -1058,7 +1060,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    QtGui.QFontDatabase.addApplicationFont("resources/fonts/digital_7/digital-7_mono.ttf")
+    QtGui.QFontDatabase.addApplicationFont("./SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf")
     form = SOFIACruiseDirectorApp()
     form.show()  # Show the form
     app.exec_()  # and execute the app
