@@ -51,6 +51,22 @@ class flightprofile(object):
         self.mach = 0
         self.sunset = ''
         self.sunrise = ''
+        # Fancy name is the new (2016) system for naming flights, like "Ezra"
+        self.fancyname = ''
+        # Attempted to parse from the filename
+        self.instrument = ''
+        self.instdict = {"EX": "EXES",
+                         "FC": "FLITECAM",
+                         "FF": "FPI+",
+                         "FI": "FIFI-LS",
+                         "FO": "FORCAST",
+                         "FP": "FLIPO",
+                         "GR": "GREAT",
+                         "HA": "HAWC+",
+                         "HI": "HIPO",
+                         "HM": "HIRMES",
+                         "NA": "NotApplicable",
+                         "NO": "MassDummy"}
         # In a perfect world, I'd just make this be len(legs)
         self.nlegs = 0
         self.legs = []
@@ -712,6 +728,22 @@ def parseMISPreamble(lines, flight, summarize=False):
     we're actually looking for (keytype).
 
     """
+    # Attempt to parse stuff from the Flight Plan ID bit
+    try:
+        flightid = regExper(lines, 'Flight Plan ID', howmany=1,
+                            keytype='key:val')
+        fid = keyValuePair(flightid.group(), "Flight Plan ID", dtype=str)
+        fid = fid.strip().split("_")
+        if fid[1] != '':
+            try:
+                flight.instrument = flight.instdict[fid[1].strip()]
+            except:
+                flight.instrument = ''
+        if fid[2] != '':
+            flight.fancyname = fid[2]
+    except:
+        fid = ['', '', '']
+
     # Grab the filename and date of MIS file creation
     filename = regExper(lines, 'Filename', howmany=1, keytype='key:val')
     flight.filename = keyValuePair(filename.group(), "Filename", dtype=str)

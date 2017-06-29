@@ -7,6 +7,7 @@ Created on Thu Jun 15 11:20:07 2017
 from __future__ import division, print_function
 
 import sys
+import getpass
 from os.path import basename
 
 import numpy as np
@@ -20,6 +21,8 @@ from .. import support as fpmis
 
 def scrapeMIS(filename):
     flightInfo = fpmis.parseMIS(filename)
+
+    print(flightInfo.fancyname, flightInfo.instrument)
     # Note that this will grab the table of JUST the
     #   takeoff, observing, and landing leg details
     obstab = []
@@ -80,6 +83,8 @@ class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
         self.tableFlightPlanSummary.horizontalHeader().setDragEnabled(False)
         self.tableFlightPlanSummary.horizontalHeader().setDragDropMode(QAbstractItemView.NoDragDrop)
 
+        self.lineEditUserName.setText(getpass.getuser())
+
         self.comboBoxInstruments.addItems(['EXES', 'FIFI-LS', 'FLITECAM',
                                            'FORCAST', 'FPI+', 'GREAT',
                                            'HAWC+', 'HIPO', 'HIRMES'])
@@ -131,7 +136,6 @@ class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
         user another chance
         """
         self.fname = QFileDialog.getOpenFileName()[0]
-        print(self.fname)
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.labelFlightPlanFilename.setStyleSheet("QLabel { color : black; }")
@@ -144,6 +148,12 @@ class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
             self.tableFlightPlanSummary.setColumnCount(0)
             self.setFlightTableData()
             self.successparse = True
+            # Attempt to set the Instrument for the user automagically.
+            #   Won't always work because MIS files change with the winds
+            if self.flightinfo.instrument != '':
+                npos = self.comboBoxInstruments.findText(self.flightinfo.instrument)
+                self.comboBoxInstruments.setCurrentIndex(npos)
+                print(self.flightinfo.instrument)
         except Exception as err:
             print(str(err))
             self.flightinfo = ''

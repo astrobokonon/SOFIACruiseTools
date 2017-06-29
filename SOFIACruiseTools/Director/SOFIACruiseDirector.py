@@ -99,6 +99,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         self.fitskw_remove.clicked.connect(self.removekeywordfromlist)
         self.fitskw_model = self.fitskw_listing.model()
         self.fitskw_model.layoutChanged.connect(self.reorderedheadlist)
+
         self.fitskw_savelist.clicked.connect(self.kwsavelist)
         self.fitskw_loadlist.clicked.connect(self.kwloadlist)
 
