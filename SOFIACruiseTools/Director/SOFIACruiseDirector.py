@@ -102,10 +102,14 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         self.fitskw_savelist.clicked.connect(self.kwsavelist)
         self.fitskw_loadlist.clicked.connect(self.kwloadlist)
 
-        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("accepted()"),
-                     self.accept)
-        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("rejected()"),
-                     self.reject)
+        self.fitskw_dialogbutts.accepted.connect(self.accept)
+        self.fitskw_dialogbutts.rejected.connect(self.reject)
+
+        # Not working in Qt 5? Need to look at the dialog example again
+#        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("accepted()"),
+#                     self.accept)
+#        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("rejected()"),
+#                     self.reject)
 
         self.utcnow = self.parent().utcnow
 
@@ -162,18 +166,18 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     def reorderkwwidget(self):
         self.fitskw_listing.clear()
         for key in self.headers:
-            self.fitskw_listing.addItem(QtGui.QListWidgetItem(key))
+            self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(key))
 
     def getkeywordfromuser(self):
-        text, ok = QtGui.QInputDialog.getText(self, "Add Keyword",
-                                              "New Keyword:",
-                                              QtGui.QLineEdit.Normal,
-                                              QtCore.QDir.home().dirName())
+        text, ok = QtWidgets.QInputDialog.getText(self, "Add Keyword",
+                                                  "New Keyword:",
+                                                  QtWidgets.QLineEdit.Normal,
+                                                  QtCore.QDir.home().dirName())
         text = str(text)
         if ok and text != '':
             text = text.strip()
             text = text.upper()
-            self.fitskw_listing.addItem(QtGui.QListWidgetItem(text))
+            self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(text))
             self.reorderkwwidget()
             self.updateheadlist()
             self.txt_fitskw_status.setText("Unsaved Changes!")
