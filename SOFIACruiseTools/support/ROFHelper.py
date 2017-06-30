@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 import newparse as fpmis
 
 
-infile = '/Users/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX36.mis'
+infile = '/SalusaSecundus/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX12.mis'
 
 # Read the .mis into a helpful class
 flight = fpmis.parseMIS(infile, summarize=True)
 oleg = flight.legs[6]
-print oleg.summarize()
+print(oleg.summarize())
 
 # Expand the coverage of that flight into something with more points
 iflight = fpmis.interp_flight(flight, 2000)
@@ -34,15 +34,15 @@ los_times = np.interp(los_angle[::-1], oleg.rof[::-1], oleg.elapsedtime[::-1])
 los_times = los_times[::-1][1:]
 # WARNING WARNING WARNING
 
-print "\nObserving interval between LOS rewinds (mins):"
+print("\nObserving interval between LOS rewinds (mins):")
 plt.plot(np.array(oleg.elapsedtime)/60., oleg.rof)
 i = 0
 for each in los_times:
     plt.axhline(los_angle[i], color='grey', linewidth=1, linestyle=':')
     plt.axvline(each/60., color='r', linewidth=1, linestyle=":")
     if i == 0:
-        print "%04.2f" % (each/60.)
+        print("%04.2f" % (each/60.))
     else:
-        print "%04.2f" % ((each - los_times[i-1])/60.)
+        print("%04.2f" % ((each - los_times[i-1])/60.))
     i += 1
 plt.show()

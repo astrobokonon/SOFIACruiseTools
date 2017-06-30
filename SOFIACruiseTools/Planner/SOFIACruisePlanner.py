@@ -21,8 +21,6 @@ from .. import support as fpmis
 
 def scrapeMIS(filename):
     flightInfo = fpmis.parseMIS(filename)
-
-    print(flightInfo.fancyname, flightInfo.instrument)
     # Note that this will grab the table of JUST the
     #   takeoff, observing, and landing leg details
     obstab = []
@@ -49,7 +47,7 @@ def scrapeMIS(filename):
 
             # Should be self explanatory here
         if oach.legtype == "Takeoff" or oach.legtype == "Landing" or\
-          oach.legtype == "Observing":
+           oach.legtype == "Observing":
             tabdat = [oach.legno,
                       np.round(oach.relative_time[0]/60./60., 1),
                       oach.legtype, oach.obsblk,
@@ -83,11 +81,13 @@ class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
         self.tableFlightPlanSummary.horizontalHeader().setDragEnabled(False)
         self.tableFlightPlanSummary.horizontalHeader().setDragDropMode(QAbstractItemView.NoDragDrop)
 
+        # I think this is cross-platform?  I guess we'll see
         self.lineEditUserName.setText(getpass.getuser())
 
         self.comboBoxInstruments.addItems(['EXES', 'FIFI-LS', 'FLITECAM',
                                            'FORCAST', 'FPI+', 'GREAT',
                                            'HAWC+', 'HIPO', 'HIRMES'])
+        # If I write it, I get to set the defaults to work for me
         self.comboBoxInstruments.setCurrentIndex(6)
 
         # Hooking up the menu options and buttons to their actions
@@ -149,7 +149,8 @@ class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
             self.setFlightTableData()
             self.successparse = True
             # Attempt to set the Instrument for the user automagically.
-            #   Won't always work because MIS files change with the winds
+            #   Won't always work because MIS files
+            #   exemplify the impermanence of existence
             if self.flightinfo.instrument != '':
                 npos = self.comboBoxInstruments.findText(self.flightinfo.instrument)
                 self.comboBoxInstruments.setCurrentIndex(npos)

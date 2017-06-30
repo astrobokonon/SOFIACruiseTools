@@ -276,14 +276,16 @@ def interp_flight(oflight, npts, timestep=55):
             leg.mhdg = mhdgprimer(filler) % 360.
 
             # Use a stubby little lambda function instead of a loop. Better?
-            filler = map(go_dt, filler)
+            # Need to explicitly list() map() in Python3 to operate on it
+            #   the same way as in Python2
+            filler = list(map(go_dt, filler))
             leg.relative_time = filler
 
             # Recreate timestamps for the new interpolated set, both dt and iso
             #  formatted objects for easy interactions
             leg.utcdt = leg.relative_time + np.repeat(iflight.takeoff,
                                                       len(filler))
-            leg.utc = map(go_iso, leg.utcdt)
+            leg.utc = list(map(go_iso, leg.utcdt))
 
             j += len(leg.long)
             i += 1
