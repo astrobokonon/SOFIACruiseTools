@@ -38,8 +38,8 @@ def checkVPAatTime(location, otime, targ):
     targetpos._epoch = "2000"
 
     targetpos.compute(sofia)
-    print targetpos._ra, targetpos._dec
-    print targetpos.alt, targetpos.az
+    print(targetpos._ra, targetpos._dec)
+    print(targetpos.alt, targetpos.az)
     return targetpos.parallactic_angle().real * 180./ephem.pi
 
 
@@ -54,6 +54,7 @@ moons = ((ephem.Io(), 'i'),
 
 linelen = 65
 maxradii = 30.
+
 
 def put(line, character, radii):
     if abs(radii) > maxradii:
@@ -74,11 +75,11 @@ while t < now + 2:
     for moon, character in moons:
         moon.compute(t)
         put(line, character, moon.x)
-    print str(ephem.date(t))[5:], ''.join(line).rstrip()
+    print(str(ephem.date(t))[5:], ''.join(line).rstrip())
     t += interval
 
-print 'East is to the right;',
-print ', '.join([ '%s = %s' % (c, m.name) for m, c in moons ])
+print('East is to the right;',)
+print(', '.join([ '%s = %s' % (c, m.name) for m, c in moons ]))
 
 # =======
 otime = datetime.datetime(2016, 12, 1, 7, 59, 20)
@@ -89,5 +90,5 @@ lon = '-127.8479'
 targvpa = checkVPAatTime([lat, lon], otime, targ)
 st = "Target: %s\t\tVPA: %.3lf\tROF: %.3lf" % \
     (targ[4], targvpa, (targvpa + 360.) % 360.)
-print st
+print(st)
 # =======
