@@ -20,7 +20,7 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="tabInput">
+      <widget class="QWidget" name="tabPrepare">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
          <horstretch>0</horstretch>
@@ -31,7 +31,7 @@
         <bool>true</bool>
        </property>
        <attribute name="title">
-        <string>Input</string>
+        <string>Prepare</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <property name="leftMargin">
@@ -52,8 +52,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>765</width>
-               <height>447</height>
+               <width>760</width>
+               <height>517</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_2">
@@ -219,9 +219,9 @@ It can have **markdown**
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabOutput">
+      <widget class="QWidget" name="tabReview">
        <attribute name="title">
-        <string>Output</string>
+        <string>Review</string>
        </attribute>
       </widget>
      </widget>
