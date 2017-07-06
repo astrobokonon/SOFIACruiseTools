@@ -67,12 +67,12 @@ def scrapeMIS(filename):
 
 class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
     def __init__(self):
-        # Since the SOFIACruiseDirectorPanel file will be overwritten each time
+        # Since the ...Panel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
         #   writing any code in it, instead we'll create a new class to
         #   combine with the design code
         super(self.__class__, self).__init__()
-        # This is defined in SOFIACruiseDirectorPanel.py file automatically;
+        # This is defined in ...Panel.py file automatically;
         #   It sets up layout and widgets that are defined, and then shows it
         self.setupUi(self)
 
