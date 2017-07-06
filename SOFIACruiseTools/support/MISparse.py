@@ -20,6 +20,36 @@ go_dt = lambda x: timedelta(seconds=x)
 go_iso = lambda x: x.isoformat()
 
 
+class flightcomments(object):
+    """
+    Useful for reviewing flight plans and keeping their comments
+    """
+    def __init__(self):
+        self.notes = []
+        self.warnings = []
+        self.errors = []
+        self.tips = []
+        self.rating = ''
+
+
+class flightreview(object):
+    """
+    Are meta-classes a thing?
+    """
+    def __init__(self):
+        self.flightprofile = flightprofile()
+        self.comments = flightcomments()
+
+
+class seriesreview(object):
+    """
+    Even more meta
+    """
+    def __init__(self):
+        # Laziness so we can just .append() to it
+        self.flights = []
+
+
 class nonsiderial(object):
     """
     Keeping all the non-siderial object info in a helpful place.
@@ -730,7 +760,8 @@ def parseMISPreamble(lines, flight, summarize=False):
     we're actually looking for (keytype).
 
     """
-    # Attempt to parse stuff from the Flight Plan ID bit
+    # Attempt to parse stuff from the Flight Plan ID bit. Fancy logic for
+    #   grabbing the fancy name, which didn't always exist
     try:
         flightid = regExper(lines, 'Flight Plan ID', howmany=1,
                             keytype='key:val')
