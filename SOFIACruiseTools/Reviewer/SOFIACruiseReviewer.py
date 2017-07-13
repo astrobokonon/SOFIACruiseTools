@@ -145,9 +145,6 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         # Need to only update what is needed.
         self.updateFlightWidget()
 
-#        self.reorderFlightList()
-#        self.updateFlightList()
-
     def removeFlightFromList(self):
         for it in self.listWidgetFlights.selectedItems():
             self.listWidgetFlights.takeItem(self.listWidgetFlights.row(it))
@@ -187,11 +184,6 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
     def reorderFlightList(self):
         self.updateFlightList()
         self.updateFlightWidget()
-#        for each in self.listoflights:
-#            # Get just the base name and trim off the extension
-#            bname = basename(each)[:-4]
-#            print(bname)
-#            self.listWidgetFlights.addItem(QListWidgetItem(bname))
         print("Updated internal list2:")
         print(self.listoflights)
 
