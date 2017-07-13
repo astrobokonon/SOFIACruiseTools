@@ -24,7 +24,6 @@ from os.path import join, basename, getmtime
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
 
-#from ..support import newparse as fpmis
 from .. import support as fpmis
 
 from . import FITSKeywordPanel as fkwp
@@ -105,12 +104,6 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
 
         self.fitskw_dialogbutts.accepted.connect(self.accept)
         self.fitskw_dialogbutts.rejected.connect(self.reject)
-
-        # Not working in Qt 5? Need to look at the dialog example again
-#        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("accepted()"),
-#                     self.accept)
-#        self.connect(self.fitskw_dialogbutts, QtCore.SIGNAL("rejected()"),
-#                     self.reject)
 
         self.utcnow = self.parent().utcnow
 
@@ -265,34 +258,34 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method
 #        self.instrument = 'HAWC'
-        self.instrument = 'HAWCFlight'
-        self.headers = ['date-obs', 'object', 'mccsmode',
-                        'spectel1', 'spectel2',
-                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
-                        'calmode', 'exptime', 'nodtime', 'fcstoff',
-                        'chpamp1', 'chpamp2', 'chpfreq',
-                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
-                        'aor_id', 'dthindex', 'dthnpos',
-                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
-                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
-                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
-                        'scnstep', 'scnsteps', 'scncross',
-                        'intcalv', 'diag_hz',
-                        'nhwp', 'hwpstart',
-                        'telra', 'teldec', 'telvpa',
-                        'obsra', 'obsdec', 'objra', 'objdec',
-                        'za_start', 'za_end', 'focus_st', 'focus_en',
-                        'utcstart', 'utcend',
-                        'missn-id']
+#        self.instrument = 'HAWCFlight'
+#        self.headers = ['date-obs', 'object', 'mccsmode',
+#                        'spectel1', 'spectel2',
+#                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
+#                        'calmode', 'exptime', 'nodtime', 'fcstoff',
+#                        'chpamp1', 'chpamp2', 'chpfreq',
+#                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
+#                        'aor_id', 'dthindex', 'dthnpos',
+#                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+#                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
+#                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
+#                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
+#                        'scnstep', 'scnsteps', 'scncross',
+#                        'intcalv', 'diag_hz',
+#                        'nhwp', 'hwpstart',
+#                        'telra', 'teldec', 'telvpa',
+#                        'obsra', 'obsdec', 'objra', 'objdec',
+#                        'za_start', 'za_end', 'focus_st', 'focus_en',
+#                        'utcstart', 'utcend',
+#                        'missn-id']
 
         # FIFI-LS instrument name and headers
-        # self.instrument = 'FIFI-LS'
-        # self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
-        #                 "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
-        #                 "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
-        #                 "DLAM_MAP", "DBET_MAP", "DET_ANGL",
-        #                 "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
+        self.instrument = 'FIFI-LS'
+        self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
+                        "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
+                        "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
+                        "DLAM_MAP", "DBET_MAP", "DET_ANGL",
+                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
 
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
@@ -1050,6 +1043,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.successparse = False
 
     def browse_folder(self):
+        """
+        What is this function for?  Is it vestigial?  I don't remember
+        this function or its purpose at all :-/
+        """
         # In case there are any existing elements in the list
         self.listWidget.clear()
         titlestr = "Choose a SOFIA mission file (.mis)"

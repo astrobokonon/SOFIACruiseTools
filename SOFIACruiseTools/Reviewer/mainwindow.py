@@ -69,7 +69,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 744, 370))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 742, 316))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
@@ -124,7 +124,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "SOFIA Cruise Reviewer"))
         self.pushButtonRemoveFlight.setText(_translate("MainWindow", "Remove Flight(s)"))
         self.labelSeriesTitle.setText(_translate("MainWindow", "Series Title:"))
         self.pushButtonAddFlight.setText(_translate("MainWindow", "Add Flight(s)"))

@@ -13,7 +13,7 @@ from os.path import basename
 import numpy as np
 import astropy.table as apt
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, \
-    QAbstractItemView, QTableWidgetItem
+    QTableWidgetItem, QListWidgetItem, QAbstractItemView
 
 from . import mainwindow as panel
 from .. import support as fpmis
@@ -77,16 +77,123 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.setupUi(self)
 
         # Setting some states
+        self.listoflights = []
+        self.newflights = []
+        self.listWidgetFlights.setDragEnabled(True)
+        self.listWidgetFlights.setDragDropMode(QAbstractItemView.InternalMove)
 
         # I think this is cross-platform?  I guess we'll see
         self.lineEditUserName.setText(getpass.getuser())
 
         # Hooking up the menu options and buttons to their actions
+        self.pushButtonAddFlight.clicked.connect(self.addFlightToList)
+        self.pushButtonRemoveFlight.clicked.connect(self.removeFlightFromList)
+        self.flightlist_model = self.listWidgetFlights.model()
+        self.flightlist_model.rowsMoved.connect(self.reorderFlightList)
 #        self.actionOpen_Flight_Plan.triggered.connect(self.selectInputFlight)
 
         # Flight plan progression
 #        self.buttonPreviousLeg.clicked.connect(self.prevLeg)
 #        self.buttonNextLeg.clicked.connect(self.nextLeg)
+
+#    def selectInputFile(self):
+#        """
+#        Spawn the file chooser diaglog box and return the result, attempting
+#        to parse the file as a SOFIA flight plan (.mis).
+#
+#        If successful, set the various state parameters for further use.
+#        If unsuccessful, make the label text red and angry and give the
+#        user another chance
+#        """
+#        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
+#        # Make sure the label text is black every time we start, and
+#        #   cut out the path so we just have the filename instead of huge str
+#        self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
+#        self.flightplan_filename.setText(basename(str(self.fname)))
+#        try:
+#            self.flightinfo = fpmis.parseMIS(self.fname)
+#            self.lginfo = self.flightinfo.legs[self.legpos]
+#            self.successparse = True
+#            self.updateLegInfoWindow()
+#            if self.set_takeoffFP.isChecked() is True:
+#                self.updateTakeoffTime()
+#            if self.set_landingFP.isChecked() is True:
+#                self.updateLandingTime()
+#        except Exception as why:
+#            print(str(why))
+#            self.flightinfo = ''
+#            self.errmsg = 'ERROR: Failure Parsing File!'
+#            self.flightplan_filename.setStyleSheet("QLabel { color : red; }")
+#            self.flightplan_filename.setText(self.errmsg)
+#            self.successparse = False
+
+    def addFlightToList(self):
+        tstr = "Load SOFIA Flight Plan"
+        filt = "MIS (*.mis);;FSR (*.fsr)"
+        self.newflights = QFileDialog.getOpenFileNames(self,
+                                                       tstr,
+                                                       filt)[0]
+
+        # Make sure it's flat so it's trivial to itterate over
+        for thingy in self.newflights:
+            self.listoflights.append(thingy)
+
+        print("Full list with newly added things:")
+        print(self.listoflights)
+        print("=====")
+
+        # Need to only update what is needed.
+        self.updateFlightWidget()
+
+#        self.reorderFlightList()
+#        self.updateFlightList()
+
+    def removeFlightFromList(self):
+        for it in self.listWidgetFlights.selectedItems():
+            self.listWidgetFlights.takeItem(self.listWidgetFlights.row(it))
+
+        self.updateFlightList()
+#        self.reorderFlightList()
+
+    def updateFlightList(self):
+        """
+        Re-set the internal listoflights property from the current
+        contents of the listWidgetFlights box in the panel
+        """
+        self.listoflights = []
+        print("I see %i items" % self.listWidgetFlights.count())
+        for j in range(self.listWidgetFlights.count()):
+            floc = self.listWidgetFlights.item(j).toolTip()
+            self.listoflights.append(floc)
+            print(floc)
+        print("Updated internal list:")
+        print(self.listoflights)
+
+    def updateFlightWidget(self):
+        self.listWidgetFlights.clear()
+        for each in self.listoflights:
+            # Sorry, but quick and dirty string comparison is more
+            #   important to me than keeping unicode support.
+            ext = str(each[-4:]).lower()
+            if ext == ".mis" or ext == ".fsr":
+                # Get just the base name and trim off the extension
+                bname = basename(each)[:-4]
+            else:
+                bname = basename(each)
+            ni = QListWidgetItem(bname)
+            ni.setToolTip(each)
+            self.listWidgetFlights.addItem(ni)
+
+    def reorderFlightList(self):
+        self.updateFlightList()
+        self.updateFlightWidget()
+#        for each in self.listoflights:
+#            # Get just the base name and trim off the extension
+#            bname = basename(each)[:-4]
+#            print(bname)
+#            self.listWidgetFlights.addItem(QListWidgetItem(bname))
+        print("Updated internal list2:")
+        print(self.listoflights)
 
     def setFlightTableData(self):
         """
