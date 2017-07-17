@@ -21,8 +21,18 @@
        <string/>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="3" column="0" colspan="3">
-        <widget class="QListWidget" name="listWidgetFlights"/>
+       <item row="5" column="3">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item row="5" column="1">
         <spacer name="horizontalSpacer_2">
@@ -40,15 +50,18 @@
        <item row="5" column="2">
         <widget class="QPushButton" name="pushButtonRemoveFlight">
          <property name="text">
-          <string>Remove Flight(s)</string>
+          <string>Remove</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1" colspan="2">
-        <widget class="QLineEdit" name="lineEditSeriesTitle"/>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="labelSeriesTitle">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>Series Title:</string>
          </property>
@@ -57,26 +70,51 @@
        <item row="5" column="0">
         <widget class="QPushButton" name="pushButtonAddFlight">
          <property name="text">
-          <string>Add Flight(s)</string>
+          <string>Add</string>
          </property>
         </widget>
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="labelUsername">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>Username:</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="1" colspan="2">
-        <widget class="QLineEdit" name="lineEditUserName"/>
-       </item>
        <item row="2" column="0" colspan="3">
         <widget class="QLabel" name="labelSeriesFlightList">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>Flights in the Series:</string>
          </property>
         </widget>
+       </item>
+       <item row="5" column="4">
+        <widget class="QPushButton" name="pushButtonParseList">
+         <property name="text">
+          <string>Parse</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="5">
+        <widget class="QListWidget" name="listWidgetFlights"/>
+       </item>
+       <item row="1" column="1" colspan="4">
+        <widget class="QLineEdit" name="lineEditSeriesTitle"/>
+       </item>
+       <item row="0" column="1" colspan="4">
+        <widget class="QLineEdit" name="lineEditUserName"/>
        </item>
       </layout>
      </widget>
@@ -87,15 +125,21 @@
        <string/>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="1" column="0">
-        <widget class="QTableView" name="tableViewFlightBasics"/>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="labelFlightBasics">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>Flight Basics</string>
          </property>
         </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QTableWidget" name="tableWidgetFlightBasics"/>
        </item>
       </layout>
      </widget>
@@ -123,6 +167,12 @@
           <layout class="QGridLayout" name="gridLayout_5">
            <item row="1" column="0">
             <widget class="QLabel" name="labelWarnings">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Warnings:</string>
              </property>
@@ -130,6 +180,12 @@
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="labelErrors">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Errors:</string>
              </property>
@@ -137,6 +193,12 @@
            </item>
            <item row="0" column="0">
             <widget class="QLabel" name="labelNotes">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Notes:</string>
              </property>
@@ -144,6 +206,12 @@
            </item>
            <item row="3" column="0">
             <widget class="QLabel" name="labelTips">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Tips:</string>
              </property>
@@ -190,7 +258,7 @@
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
-        <widget class="QTableView" name="tableViewCurrentFlight"/>
+        <widget class="QTableWidget" name="tableWidgetCurrentFlight"/>
        </item>
       </layout>
      </widget>

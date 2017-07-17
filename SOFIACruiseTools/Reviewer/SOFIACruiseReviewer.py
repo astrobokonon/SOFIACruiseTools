@@ -77,6 +77,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.setupUi(self)
 
         # Setting some states
+        self.flightbasics = {}
         self.listoflights = []
         self.newflights = []
         self.listWidgetFlights.setDragEnabled(True)
@@ -90,42 +91,81 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.pushButtonRemoveFlight.clicked.connect(self.removeFlightFromList)
         self.flightlist_model = self.listWidgetFlights.model()
         self.flightlist_model.rowsMoved.connect(self.reorderFlightList)
-#        self.actionOpen_Flight_Plan.triggered.connect(self.selectInputFlight)
+        self.lineEditSeriesTitle.editingFinished.connect(self.setSeriesTitle)
+        self.lineEditUserName.editingFinished.connect(self.setUserName)
+        self.pushButtonParseList.clicked.connect(self.parseFlightList)
+
+        # Create the review class
+        self.seReview = fpmis.seriesreview()
+        self.setSeriesTitle()
+        self.setUserName()
 
         # Flight plan progression
 #        self.buttonPreviousLeg.clicked.connect(self.prevLeg)
 #        self.buttonNextLeg.clicked.connect(self.nextLeg)
 
-#    def selectInputFile(self):
-#        """
-#        Spawn the file chooser diaglog box and return the result, attempting
-#        to parse the file as a SOFIA flight plan (.mis).
-#
-#        If successful, set the various state parameters for further use.
-#        If unsuccessful, make the label text red and angry and give the
-#        user another chance
-#        """
-#        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
-#        # Make sure the label text is black every time we start, and
-#        #   cut out the path so we just have the filename instead of huge str
-#        self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
-#        self.flightplan_filename.setText(basename(str(self.fname)))
-#        try:
-#            self.flightinfo = fpmis.parseMIS(self.fname)
-#            self.lginfo = self.flightinfo.legs[self.legpos]
-#            self.successparse = True
-#            self.updateLegInfoWindow()
-#            if self.set_takeoffFP.isChecked() is True:
-#                self.updateTakeoffTime()
-#            if self.set_landingFP.isChecked() is True:
-#                self.updateLandingTime()
-#        except Exception as why:
-#            print(str(why))
-#            self.flightinfo = ''
-#            self.errmsg = 'ERROR: Failure Parsing File!'
-#            self.flightplan_filename.setStyleSheet("QLabel { color : red; }")
-#            self.flightplan_filename.setText(self.errmsg)
-#            self.successparse = False
+    def setUserName(self):
+        """
+        """
+        self.seReview.reviewername = self.lineEditUserName.text()
+
+    def setSeriesTitle(self):
+        """
+        """
+        self.seReview.seriesname = self.lineEditSeriesTitle.text()
+
+    def parseFlightList(self):
+        """
+        Given a list of filenames, attempt to parse each one
+        and fill a class holding them all.  
+        
+        When done, fill in a table giving the vital statistics of each.
+        
+        The class (seriesreview in MISparse) is a nested framework.
+        Go look there.
+        """
+        # Clear out the old crud
+        self.seReview.flights = []
+        self.tableWidgetFlightBasics.setRowCount(0)
+        labs = ['Fancy Name', 'Takeoff', 'Duration', 
+                'Obs. Time', 'Airports']
+        self.tableWidgetFlightBasics.setColumnCount(len(labs))
+        self.tableWidgetFlightBasics.setHorizontalHeaderLabels(labs)
+        
+        for i, each in enumerate(self.listoflights):
+            print("Parsing %s" % each)
+            bname = basename(each)
+            fdict = {}
+            try:
+                cflight = fpmis.parseMIS(each)
+                self.seReview.flights.append(cflight)
+                print("Success!")
+                
+                # Now fill in the table
+                fdict['Filename'] = bname
+                fdict['Fancy Name'] = cflight.fancyname
+                fdict['Takeoff'] = str(cflight.takeoff).split(" ")[0]
+                fdict['Duration'] = str(cflight.flighttime)
+                fdict['Obs. Time'] = str(cflight.obstime)
+                dstr = "%s to %s" % (cflight.origin, cflight.destination)
+                fdict['Airports'] = dstr
+            except:
+                print("Failed to parse %s" % each)
+                # Fill out the table
+                for key in labs:
+                    if key == 'Filename':
+                        fdict[key] = bname
+                    else:
+                        fdict[key] = ''
+            self.flightbasics[bname] = fdict
+
+            # Now actually fill the table widget
+            self.tableWidgetFlightBasics.insertRow(i)
+            for j, hkey in enumerate(labs):
+                newitem = QTableWidgetItem(str(fdict[hkey]))
+                self.tableWidgetFlightBasics.setItem(i, j, newitem)
+
+        self.tableWidgetFlightBasics
 
     def addFlightToList(self):
         tstr = "Load SOFIA Flight Plan"
@@ -150,7 +190,6 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             self.listWidgetFlights.takeItem(self.listWidgetFlights.row(it))
 
         self.updateFlightList()
-#        self.reorderFlightList()
 
     def updateFlightList(self):
         """
@@ -180,6 +219,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             ni = QListWidgetItem(bname)
             ni.setToolTip(each)
             self.listWidgetFlights.addItem(ni)
+
 
     def reorderFlightList(self):
         self.updateFlightList()

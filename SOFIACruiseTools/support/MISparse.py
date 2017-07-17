@@ -48,6 +48,8 @@ class seriesreview(object):
     def __init__(self):
         # Laziness so we can just .append() to it
         self.flights = []
+        self.seriesname = ''
+        self.reviewername = ''
 
 
 class nonsiderial(object):

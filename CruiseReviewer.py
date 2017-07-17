@@ -7,7 +7,6 @@ Created on Wed Jun 28 15:00:33 2017
 
 from __future__ import absolute_import, division, print_function
 
-
 import SOFIACruiseTools.Reviewer.SOFIACruiseReviewer
 
 
