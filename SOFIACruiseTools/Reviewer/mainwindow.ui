@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>633</height>
+    <height>608</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -122,7 +122,14 @@
         </widget>
        </item>
        <item row="3" column="0" colspan="4">
-        <widget class="QTableWidget" name="tableWidgetFlightBasics"/>
+        <widget class="QTableWidget" name="tableWidgetFlightBasics">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>100</height>
+          </size>
+         </property>
+        </widget>
        </item>
        <item row="4" column="0">
         <widget class="QPushButton" name="pushButtonAddFlight">
@@ -259,7 +266,14 @@
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
-        <widget class="QTableWidget" name="tableWidgetCurrentFlight"/>
+        <widget class="QTableWidget" name="tableWidgetCurrentFlight">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>100</height>
+          </size>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

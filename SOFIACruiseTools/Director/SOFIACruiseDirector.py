@@ -427,8 +427,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         """
         defaultname = "SILog_" + self.utcnow.strftime("%Y%m%d.txt")
-        self.outputname = QtWidgets.QFileDialog.getSaveFileName(self, "Save File",
-                                                            defaultname)[0]
+        self.outputname = QtWidgets.QFileDialog.getSaveFileName(self,
+                                                                "Save File",
+                                                                defaultname)[0]
         if self.outputname != '':
             self.txt_logoutputname.setText("Writing to: " +
                                            basename(str(self.outputname)))[0]
@@ -441,8 +442,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.csv")
         self.logoutnme = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                           "Save File",
-                                                           defaultname)[0]
+                                                               "Save File",
+                                                               defaultname)[0]
 
         if self.logoutnme != '':
             self.txt_datalogsavefile.setText("Writing to: " +

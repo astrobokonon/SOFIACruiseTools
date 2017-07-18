@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 633)
+        MainWindow.resize(800, 608)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -68,6 +68,7 @@ class Ui_MainWindow(object):
         self.labelSeriesFlightList.setObjectName("labelSeriesFlightList")
         self.gridLayout_3.addWidget(self.labelSeriesFlightList, 1, 0, 1, 4)
         self.tableWidgetFlightBasics = QtWidgets.QTableWidget(self.frame)
+        self.tableWidgetFlightBasics.setMinimumSize(QtCore.QSize(0, 100))
         self.tableWidgetFlightBasics.setObjectName("tableWidgetFlightBasics")
         self.tableWidgetFlightBasics.setColumnCount(0)
         self.tableWidgetFlightBasics.setRowCount(0)
@@ -148,6 +149,7 @@ class Ui_MainWindow(object):
         self.pushButtonNextFlight.setObjectName("pushButtonNextFlight")
         self.gridLayout_4.addWidget(self.pushButtonNextFlight, 3, 0, 1, 1)
         self.tableWidgetCurrentFlight = QtWidgets.QTableWidget(self.frame_3)
+        self.tableWidgetCurrentFlight.setMinimumSize(QtCore.QSize(0, 100))
         self.tableWidgetCurrentFlight.setObjectName("tableWidgetCurrentFlight")
         self.tableWidgetCurrentFlight.setColumnCount(0)
         self.tableWidgetCurrentFlight.setRowCount(0)
