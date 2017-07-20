@@ -12,8 +12,9 @@ from os.path import basename
 
 import numpy as np
 import astropy.table as apt
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, \
-    QTableWidgetItem, QListWidgetItem, QAbstractItemView
+    QHeaderView, QTableWidgetItem, QAbstractItemView
 
 from . import mainwindow as panel
 from .. import support as fpmis
@@ -80,8 +81,20 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.flightbasics = {}
         self.listoflights = []
         self.newflights = []
-        self.listWidgetFlights.setDragEnabled(True)
-        self.listWidgetFlights.setDragDropMode(QAbstractItemView.InternalMove)
+
+        self.tableWidgetFlightBasics.setDragEnabled(True)
+        ddmode = QAbstractItemView.InternalMove
+        self.tableWidgetFlightBasics.setDragDropMode(ddmode)
+        self.tableWidgetFlightBasics.setDragDropOverwriteMode(False)
+        self.tableWidgetFlightBasics.verticalHeader().setSectionsMovable(True)
+        self.tableWidgetFlightBasics.setAcceptDrops(True)
+
+        sbehav = QAbstractItemView.SelectRows
+        self.tableWidgetFlightBasics.setSelectionBehavior(sbehav)
+        self.tableWidgetFlightBasics.setAlternatingRowColors(True)
+        ssc = "alternate-background-color: rgb(219, 250, 255);"
+        ssc += " background-color: white;"
+        self.tableWidgetFlightBasics.setStyleSheet(ssc)
 
         # I think this is cross-platform?  I guess we'll see
         self.lineEditUserName.setText(getpass.getuser())
@@ -89,11 +102,14 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         # Hooking up the menu options and buttons to their actions
         self.pushButtonAddFlight.clicked.connect(self.addFlightToList)
         self.pushButtonRemoveFlight.clicked.connect(self.removeFlightFromList)
-        self.flightlist_model = self.listWidgetFlights.model()
-        self.flightlist_model.rowsMoved.connect(self.reorderFlightList)
+
+        # If something is typed in either of these boxes, update the class
         self.lineEditSeriesTitle.editingFinished.connect(self.setSeriesTitle)
         self.lineEditUserName.editingFinished.connect(self.setUserName)
-        self.pushButtonParseList.clicked.connect(self.parseFlightList)
+
+        # Need this to catch the dragged signal in the series overview table
+#        self.flightlist_model = self.tableWidgetFlightBasics.model()
+#        self.flightlist_model.rowsMoved.connect(self.reorderFlightList)
 
         # Create the review class
         self.seReview = fpmis.seriesreview()
@@ -117,21 +133,21 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
     def parseFlightList(self):
         """
         Given a list of filenames, attempt to parse each one
-        and fill a class holding them all.  
-        
+        and fill a class holding them all.
+
         When done, fill in a table giving the vital statistics of each.
-        
+
         The class (seriesreview in MISparse) is a nested framework.
         Go look there.
         """
         # Clear out the old crud
         self.seReview.flights = []
         self.tableWidgetFlightBasics.setRowCount(0)
-        labs = ['Fancy Name', 'Takeoff', 'Duration', 
+        labs = ['Fancy Name', 'Takeoff', 'Duration',
                 'Obs. Time', 'Airports']
         self.tableWidgetFlightBasics.setColumnCount(len(labs))
         self.tableWidgetFlightBasics.setHorizontalHeaderLabels(labs)
-        
+
         for i, each in enumerate(self.listoflights):
             print("Parsing %s" % each)
             bname = basename(each)
@@ -140,7 +156,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                 cflight = fpmis.parseMIS(each)
                 self.seReview.flights.append(cflight)
                 print("Success!")
-                
+
                 # Now fill in the table
                 fdict['Filename'] = bname
                 fdict['Fancy Name'] = cflight.fancyname
@@ -163,9 +179,14 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             self.tableWidgetFlightBasics.insertRow(i)
             for j, hkey in enumerate(labs):
                 newitem = QTableWidgetItem(str(fdict[hkey]))
+                newitem.setTextAlignment(QtCore.Qt.AlignCenter)
                 self.tableWidgetFlightBasics.setItem(i, j, newitem)
+            self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
 
-        self.tableWidgetFlightBasics
+        # Resize before displaying
+        self.tableWidgetFlightBasics.resizeRowsToContents()
+        hhead = self.tableWidgetFlightBasics.horizontalHeader()
+        hhead.setSectionResizeMode(QHeaderView.Stretch)
 
     def addFlightToList(self):
         tstr = "Load SOFIA Flight Plan"
@@ -183,11 +204,12 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         print("=====")
 
         # Need to only update what is needed.
-        self.updateFlightWidget()
+        self.parseFlightList()
 
     def removeFlightFromList(self):
-        for it in self.listWidgetFlights.selectedItems():
-            self.listWidgetFlights.takeItem(self.listWidgetFlights.row(it))
+        bad = self.tableWidgetFlightBasics.currentRow()
+        if bad != -1:
+            self.tableWidgetFlightBasics.removeRow(bad)
 
         self.updateFlightList()
 
@@ -197,29 +219,14 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         contents of the listWidgetFlights box in the panel
         """
         self.listoflights = []
-        print("I see %i items" % self.listWidgetFlights.count())
-        for j in range(self.listWidgetFlights.count()):
-            floc = self.listWidgetFlights.item(j).toolTip()
+        print("I see %i items" % self.tableWidgetFlightBasics.rowCount())
+        for j in range(self.tableWidgetFlightBasics.rowCount()):
+            floc = self.tableWidgetFlightBasics.item(j, 0).toolTip()
             self.listoflights.append(floc)
             print(floc)
         print("Updated internal list:")
         print(self.listoflights)
-
-    def updateFlightWidget(self):
-        self.listWidgetFlights.clear()
-        for each in self.listoflights:
-            # Sorry, but quick and dirty string comparison is more
-            #   important to me than keeping unicode support.
-            ext = str(each[-4:]).lower()
-            if ext == ".mis" or ext == ".fsr":
-                # Get just the base name and trim off the extension
-                bname = basename(each)[:-4]
-            else:
-                bname = basename(each)
-            ni = QListWidgetItem(bname)
-            ni.setToolTip(each)
-            self.listWidgetFlights.addItem(ni)
-
+        self.parseFlightList()
 
     def reorderFlightList(self):
         self.updateFlightList()
@@ -318,7 +325,6 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
 
 def main():
     app = QApplication(sys.argv)
-#    QtGui.QFontDatabase.addApplicationFont("resources/fonts/digital_7/digital-7_mono.ttf")
     form = SOFIACruiseReviewerApp()
     form.show()  # Show the form
     app.exec_()  # and execute the app
