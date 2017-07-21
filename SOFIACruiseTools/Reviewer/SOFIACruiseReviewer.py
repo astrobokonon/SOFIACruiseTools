@@ -12,9 +12,11 @@ from os.path import basename
 
 import numpy as np
 import astropy.table as apt
-from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, \
-    QHeaderView, QTableWidgetItem, QAbstractItemView
+    QHeaderView, QTableWidget, QTableWidgetItem, QAbstractItemView, \
+    QWidget, QHBoxLayout
 
 from . import mainwindow as panel
 from .. import support as fpmis
@@ -82,20 +84,6 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.listoflights = []
         self.newflights = []
 
-        self.tableWidgetFlightBasics.setDragEnabled(True)
-        ddmode = QAbstractItemView.InternalMove
-        self.tableWidgetFlightBasics.setDragDropMode(ddmode)
-        self.tableWidgetFlightBasics.setDragDropOverwriteMode(False)
-        self.tableWidgetFlightBasics.verticalHeader().setSectionsMovable(True)
-        self.tableWidgetFlightBasics.setAcceptDrops(True)
-
-        sbehav = QAbstractItemView.SelectRows
-        self.tableWidgetFlightBasics.setSelectionBehavior(sbehav)
-        self.tableWidgetFlightBasics.setAlternatingRowColors(True)
-        ssc = "alternate-background-color: rgb(219, 250, 255);"
-        ssc += " background-color: white;"
-        self.tableWidgetFlightBasics.setStyleSheet(ssc)
-
         # I think this is cross-platform?  I guess we'll see
         self.lineEditUserName.setText(getpass.getuser())
 
@@ -107,9 +95,9 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.lineEditSeriesTitle.editingFinished.connect(self.setSeriesTitle)
         self.lineEditUserName.editingFinished.connect(self.setUserName)
 
-        # Need this to catch the dragged signal in the series overview table
+#        # Need this to catch the dragged signal in the series overview table
 #        self.flightlist_model = self.tableWidgetFlightBasics.model()
-#        self.flightlist_model.rowsMoved.connect(self.reorderFlightList)
+        self.tableWidgetFlightBasics.ddmodel.rowsMoved.connect(self.reorderFlightList)
 
         # Create the review class
         self.seReview = fpmis.seriesreview()
@@ -179,7 +167,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             self.tableWidgetFlightBasics.insertRow(i)
             for j, hkey in enumerate(labs):
                 newitem = QTableWidgetItem(str(fdict[hkey]))
-                newitem.setTextAlignment(QtCore.Qt.AlignCenter)
+                newitem.setTextAlignment(Qt.AlignCenter)
                 self.tableWidgetFlightBasics.setItem(i, j, newitem)
             self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
 

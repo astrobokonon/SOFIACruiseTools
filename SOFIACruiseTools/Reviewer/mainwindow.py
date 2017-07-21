@@ -67,7 +67,7 @@ class Ui_MainWindow(object):
         self.labelSeriesFlightList.setAlignment(QtCore.Qt.AlignCenter)
         self.labelSeriesFlightList.setObjectName("labelSeriesFlightList")
         self.gridLayout_3.addWidget(self.labelSeriesFlightList, 1, 0, 1, 4)
-        self.tableWidgetFlightBasics = QtWidgets.QTableWidget(self.frame)
+        self.tableWidgetFlightBasics = DragDropTable(self.frame)
         self.tableWidgetFlightBasics.setMinimumSize(QtCore.QSize(0, 100))
         self.tableWidgetFlightBasics.setObjectName("tableWidgetFlightBasics")
         self.tableWidgetFlightBasics.setColumnCount(0)
@@ -182,3 +182,4 @@ class Ui_MainWindow(object):
         self.pushButtonPrevFlight.setText(_translate("MainWindow", "Previous Flight"))
         self.pushButtonNextFlight.setText(_translate("MainWindow", "Next Flight"))
 
+from .dragdroptable import DragDropTable
