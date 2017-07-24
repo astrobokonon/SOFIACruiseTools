@@ -10,6 +10,7 @@ from __future__ import division, print_function
 
 import re
 import copy
+import hashlib
 import itertools
 import numpy as np
 import scipy.interpolate as spi
@@ -72,6 +73,7 @@ class flightprofile(object):
     """
     def __init__(self):
         self.filename = ''
+        self.shasum = ''
         self.saved = ''
         self.origin = ''
         self.destination = ''
@@ -889,6 +891,8 @@ def parseMIS(infile, summarize=False):
     cont = f.readlines()
     f.close()
 
+    flight.shasum = computeHash(infile)
+
     # Search for the header lines which will tell us how many legs there are.
     #  Use a regular expression to make the searching less awful
     #  Note: regexp searches can be awful no matter what
@@ -933,7 +937,19 @@ def parseMIS(infile, summarize=False):
     return flight
 
 
+def computeHash(infile):
+    """
+    Given an input file, compute and return the sha1() hash of it so
+    it can be used as an associative key for other purposes/programs.
+
+    Using sha1() for now because it's trivial, but anything in hashlib will do!
+    """
+    f = open(infile, 'rb')
+    buffer = f.read()
+    f.close()
+    return hashlib.sha1(buffer).hexdigest()
+
+
 if __name__ == "__main__":
-#    infile = '/Users/rhamilton/Desktop/HAWCCom2Flights/Draft5/201609_HA_01_SCI.mis'
     infile = '/Users/rhamilton/Desktop/201609_HA_01_WX12.mis'
     parseMIS(infile, summarize=True)
