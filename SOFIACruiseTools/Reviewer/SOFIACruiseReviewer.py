@@ -4,7 +4,7 @@ Created on Thu Jun 15 11:20:07 2017
 @author: rhamilton
 """
 
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 import sys
 import getpass
@@ -13,10 +13,8 @@ from os.path import basename
 import numpy as np
 import astropy.table as apt
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, \
-    QHeaderView, QTableWidget, QTableWidgetItem, QAbstractItemView, \
-    QWidget, QHBoxLayout
+    QHeaderView, QTableWidgetItem
 
 from . import mainwindow as panel
 from .. import support as fpmis
@@ -95,9 +93,20 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.lineEditSeriesTitle.editingFinished.connect(self.setSeriesTitle)
         self.lineEditUserName.editingFinished.connect(self.setUserName)
 
-#        # Need this to catch the dragged signal in the series overview table
-#        self.flightlist_model = self.tableWidgetFlightBasics.model()
-        self.tableWidgetFlightBasics.ddmodel.rowsMoved.connect(self.reorderFlightList)
+        # Need this to catch the dragged signal in the series overview table
+        self.flightBasicsModel = self.tableWidgetFlightBasics.model()
+        self.flightBasicsModel.rowsMoved.connect(self.reorderFlightList)
+
+        self.tableWidgetFlightBasics.rearranged.connect(self.reorderFlightList)
+        # Click to change to the details for that flight
+#        self.tableWidgetFlightBasics.clicked.connect(self.reorderFlightList)
+
+
+        # Generate a list of the available signals
+        metaobject = self.tableWidgetFlightBasics.metaObject()
+        for i in range(metaobject.methodCount()):
+            mobm = metaobject.method(i)
+            print(mobm.methodSignature())
 
         # Create the review class
         self.seReview = fpmis.seriesreview()
@@ -218,7 +227,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
 
     def reorderFlightList(self):
         self.updateFlightList()
-        self.updateFlightWidget()
+#        self.updateFlightWidget()
         print("Updated internal list2:")
         print(self.listoflights)
 

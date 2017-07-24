@@ -7,15 +7,20 @@ Created on Thu Jul 20 15:16:32 2017
 
 """
 
-from PyQt5.QtCore import Qt
+from __future__ import division, print_function, absolute_import
+
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, \
     QAbstractItemView, QHeaderView
 
 
 class DragDropTable(QTableWidget):
+    # Need to define new signals as variables of the class
+    rearranged = pyqtSignal()
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(self.__class__, self).__init__(*args, **kwargs)
 
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
@@ -33,10 +38,7 @@ class DragDropTable(QTableWidget):
         ssc += " background-color: white;"
         self.setStyleSheet(ssc)
 
-        # Need this to catch the dragged signal in the series overview table
-        self.ddmodel = self.model()
-
-    def dropEvent(self, event: QDropEvent):
+    def dropEvent(self, event):
         if not event.isAccepted() and event.source() == self:
             drop_row = self.drop_on(event)
 
@@ -62,8 +64,10 @@ class DragDropTable(QTableWidget):
             self.resizeRowsToContents()
             hhead = self.horizontalHeader()
             hhead.setSectionResizeMode(QHeaderView.Stretch)
+        self.rearranged.emit()
 
-        super().dropEvent(event)
+        super(DragDropTable, self).dropEvent(event)
+    dropEvent.__annotations__ = {'event': QDropEvent}
 
     def drop_on(self, event):
         index = self.indexAt(event.pos())

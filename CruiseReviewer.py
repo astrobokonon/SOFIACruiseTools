@@ -5,7 +5,7 @@ Created on Wed Jun 28 15:00:33 2017
 @author: rhamilton
 """
 
-from __future__ import absolute_import, division, print_function
+from __future__ import division, print_function, absolute_import
 
 import SOFIACruiseTools.Reviewer.SOFIACruiseReviewer
 
