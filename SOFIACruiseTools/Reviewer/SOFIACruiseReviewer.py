@@ -97,10 +97,11 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.flightBasicsModel = self.tableWidgetFlightBasics.model()
         self.flightBasicsModel.rowsMoved.connect(self.reorderFlightList)
 
+        # Custom signal that gets emitted in the drop method of DragDropTable
         self.tableWidgetFlightBasics.rearranged.connect(self.reorderFlightList)
-        # Click to change to the details for that flight
-#        self.tableWidgetFlightBasics.clicked.connect(self.reorderFlightList)
 
+        # Click to change to the details for that flight
+        self.tableWidgetFlightBasics.clicked.connect(self.selectFlight)
 
         # Generate a list of the available signals
         metaobject = self.tableWidgetFlightBasics.metaObject()
@@ -116,6 +117,13 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         # Flight plan progression
 #        self.buttonPreviousLeg.clicked.connect(self.prevLeg)
 #        self.buttonNextLeg.clicked.connect(self.nextLeg)
+
+    def selectFlight(self):
+        # The TableWidget is set with row selection only, so this will always
+        #   have length = 1 (but still is a list)
+        sel = self.tableWidgetFlightBasics.selectionModel().selectedRows()[0]
+        sel = sel.row()
+#        print("%s" % self.seReview.flights[sel].
 
     def setUserName(self):
         """
@@ -146,7 +154,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.tableWidgetFlightBasics.setHorizontalHeaderLabels(labs)
 
         for i, each in enumerate(self.listoflights):
-            print("Parsing %s" % each)
+            print("Parsing %s ..." % each, end=' ')
             bname = basename(each)
             fdict = {}
             try:
@@ -221,14 +229,12 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             floc = self.tableWidgetFlightBasics.item(j, 0).toolTip()
             self.listoflights.append(floc)
             print(floc)
-        print("Updated internal list:")
-        print(self.listoflights)
+#        print("Updated internal list:")
+#        print(self.listoflights)
         self.parseFlightList()
 
     def reorderFlightList(self):
         self.updateFlightList()
-#        self.updateFlightWidget()
-        print("Updated internal list2:")
         print(self.listoflights)
 
     def setFlightTableData(self):
