@@ -48,7 +48,7 @@ class seriesreview(object):
     """
     def __init__(self):
         # Laziness so we can just .append() to it
-        self.flights = []
+        self.flights = {}
         self.seriesname = ''
         self.reviewername = ''
 
@@ -841,47 +841,9 @@ def parseMISPreamble(lines, flight, summarize=False):
     return flight
 
 
-def parseMISlightly(infile):
+def parseMISlightly(infile, summarize=False):
     """
     Given a SOFIA .MIS file, just parse the header block and return it
-    """
-    # Create an empty base class that we'll fill up as we read through
-    flight = flightprofile()
-
-    # Read the file into memory so we can quickly parse stuff
-    f = open(infile, 'r')
-    cont = f.readlines()
-    f.close()
-
-    # Search for the header lines which will tell us how many legs there are.
-    #  Use a regular expression to make the searching less awful
-    #  Note: regexp searches can be awful no matter what
-    head1 = "Leg \d* \(.*\)"
-    lhed = findLegHeaders(cont, re.compile(head1))
-
-    # Guarantee that the loop matches the number of legs found
-    flight.nlegs = len(lhed)
-
-    head2 = "UTC\s*MHdg"
-    ldat = findLegHeaders(cont, re.compile(head2))
-
-    if len(lhed) != len(ldat):
-        print("FATAL ERROR: Couldn't find the same amount of legs and data!")
-        print("Check the formatting of the file?  Or the regular expressions")
-        print("need updating because they changed the file format?")
-        print("Looking for '%s' and '%s'" % (head1, head2))
-        return -1
-
-    # Since we know where the first leg line is, we can define the preamble.
-    #   Takes the flight class as an argument and returns it all filled up.
-    flight = parseMISPreamble(cont[0:lhed[0]], flight, summarize=False)
-
-    return flight
-
-
-def parseMIS(infile, summarize=False):
-    """
-    Read a SOFIA .MIS file, parse it, and return a nice thing we can work with
     """
     # Create an empty base class that we'll fill up as we read through
     flight = flightprofile()
@@ -915,6 +877,15 @@ def parseMIS(infile, summarize=False):
     # Since we know where the first leg line is, we can define the preamble.
     #   Takes the flight class as an argument and returns it all filled up.
     flight = parseMISPreamble(cont[0:lhed[0]], flight, summarize=summarize)
+
+    return flight, lhed, ldat, cont
+
+
+def parseMIS(infile, summarize=False):
+    """
+    Read a SOFIA .MIS file, parse it, and return a nice thing we can work with
+    """
+    flight, lhed, ldat, cont = parseMISlightly(infile, summarize)
 
     for i, datastart in enumerate(lhed):
         if i == 0:

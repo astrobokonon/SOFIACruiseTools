@@ -8,6 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import getpass
+import hashlib
 from os.path import basename
 
 import numpy as np
@@ -93,12 +94,8 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.lineEditSeriesTitle.editingFinished.connect(self.setSeriesTitle)
         self.lineEditUserName.editingFinished.connect(self.setUserName)
 
-        # Need this to catch the dragged signal in the series overview table
-        self.flightBasicsModel = self.tableWidgetFlightBasics.model()
-        self.flightBasicsModel.rowsMoved.connect(self.reorderFlightList)
-
         # Custom signal that gets emitted in the drop method of DragDropTable
-        self.tableWidgetFlightBasics.rearranged.connect(self.reorderFlightList)
+        self.tableWidgetFlightBasics.rearranged.connect(self.updateFlightList)
 
         # Click to change to the details for that flight
         self.tableWidgetFlightBasics.clicked.connect(self.selectFlight)
@@ -146,8 +143,9 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         Go look there.
         """
         # Clear out the old crud
-        self.seReview.flights = []
+        self.seReview.flights = {}
         self.tableWidgetFlightBasics.setRowCount(0)
+        # Note the order here is the order it'll show in the table
         labs = ['Fancy Name', 'Takeoff', 'Duration',
                 'Obs. Time', 'Airports']
         self.tableWidgetFlightBasics.setColumnCount(len(labs))
@@ -159,7 +157,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             fdict = {}
             try:
                 cflight = fpmis.parseMIS(each)
-                self.seReview.flights.append(cflight)
+                self.seReview.flights.update({cflight.shasum: cflight})
                 print("Success!")
 
                 # Now fill in the table
@@ -178,6 +176,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                         fdict[key] = bname
                     else:
                         fdict[key] = ''
+                fdict['shasum'] = hashlib.sha1(bname)
             self.flightbasics[bname] = fdict
 
             # Now actually fill the table widget
@@ -186,6 +185,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                 newitem = QTableWidgetItem(str(fdict[hkey]))
                 newitem.setTextAlignment(Qt.AlignCenter)
                 self.tableWidgetFlightBasics.setItem(i, j, newitem)
+            self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
             self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
 
         # Resize before displaying
@@ -232,10 +232,6 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
 #        print("Updated internal list:")
 #        print(self.listoflights)
         self.parseFlightList()
-
-    def reorderFlightList(self):
-        self.updateFlightList()
-        print(self.listoflights)
 
     def setFlightTableData(self):
         """
