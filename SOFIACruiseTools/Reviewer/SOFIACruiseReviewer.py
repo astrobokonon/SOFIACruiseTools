@@ -8,7 +8,6 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import getpass
-import hashlib
 from os.path import basename
 
 import numpy as np
@@ -168,6 +167,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                 fdict['Obs. Time'] = str(cflight.obstime)
                 dstr = "%s to %s" % (cflight.origin, cflight.destination)
                 fdict['Airports'] = dstr
+                fdict['shasum'] = cflight.shasum
             except:
                 print("Failed to parse %s" % each)
                 # Fill out the table
@@ -176,7 +176,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                         fdict[key] = bname
                     else:
                         fdict[key] = ''
-                fdict['shasum'] = hashlib.sha1(bname)
+                fdict['shasum'] = fpmis.computeHash(each)
             self.flightbasics[bname] = fdict
 
             # Now actually fill the table widget
@@ -184,9 +184,10 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             for j, hkey in enumerate(labs):
                 newitem = QTableWidgetItem(str(fdict[hkey]))
                 newitem.setTextAlignment(Qt.AlignCenter)
-                self.tableWidgetFlightBasics.setItem(i, j, newitem)
+                if hkey != 'shasum':
+                    self.tableWidgetFlightBasics.setItem(i, j, newitem)
             self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
-            self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
+            self.tableWidgetFlightBasics.item(i, 1).setToolTip(fdict['shasum'])
 
         # Resize before displaying
         self.tableWidgetFlightBasics.resizeRowsToContents()
