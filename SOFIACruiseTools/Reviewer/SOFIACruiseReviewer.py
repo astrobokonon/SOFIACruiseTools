@@ -100,10 +100,10 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.tableWidgetFlightBasics.clicked.connect(self.selectFlight)
 
         # Generate a list of the available signals
-        metaobject = self.tableWidgetFlightBasics.metaObject()
-        for i in range(metaobject.methodCount()):
-            mobm = metaobject.method(i)
-            print(mobm.methodSignature())
+#        metaobject = self.tableWidgetFlightBasics.metaObject()
+#        for i in range(metaobject.methodCount()):
+#            mobm = metaobject.method(i)
+#            print(mobm.methodSignature())
 
         # Create the review class
         self.seReview = fpmis.seriesreview()
@@ -145,7 +145,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         self.seReview.flights = {}
         self.tableWidgetFlightBasics.setRowCount(0)
         # Note the order here is the order it'll show in the table
-        labs = ['Fancy Name', 'Takeoff', 'Duration',
+        labs = ['Filename', 'Fancy Name', 'Takeoff', 'Duration',
                 'Obs. Time', 'Airports']
         self.tableWidgetFlightBasics.setColumnCount(len(labs))
         self.tableWidgetFlightBasics.setHorizontalHeaderLabels(labs)
@@ -156,7 +156,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             fdict = {}
             try:
                 cflight = fpmis.parseMIS(each)
-                self.seReview.flights.update({cflight.shasum: cflight})
+                self.seReview.flights.update({cflight.hash: cflight})
                 print("Success!")
 
                 # Now fill in the table
@@ -167,7 +167,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                 fdict['Obs. Time'] = str(cflight.obstime)
                 dstr = "%s to %s" % (cflight.origin, cflight.destination)
                 fdict['Airports'] = dstr
-                fdict['shasum'] = cflight.shasum
+                fdict['hash'] = cflight.hash
             except:
                 print("Failed to parse %s" % each)
                 # Fill out the table
@@ -176,7 +176,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                         fdict[key] = bname
                     else:
                         fdict[key] = ''
-                fdict['shasum'] = fpmis.computeHash(each)
+                fdict['hash'] = fpmis.computeHash(each)
             self.flightbasics[bname] = fdict
 
             # Now actually fill the table widget
@@ -184,10 +184,9 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             for j, hkey in enumerate(labs):
                 newitem = QTableWidgetItem(str(fdict[hkey]))
                 newitem.setTextAlignment(Qt.AlignCenter)
-                if hkey != 'shasum':
+                if hkey != 'hash':
                     self.tableWidgetFlightBasics.setItem(i, j, newitem)
             self.tableWidgetFlightBasics.item(i, 0).setToolTip(each)
-            self.tableWidgetFlightBasics.item(i, 1).setToolTip(fdict['shasum'])
 
         # Resize before displaying
         self.tableWidgetFlightBasics.resizeRowsToContents()

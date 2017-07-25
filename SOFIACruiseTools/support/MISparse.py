@@ -17,8 +17,12 @@ import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
 
-go_dt = lambda x: timedelta(seconds=x)
-go_iso = lambda x: x.isoformat()
+def go_dt(x):
+    timedelta(seconds=x)
+
+
+def go_iso(x):
+    x.isoformat()
 
 
 class flightcomments(object):
@@ -35,7 +39,7 @@ class flightcomments(object):
 
 class flightreview(object):
     """
-    Are meta-classes a thing?
+    In work. Might change the layout.
     """
     def __init__(self):
         self.flightprofile = flightprofile()
@@ -44,7 +48,7 @@ class flightreview(object):
 
 class seriesreview(object):
     """
-    Even more meta
+    So. Meta.
     """
     def __init__(self):
         # Laziness so we can just .append() to it
@@ -73,7 +77,7 @@ class flightprofile(object):
     """
     def __init__(self):
         self.filename = ''
-        self.shasum = ''
+        self.hash = ''
         self.saved = ''
         self.origin = ''
         self.destination = ''
@@ -438,15 +442,7 @@ def regExper(lines, key, keytype='key:val', howmany=1, nextkey=None):
     mask = ''
 
     # Oh god I'm sorry it's like it's suddenly all Perl up in here.
-    #   Use something like https://regex101.com/ and the test block here
-    #
-    # Leg 4 (HIP 84379)   Start: 04:06:22     Leg Dur: 00:30:00   Req. Alt: 37000 ft
-    # ObspID:             Blk:                Priority: C         Obs Dur: 00:00:00
-    # Target: HIP 84379   RA: 17h15m01.91s    Dec: 24d50m21.1s    Equinox: J2000.0
-    # Elev: [40.9, 34.7]  ROF: [64.9, 59.0] rate: [-0.20, -0.19] deg/min
-    # Moon Angle: 50      Moon Illum: 9%      THdg: [4.6, 6.0] rate: [+0.02, +0.06] deg/min
-    #
-
+    #   Use something like https://regex101.com/ to test against
     if keytype == 'legtarg':
         mask = u'(%s\s+\d+\s*\(.*\))' % (key)
     elif keytype == 'key:val':
@@ -853,7 +849,7 @@ def parseMISlightly(infile, summarize=False):
     cont = f.readlines()
     f.close()
 
-    flight.shasum = computeHash(infile)
+    flight.hash = computeHash(infile)
 
     # Search for the header lines which will tell us how many legs there are.
     #  Use a regular expression to make the searching less awful
