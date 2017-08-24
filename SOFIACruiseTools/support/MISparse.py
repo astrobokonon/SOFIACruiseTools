@@ -17,13 +17,128 @@ import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
 
-def go_dt(x):
-    timedelta(seconds=x)
+def go_dt(var):
+    timedelta(seconds=var)
 
 
-def go_iso(x):
-    x.isoformat()
+def go_iso(var):
+    var.isoformat()
 
+
+def commentinator(coms, ctype, btag, tag):
+    """
+    Given a comment class/structure, append the message 
+    to the specified type of comment
+    """
+    # Construct the message
+    tag = btag + tag
+    
+    if ctype.lower() == 'notes':
+        coms.notes.append(tag)
+    elif ctype.lower() == 'warning':
+        coms.warnings.append(tag)
+    elif ctype.lower() == 'error':
+        coms.errors.append(tag)
+    elif ctype.lower() == 'tip':
+        coms.tips.append(tag)
+    
+    return coms
+
+
+def autoReview(flight):
+    """
+    Given a parsed flight class, review it checking for:
+        - Sun elevation
+        - Moon angle
+        - Elevation range problems
+        - Short legs
+        - No setup time
+        - Fast rotation
+        - Fast heading changes
+        - Combination of those last two
+    """
+    comments = flightcomments()
+    
+    for leg in flight.legs:
+        print("Leg %02i, %s %s" % (leg.legno, leg.legtype, leg.target))
+        # We only care about the observing legs
+        if leg.legtype == 'Observing':
+            basetag = tag = "* Leg %02i: " % (leg.legno)
+            
+            if np.where(np.array(leg.sunelev) >= -5) != np.array([]):
+                comments = commentinator(comments, 'error', basetag,
+                                         "Uh, it's daytime")
+                                
+            if np.where(np.array(leg.elev) <= 23) != np.array([]):
+                comments = commentinator(comments, 'warning', basetag,
+                                         "Low target elevations")
+
+            elif np.where(np.array(leg.elev) >= 57) != np.array([]):
+                comments = commentinator(comments, 'warning', basetag,
+                                         "High target elevations")
+            
+            if leg.obsdur.total_seconds() < 15.*60.:
+                # To try to catch the setup leg which has no obs duration
+                if leg.obsdur.total_seconds() != 0.:
+                    comments = commentinator(comments, 'warning', basetag,
+                                         "Short leg! < 15 minutes.")
+
+            if (leg.duration - leg.obsdur).total_seconds() == 0.:
+                comments = commentinator(comments, 'warning', basetag,
+                                         "No setup time; expected?")
+
+            if leg.moonangle < 45.:
+                comments = commentinator(comments, 'warning', basetag,
+                                         "Close moon (< 45 degrees)")
+            
+            # Need the [1:] because the first ROF rate is always N/A
+            if np.where(np.array(leg.rofrt[1:]) < -0.2) != np.array([]):
+                if np.where(np.array(leg.rofrt[1:]) < -0.325) != np.array([]):
+                    comments = commentinator(comments, 'warning', basetag,
+                                             "Fast negative rotator")
+                else:
+                    comments = commentinator(comments, 'warning', basetag,
+                                             "Moderate negative rotator")
+                            
+            if np.where(np.array(leg.rofrt[1:]) > 0.2) != np.array([]):
+                if np.where(np.array(leg.rofrt[1:]) > 0.325) != np.array([]):
+                    comments = commentinator(comments, 'warning', basetag,
+                                             "Fast positive rotator")
+                else:
+                    comments = commentinator(comments, 'warning', basetag,
+                                         "Moderate positive rotator")
+
+            # Check up on the heading changes combined with ROF rates
+            #   degrees/step; not time units yet
+            thr = (np.array(leg.thdg[1:]) - np.array(leg.thdg[:-1]))
+            # Elapsed time is time since start of leg; assuming a sensible
+            #   linear spacing, just take the 2nd step as the interval
+            thr /= leg.elapsedtime[1]/60.
+            
+            comborate = np.array(leg.rofrt[1:]) + thr
+            if np.where(thr >= 0.2) != np.array([]):
+                comments = commentinator(comments, 'warning', basetag,
+                                         "Fast positive heading changes")
+
+            if np.where(thr <= -0.2) != np.array([]):
+                comments = commentinator(comments, 'warning', basetag,
+                                         "Fast negative heading changes")
+
+            if np.where(comborate >= 0.325) != np.array([]):
+                ntag = "Fast combined positive (ROF + THdg) rotator"
+                comments = commentinator(comments, 'warning', basetag, ntag)
+                
+            if np.where(comborate <= -0.325) != np.array([]):
+                ntag = "Fast combined negative (ROF + THdg) rotator"
+                comments = commentinator(comments, 'warning', basetag, ntag)
+
+    print(comments.notes)
+    print(comments.warnings)
+    print(comments.errors)
+    print(comments.tips)
+    
+    return comments
+    
 
 class flightcomments(object):
     """
@@ -42,7 +157,8 @@ class flightreview(object):
     In work. Might change the layout.
     """
     def __init__(self):
-        self.flightprofile = flightprofile()
+        self.hash = ''
+        self.flights = {}
         self.comments = flightcomments()
 
 
@@ -51,10 +167,9 @@ class seriesreview(object):
     So. Meta.
     """
     def __init__(self):
-        # Laziness so we can just .append() to it
-        self.flights = {}
         self.seriesname = ''
         self.reviewername = ''
+        self.review = flightreview()
 
 
 class nonsiderial(object):
@@ -313,7 +428,7 @@ def interp_flight(oflight, npts, timestep=55):
             leg.thdg = thdgprimer(filler) % 360.
             leg.mhdg = mhdgprimer(filler) % 360.
 
-            # Use a stubby little lambda function instead of a loop. Better?
+            # Use a stubby little function instead of a loop. Better?
             # Need to explicitly list() map() in Python3 to operate on it
             #   the same way as in Python2
             filler = list(map(go_dt, filler))
@@ -594,7 +709,7 @@ def parseLegData(i, contents, leg, flight):
                 # Store the current datetime for comparison to the next
                 ptime = utcdt
                 k += 1
-
+        
     return leg
 
 
@@ -918,5 +1033,7 @@ def computeHash(infile):
 
 
 if __name__ == "__main__":
-    infile = '/Users/rhamilton/Desktop/201609_HA_01_WX12.mis'
-    parseMIS(infile, summarize=True)
+    infile = '../../inputs/07_201705_HA_EZRA_WX12.mis'
+    flight = parseMIS(infile, summarize=True)
+    autoReview(flight)
+
