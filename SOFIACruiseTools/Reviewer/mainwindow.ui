@@ -252,16 +252,16 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QPushButton" name="pushButtonPrevFlight">
+        <widget class="QPushButton" name="pushButtonClearReview">
          <property name="text">
-          <string>Previous Flight</string>
+          <string>Clear Review</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QPushButton" name="pushButtonNextFlight">
+        <widget class="QPushButton" name="pushButtonAutoReview">
          <property name="text">
-          <string>Next Flight</string>
+          <string>Auto Review</string>
          </property>
         </widget>
        </item>

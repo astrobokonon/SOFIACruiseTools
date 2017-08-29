@@ -45,7 +45,7 @@ def commentinator(coms, ctype, btag, tag):
     return coms
 
 
-def autoReview(flight):
+def autoReview(flight, clear=True):
     """
     Given a parsed flight class, review it checking for:
         - Sun elevation
@@ -57,13 +57,14 @@ def autoReview(flight):
         - Fast heading changes
         - Combination of those last two
     """
-    comments = flightcomments()
+    if clear is True:
+        comments = flightcomments()
     
     for leg in flight.legs:
         print("Leg %02i, %s %s" % (leg.legno, leg.legtype, leg.target))
         # We only care about the observing legs
         if leg.legtype == 'Observing':
-            basetag = tag = "* Leg %02i: " % (leg.legno)
+            basetag = "* Leg %02i: " % (leg.legno)
             
             if np.where(np.array(leg.sunelev) >= -5) != np.array([]):
                 comments = commentinator(comments, 'error', basetag,
@@ -131,11 +132,6 @@ def autoReview(flight):
             if np.where(comborate <= -0.325) != np.array([]):
                 ntag = "Fast combined negative (ROF + THdg) rotator"
                 comments = commentinator(comments, 'warning', basetag, ntag)
-
-    print(comments.notes)
-    print(comments.warnings)
-    print(comments.errors)
-    print(comments.tips)
     
     return comments
     
@@ -159,7 +155,6 @@ class flightreview(object):
     def __init__(self):
         self.hash = ''
         self.flights = {}
-        self.comments = flightcomments()
 
 
 class seriesreview(object):
@@ -223,6 +218,7 @@ class flightprofile(object):
         # In a perfect world, I'd just make this be len(legs)
         self.nlegs = 0
         self.legs = []
+        self.reviewComments = flightcomments()
 
     def add_leg(self, parsedleg):
         self.legs.append(parsedleg)
