@@ -123,7 +123,6 @@ class SOFIACruisePlannerApp(QMainWindow, scpp.Ui_MainWindow):
         # Resize to minimum required, then display
         self.tableFlightPlanSummary.resizeColumnsToContents()
         self.tableFlightPlanSummary.resizeRowsToContents()
-
         self.tableFlightPlanSummary.show()
 
     def selectInputFlight(self):

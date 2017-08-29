@@ -8,7 +8,7 @@ Created on Fri Aug 30 18:57:54 2013
 import numpy as np
 import matplotlib.pyplot as plt
 
-import newparse as fpmis
+import MISparse as fpmis
 
 
 infile = '/SalusaSecundus/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX12.mis'
