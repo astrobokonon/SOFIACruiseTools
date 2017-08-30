@@ -16,7 +16,8 @@ import numpy as np
 import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
-import autoreview as ar
+#import autoreview as ar
+#from . import autoreview as ar
 
 
 def go_dt(var):

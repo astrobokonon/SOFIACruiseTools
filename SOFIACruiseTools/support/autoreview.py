@@ -6,6 +6,11 @@ Created on Tue Aug 29 11:37:09 2017
 @author: rhamilton
 """
 
+import numpy as np
+#from . import MISparse as fpmis
+from MISparse import flightcomments, commentinator
+
+
 def autoReview(flight, clear=True):
     """
     Given a parsed flight class, review it checking for:
@@ -29,46 +34,51 @@ def autoReview(flight, clear=True):
             
             if np.where(np.array(leg.sunelev) >= -5) != np.array([]):
                 comments = commentinator(comments, 'error', basetag,
-                                         "Uh, it's daytime")
+                                               "Uh, it's daytime")
                                 
             if np.where(np.array(leg.elev) <= 23) != np.array([]):
                 comments = commentinator(comments, 'warning', basetag,
-                                         "Low target elevations")
+                                               "Low target elevations")
 
             elif np.where(np.array(leg.elev) >= 57) != np.array([]):
                 comments = commentinator(comments, 'warning', basetag,
-                                         "High target elevations")
+                                               "High target elevations")
             
             if leg.obsdur.total_seconds() < 15.*60.:
                 # To try to catch the setup leg which has no obs duration
                 if leg.obsdur.total_seconds() != 0.:
-                    comments = commentinator(comments, 'warning', basetag,
-                                         "Short leg! < 15 minutes.")
+                    comments = commentinator(comments, 'warning', 
+                                                   basetag,
+                                                   "Short leg! < 15 minutes.")
 
             if (leg.duration - leg.obsdur).total_seconds() == 0.:
                 comments = commentinator(comments, 'warning', basetag,
-                                         "No setup time; expected?")
+                                               "No setup time; expected?")
 
             if leg.moonangle < 20.:
                 comments = commentinator(comments, 'warning', basetag,
-                                         "Close moon (< 20 degrees)")
+                                               "Close moon (< 20 degrees)")
             
             # Need the [1:] because the first ROF rate is always N/A
             if np.where(np.array(leg.rofrt[1:]) < -0.2) != np.array([]):
                 if np.where(np.array(leg.rofrt[1:]) < -0.325) != np.array([]):
-                    comments = commentinator(comments, 'warning', basetag,
-                                             "Fast negative rotator")
+                    comments = commentinator(comments, 'warning', 
+                                                   basetag,
+                                                   "Fast negative rotator")
                 else:
-                    comments = commentinator(comments, 'warning', basetag,
-                                             "Moderate negative rotator")
+                    comments = commentinator(comments, 'warning', 
+                                                   basetag,
+                                                   "Moderate negative rotator")
                             
             if np.where(np.array(leg.rofrt[1:]) > 0.2) != np.array([]):
                 if np.where(np.array(leg.rofrt[1:]) > 0.325) != np.array([]):
-                    comments = commentinator(comments, 'warning', basetag,
-                                             "Fast positive rotator")
+                    comments = commentinator(comments, 'warning', 
+                                                   basetag,
+                                                   "Fast positive rotator")
                 else:
-                    comments = commentinator(comments, 'warning', basetag,
-                                         "Moderate positive rotator")
+                    comments = commentinator(comments, 'warning', 
+                                                   basetag,
+                                                   "Moderate positive rotator")
 
             # Check up on the heading changes combined with ROF rates
             #   degrees/step; not time units yet
@@ -80,18 +90,20 @@ def autoReview(flight, clear=True):
             comborate = np.array(leg.rofrt[1:]) + thr
             if np.where(thr >= 0.2) != np.array([]):
                 comments = commentinator(comments, 'warning', basetag,
-                                         "Fast positive heading changes")
+                                               "Fast positive heading changes")
 
             if np.where(thr <= -0.2) != np.array([]):
                 comments = commentinator(comments, 'warning', basetag,
-                                         "Fast negative heading changes")
+                                               "Fast negative heading changes")
 
             if np.where(comborate >= 0.325) != np.array([]):
                 ntag = "Fast combined positive (ROF + THdg) rotator"
-                comments = commentinator(comments, 'warning', basetag, ntag)
+                comments = commentinator(comments, 'warning', 
+                                               basetag, ntag)
                 
             if np.where(comborate <= -0.325) != np.array([]):
                 ntag = "Fast combined negative (ROF + THdg) rotator"
-                comments = commentinator(comments, 'warning', basetag, ntag)
+                comments = commentinator(comments, 'warning', 
+                                               basetag, ntag)
     
     return comments
