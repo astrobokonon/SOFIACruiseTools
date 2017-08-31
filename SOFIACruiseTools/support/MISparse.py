@@ -16,9 +16,6 @@ import numpy as np
 import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
-#import autoreview as ar
-#from . import autoreview as ar
-
 
 def go_dt(var):
     return timedelta(seconds=var)
@@ -943,5 +940,3 @@ def computeHash(infile):
 if __name__ == "__main__":
     infile = '../../inputs/07_201705_HA_EZRA_WX12.mis'
     flight = parseMIS(infile, summarize=True)
-    ar.autoReview(flight)
-

@@ -7,8 +7,6 @@ Created on Tue Aug 29 11:37:09 2017
 """
 
 import numpy as np
-#from . import MISparse as fpmis
-#from MISparse import flightcomments, commentinator
 from .MISparse import flightcomments, commentinator
 
 

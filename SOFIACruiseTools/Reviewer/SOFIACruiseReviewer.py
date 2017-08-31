@@ -55,6 +55,12 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         
         # Autoreview/clear review
         self.pushButtonAutoReview.clicked.connect(self.autoReviewSelected)
+        
+        #
+        # Need an update event for each textEdit box to update them
+        #  will focus work if you go right from typing to click a button?
+        #
+        #
 
         # Generate a list of the available signals
 #        metaobject = self.tableWidgetFlightBasics.metaObject()
@@ -64,6 +70,7 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
 
         # Create the review class
         self.seReview = fpmis.seriesreview()
+        self.seReview.flights = {}
         self.setSeriesTitle()
         self.setUserName()
 
@@ -191,11 +198,14 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         The class (seriesreview in MISparse) is a nested framework.
         Go look there.
         """
-        #
-        # WARNING THIS WILL CLEAR ALL COMMENTS ALREADY SUBMITTED
-        #
-        # Clear out the old crud
+        # Save the old contents since we may have parsed some stuff or 
+        #   commented on some stuff already
+        oldFlights = self.seReview.flights
+        oldHashes = oldFlights.keys()
+
+        # Create a new fresh dict
         self.seReview.flights = {}
+
         self.tableWidgetFlightBasics.setRowCount(0)
         # Note the order here is the order it'll show in the table
         labs = ['Filename', 'Fancy Name', 'Takeoff', 'Duration',
@@ -210,7 +220,11 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
             try:
                 # Parse the flight here
                 cflight = fpmis.parseMIS(each)
-                self.seReview.flights.update({cflight.hash: cflight})
+                if cflight.hash in oldHashes:
+                    self.seReview.flights.update({cflight.hash: 
+                                                  oldFlights[cflight.hash]})
+                else:
+                    self.seReview.flights.update({cflight.hash: cflight})
                 print("Success!")
 
                 # Now fill in the table
