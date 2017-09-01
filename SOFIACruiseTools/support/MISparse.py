@@ -17,6 +17,26 @@ import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
 
+def sortByDate(inlist):
+    """
+    Given a random stupid list of flight plans, return the order that
+    provides a date-ordered sequence because of course this is something
+    that has to be done by hand after the fact
+    """
+
+    seq = []
+    for i, each in enumerate(inlist):
+        # Lightly parse each flight (just reads the preamble)
+        #   Putting the last 3 returns of MISlightly into the _ junk var
+        flight, _, _, _ = parseMISlightly(each)
+        seq.append(flight.takeoff)
+
+    # Sort by takeoff time (flight.takeoff is a datetime obj!)
+    newseq = np.argsort(seq)
+
+    return newseq
+
+
 def go_dt(var):
     return timedelta(seconds=var)
 

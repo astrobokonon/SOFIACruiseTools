@@ -24,6 +24,46 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
+       <item row="3" column="3">
+        <widget class="QPushButton" name="pushButtonRemoveFlight">
+         <property name="text">
+          <string>Remove Selected</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="4">
+        <widget class="QLabel" name="labelSeriesFlightList">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Series Overview</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="4">
+        <widget class="DragDropTable" name="tableWidgetFlightBasics">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>100</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QPushButton" name="pushButtonAddFlight">
+         <property name="text">
+          <string>Add Flight(s)</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0" colspan="4">
         <widget class="QWidget" name="widget" native="true">
          <layout class="QGridLayout" name="gridLayout_6">
@@ -45,16 +85,6 @@
           </item>
           <item row="0" column="4">
            <widget class="QLineEdit" name="lineEditSeriesTitle"/>
-          </item>
-          <item row="0" column="6">
-           <widget class="QCheckBox" name="checkBoxAutosortFlights">
-            <property name="text">
-             <string>Autosort Flight Dates</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
           </item>
           <item row="0" column="2">
            <spacer name="horizontalSpacer">
@@ -98,57 +128,23 @@
          </layout>
         </widget>
        </item>
-       <item row="3" column="3">
-        <widget class="QPushButton" name="pushButtonRemoveFlight">
-         <property name="text">
-          <string>Remove Selected</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="4">
-        <widget class="QLabel" name="labelSeriesFlightList">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Series Overview</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="4">
-        <widget class="DragDropTable" name="tableWidgetFlightBasics">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>100</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QPushButton" name="pushButtonAddFlight">
-         <property name="text">
-          <string>Add Flight(s)</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
-        <widget class="QPushButton" name="pushButtonMoveUp">
+        <widget class="QCheckBox" name="checkBoxAutosortFlights">
          <property name="text">
-          <string>Move Up</string>
+          <string>Autosort Flight Dates</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="QPushButton" name="pushButtonMoveDown">
+        <widget class="QCheckBox" name="checkBoxAutoAutoReview">
          <property name="text">
-          <string>Move Down</string>
+          <string>Automatic Auto Review</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -226,16 +222,16 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QTextEdit" name="textEditNotes"/>
+            <widget class="QPlainTextEdit" name="plainTextEditNotes"/>
            </item>
            <item row="1" column="1">
-            <widget class="QTextEdit" name="textEditWarnings"/>
+            <widget class="QPlainTextEdit" name="plainTextEditWarnings"/>
            </item>
            <item row="2" column="1">
-            <widget class="QTextEdit" name="textEditErrors"/>
+            <widget class="QPlainTextEdit" name="plainTextEditErrors"/>
            </item>
            <item row="3" column="1">
-            <widget class="QTextEdit" name="textEditTips"/>
+            <widget class="QPlainTextEdit" name="plainTextEditTips"/>
            </item>
           </layout>
          </widget>

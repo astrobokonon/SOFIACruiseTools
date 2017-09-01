@@ -56,23 +56,27 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         # Autoreview/clear review
         self.pushButtonAutoReview.clicked.connect(self.autoReviewSelected)
         
+        # Catch events from plainTextEdit boxes being changed by the user
         #
-        # Need an update event for each textEdit box to update them
-        #  will focus work if you go right from typing to click a button?
+        # NOTE: This signal sucks and triggers on each and every character
         #
-        #
+        self.plainTextEditWarnings.textChanged.connect(self.updateCommentBoxes)
 
         # Generate a list of the available signals
-#        metaobject = self.tableWidgetFlightBasics.metaObject()
-#        for i in range(metaobject.methodCount()):
-#            mobm = metaobject.method(i)
-#            print(mobm.methodSignature())
+        metaobject = self.plainTextEditNotes.metaObject()
+        for i in range(metaobject.methodCount()):
+            mobm = metaobject.method(i)
+            print(mobm.methodSignature())
 
         # Create the review class
         self.seReview = fpmis.seriesreview()
         self.seReview.flights = {}
         self.setSeriesTitle()
         self.setUserName()
+
+    def updateCommentBoxes(self):
+        print("Box updated!")
+        pass
 
     def autoReviewSelected(self):
         # The TableWidget is set with row selection only, so this will always
@@ -92,10 +96,10 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
 
     def fillReviewBoxes(self):
         # Clear the boxes of their former contents
-        self.textEditNotes.clear()
-        self.textEditWarnings.clear()
-        self.textEditErrors.clear()
-        self.textEditTips.clear()
+        self.plainTextEditNotes.clear()
+        self.plainTextEditWarnings.clear()
+        self.plainTextEditErrors.clear()
+        self.plainTextEditTips.clear()
         
         # The TableWidget is set with row selection only, so this will always
         #   have length = 1 (but still is a list)
@@ -107,19 +111,19 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         
         # Notes
         for each in self.seReview.flights[selHash].reviewComments.notes:
-            self.textEditNotes.append(each)
+            self.plainTextEditNotes.appendPlainText(each)
         
         # Warnings
         for each in self.seReview.flights[selHash].reviewComments.warnings:
-            self.textEditWarnings.append(each)
+            self.plainTextEditWarnings.appendPlainText(each)
                     
         # Errors
         for each in self.seReview.flights[selHash].reviewComments.errors:
-            self.textEditErrors.append(each)
+            self.plainTextEditErrors.appendPlainText(each)
         
         # Tips
         for each in self.seReview.flights[selHash].reviewComments.tips:
-            self.textEditTips.append(each)
+            self.plainTextEditTips.appendPlainText(each)
 
     def selectFlight(self):
         # The TableWidget is set with row selection only, so this will always
@@ -224,6 +228,10 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
                     self.seReview.flights.update({cflight.hash: 
                                                   oldFlights[cflight.hash]})
                 else:
+                    # If Auto auto review is on, do it.
+                    if self.checkBoxAutoAutoReview.isChecked() is True:
+                        coms = fpmis.autoReview(cflight)
+                        cflight.reviewComments = coms
                     self.seReview.flights.update({cflight.hash: cflight})
                 print("Success!")
 
@@ -277,7 +285,11 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         print(self.listoflights)
         print("=====")
 
-        # Need to only update what is needed.
+        # Reorder them by date if desired
+        if self.checkBoxAutosortFlights.isChecked() is True:
+            rord = fpmis.sortByDate(self.listoflights)
+            self.listoflights = np.array(self.listoflights)[rord]
+        
         self.parseFlightList()
 
     def removeFlightFromList(self):
