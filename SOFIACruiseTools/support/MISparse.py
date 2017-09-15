@@ -77,23 +77,52 @@ class flightcomments(object):
         self.rating = ''
 
 
-class flightreview(object):
-    """
-    In work. Might change the layout.
-    """
-    def __init__(self):
-        self.hash = ''
-        self.flights = {}
-
-
 class seriesreview(object):
     """
-    So. Meta.
+
     """
     def __init__(self):
         self.seriesname = ''
         self.reviewername = ''
-        self.review = flightreview()
+        self.flights = {}
+        self.summary = ''
+        
+    def summarize(self):
+        self.progs = {}
+        flighthashes = self.flights.keys()
+        for fhash in flighthashes:
+            flight = self.flights[fhash]
+            for eachleg in flight.legs:
+                if eachleg.legtype == "Observing":
+                    # Group in an obsplan by target name to catch obs
+                    #   that are split across multiple flights
+                    bundle = {eachleg.target: [[str(flight.takeoff.date()),
+                                               str(eachleg.obsdur)]]}
+                    # Check to see if the obsplan already has targets in
+                    #   the series; if so, append to that so we don't lose any
+                    
+                    if eachleg.obsplan in self.progs.keys():
+#                        print("obsplan %s already here" % (eachleg.obsplan))
+                        # Check to see if this target has any other obs
+                        targsinprog = self.progs[eachleg.obsplan].keys()
+#                        print(targsinprog)
+
+                        # Still need to catch case differences ?
+                        if eachleg.target in targsinprog:
+#                            print("")
+#                            print("another obs of target %s" % eachleg.target)
+                            # Need to use atarg here because that was the 
+                            #   one already stored and it'll have the correct
+                            #   case!
+                            sht = self.progs[eachleg.obsplan][eachleg.target]
+                            sht.append(bundle[eachleg.target][0])
+#                            print("")
+                        else:
+#                            print("target %s isn't here yet" % (eachleg.target))
+                            self.progs[eachleg.obsplan].update(bundle)
+                    else:
+                        self.progs.update({eachleg.obsplan: bundle})                    
+#        print(self.progs)
 
 
 class nonsiderial(object):
@@ -949,7 +978,7 @@ def computeHash(infile):
     Given an input file, compute and return the sha1() hash of it so
     it can be used as an associative key for other purposes/programs.
 
-    Using sha1() for now because it's trivial, but anything in hashlib will do!
+    Using sha1() for now because it's trivial.  Anything in hashlib will do!
     """
     f = open(infile, 'rb')
     buffer = f.read()
@@ -960,3 +989,8 @@ def computeHash(infile):
 if __name__ == "__main__":
     infile = '../../inputs/07_201705_HA_EZRA_WX12.mis'
     flight = parseMIS(infile, summarize=True)
+    # In the given flight, go leg by leg and collect the stuff
+
+    seReview = seriesreview()
+    seReview.flights.update({flight.hash: flight})
+    seReview.summarize()

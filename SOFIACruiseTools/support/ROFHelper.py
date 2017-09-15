@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import MISparse as fpmis
 
 
-infile = '/SalusaSecundus/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX12.mis'
+#infile = '/SalusaSecundus/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX12.mis'
+infile = '/Users/rhamilton/Research/HAWC/201705/Flights/WXed/02_201705_HA_EAMES_WX12.mis'
 
 # Read the .mis into a helpful class
 flight = fpmis.parseMIS(infile, summarize=True)

@@ -270,6 +270,21 @@ class SOFIACruiseReviewerApp(QMainWindow, panel.Ui_MainWindow):
         hhead = self.tableWidgetFlightBasics.horizontalHeader()
         hhead.setSectionResizeMode(QHeaderView.Stretch)
 
+        self.printSeriesSummary()
+
+    def printSeriesSummary(self):
+        self.seReview.summarize()
+        sprogs = list(self.seReview.progs.keys())
+        sprogs = sorted(sprogs)
+        for prog in sprogs:
+            print("%s ---" % (prog))
+            # Even though self.seReview.progs[prog] is a dict, the for-each
+            #   loop will make an iterable so we can just jump into it
+            for targ in self.seReview.progs[prog]:
+                print("\t%s ---" % (targ))
+                for i, sobs in enumerate(self.seReview.progs[prog][targ]):
+                    print("\t\t%s, %s" % (sobs[0], sobs[1]))
+
     def addFlightToList(self):
         tstr = "Load SOFIA Flight Plan"
         filt = "MIS (*.mis);;FSR (*.fsr)"

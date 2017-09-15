@@ -26,7 +26,7 @@ def autoReview(flight, clear=True):
         comments = flightcomments()
     
     for leg in flight.legs:
-        print("Leg %02i, %s %s" % (leg.legno, leg.legtype, leg.target))
+#        print("Leg %02i, %s %s" % (leg.legno, leg.legtype, leg.target))
         # We only care about the observing legs
         if leg.legtype == 'Observing':
             basetag = "* Leg %02i: " % (leg.legno)
