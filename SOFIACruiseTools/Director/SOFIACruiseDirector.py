@@ -432,7 +432,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                                 defaultname)[0]
         if self.outputname != '':
             self.txt_logoutputname.setText("Writing to: " +
-                                           basename(str(self.outputname)))[0]
+                                           basename(str(self.outputname)))
 
     def selectLogOutputFile(self):
         """
@@ -681,7 +681,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         # Disable fun stuff while we update
         self.table_datalog.setSortingEnabled(False)
-        self.table_datalog.horizontalHeader().setMovable(False)
+        self.table_datalog.horizontalHeader().setSectionsMovable(False)
         self.table_datalog.horizontalHeader().setDragEnabled(False)
         self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
 
@@ -736,7 +736,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 #        self.table_datalog.setSortingEnabled(True)
 
         # Reenable fun stuff
-        self.table_datalog.horizontalHeader().setMovable(True)
+        self.table_datalog.horizontalHeader().setSectionsMovable(True)
         self.table_datalog.horizontalHeader().setDragEnabled(True)
         self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
@@ -826,7 +826,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if len(self.datanew) != 0:
             # Disable fun stuff while we update
             self.table_datalog.setSortingEnabled(False)
-            self.table_datalog.horizontalHeader().setMovable(False)
+            self.table_datalog.horizontalHeader().setSectionsMovable(False)
             self.table_datalog.horizontalHeader().setDragEnabled(False)
             self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
 
@@ -849,7 +849,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 #            self.table_datalog.setSortingEnabled(True)
 
             # Reenable fun stuff
-            self.table_datalog.horizontalHeader().setMovable(True)
+            self.table_datalog.horizontalHeader().setSectionsMovable(True)
             self.table_datalog.horizontalHeader().setDragEnabled(True)
             self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
