@@ -245,15 +245,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.logoutnme = ''
         self.headers = []
         self.fitshdu = 0
-#        self.instrument = 'FLITECAM'
-#        self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
-#                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
-#                        'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
-#                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
-#                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
-#                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
-#                        'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
-#                        'missn-id', 'instcfg', 'instmode']
+        self.instrument = 'FLITECAM'
+        self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
+                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
+                        'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
+                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
+                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
+                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
+                        'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
+                        'missn-id', 'instcfg', 'instmode']
 
         # HAWC instrument name and headers
         # Use HAWCFlight to support current SI file storage method
@@ -279,13 +279,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 #                        'utcstart', 'utcend',
 #                        'missn-id']
 
-        # FIFI-LS instrument name and headers
-        self.instrument = 'FIFI-LS'
-        self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
-                        "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
-                        "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
-                        "DLAM_MAP", "DBET_MAP", "DET_ANGL",
-                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
+#        # FIFI-LS instrument name and headers
+#        self.instrument = 'FIFI-LS'
+#        self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
+#                        "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
+#                        "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
+#                        "DLAM_MAP", "DBET_MAP", "DET_ANGL",
+#                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
 
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
@@ -432,7 +432,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                                 defaultname)[0]
         if self.outputname != '':
             self.txt_logoutputname.setText("Writing to: " +
-                                           basename(str(self.outputname)))[0]
+                                           basename(str(self.outputname)))
 
     def selectLogOutputFile(self):
         """
@@ -681,7 +681,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         # Disable fun stuff while we update
         self.table_datalog.setSortingEnabled(False)
-        self.table_datalog.horizontalHeader().setMovable(False)
+        self.table_datalog.horizontalHeader().setSectionsMovable(False)
         self.table_datalog.horizontalHeader().setDragEnabled(False)
         self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
 
@@ -736,7 +736,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 #        self.table_datalog.setSortingEnabled(True)
 
         # Reenable fun stuff
-        self.table_datalog.horizontalHeader().setMovable(True)
+        self.table_datalog.horizontalHeader().setSectionsMovable(True)
         self.table_datalog.horizontalHeader().setDragEnabled(True)
         self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
@@ -799,8 +799,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Capture the last row position so we know where to start
             self.lastdatarow = self.table_datalog.rowCount()
 
-            print("PreviousFileList:", bnpre)
-            print("CurrentFileList:", bncur)
+#            print("PreviousFileList:", bnpre)
+#            print("CurrentFileList:", bncur)
             # Actually query the files for the desired headers
             for idx in idxs:
                 # REMEMBER: THIS NEEDS TO REFERENCE THE ORIGINAL LIST!
@@ -826,7 +826,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if len(self.datanew) != 0:
             # Disable fun stuff while we update
             self.table_datalog.setSortingEnabled(False)
-            self.table_datalog.horizontalHeader().setMovable(False)
+            self.table_datalog.horizontalHeader().setSectionsMovable(False)
             self.table_datalog.horizontalHeader().setDragEnabled(False)
             self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
 
@@ -849,7 +849,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 #            self.table_datalog.setSortingEnabled(True)
 
             # Reenable fun stuff
-            self.table_datalog.horizontalHeader().setMovable(True)
+            self.table_datalog.horizontalHeader().setSectionsMovable(True)
             self.table_datalog.horizontalHeader().setDragEnabled(True)
             self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
