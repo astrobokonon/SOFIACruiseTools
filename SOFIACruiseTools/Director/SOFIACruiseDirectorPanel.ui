@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1101</width>
-    <height>830</height>
+    <width>1191</width>
+    <height>755</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -208,7 +208,7 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QCheckBox" name="set_landingFP">
+           <widget class="QCheckBox" name="set_landing_fp">
             <property name="text">
              <string>Set Landing from Plan</string>
             </property>
@@ -218,7 +218,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QCheckBox" name="set_takeoffFP">
+           <widget class="QCheckBox" name="set_takeoff_fp">
             <property name="text">
              <string>Set Takeoff from Plan</string>
             </property>
@@ -244,7 +244,7 @@
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="flightplan_filename">
+           <widget class="QLabel" name="flight_plan_filename">
             <property name="font">
              <font>
               <weight>75</weight>
@@ -260,7 +260,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QPushButton" name="flightplan_openfile">
+           <widget class="QPushButton" name="flight_plan_openfile">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -307,7 +307,7 @@
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QLabel" name="leg_rofrofrt">
+           <widget class="QLabel" name="leg_rof_rof_rate">
             <property name="text">
              <string/>
             </property>
@@ -327,7 +327,7 @@
            </widget>
           </item>
           <item row="5" column="1">
-           <widget class="QLabel" name="leg_obsblock">
+           <widget class="QLabel" name="leg_obs_block">
             <property name="text">
              <string/>
             </property>
@@ -391,7 +391,7 @@
            </widget>
           </item>
           <item row="5" column="0">
-           <widget class="QLabel" name="txt_obsplan">
+           <widget class="QLabel" name="txt_obs_plan">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -495,7 +495,7 @@
         </widget>
        </item>
        <item row="2" column="2">
-        <widget class="QPushButton" name="set_takeofflanding">
+        <widget class="QPushButton" name="set_takeoff_landing">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -545,7 +545,7 @@
     <item row="1" column="2">
      <widget class="QGroupBox" name="TimesWorld">
       <property name="title">
-       <string>World Times</string>
+       <string>World Times </string>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
@@ -565,7 +565,7 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="txt_localtime">
+        <widget class="QLabel" name="txt_local_time">
          <property name="font">
           <font>
            <family>Digital-7</family>
@@ -607,14 +607,14 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QPushButton" name="log_quick_onheading">
+            <widget class="QPushButton" name="log_quick_on_heading">
              <property name="text">
               <string>On Heading</string>
              </property>
             </widget>
            </item>
            <item row="0" column="2">
-            <widget class="QPushButton" name="log_quick_ontarget">
+            <widget class="QPushButton" name="log_quick_on_target">
              <property name="text">
               <string>On Target</string>
              </property>
@@ -628,14 +628,14 @@
             </widget>
            </item>
            <item row="0" column="4">
-            <widget class="QPushButton" name="log_quick_faultmccs">
+            <widget class="QPushButton" name="log_quick_fault_mccs">
              <property name="text">
               <string>MCCS Problem</string>
              </property>
             </widget>
            </item>
            <item row="0" column="5">
-            <widget class="QPushButton" name="log_quick_faultsi">
+            <widget class="QPushButton" name="log_quick_fault_si">
              <property name="text">
               <string>SI Problem</string>
              </property>
@@ -670,13 +670,13 @@
               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.Lucida Grande UI'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'.Lucida Grande UI';&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
            <item row="2" column="0" colspan="7">
-            <widget class="QLineEdit" name="log_inputline"/>
+            <widget class="QLineEdit" name="log_input_line"/>
            </item>
            <item row="2" column="7">
             <widget class="QPushButton" name="log_post">
@@ -692,7 +692,7 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item row="2" column="8">
-            <widget class="QLabel" name="txt_logoutputname">
+            <widget class="QLabel" name="txt_log_output_name">
              <property name="font">
               <font>
                <italic>true</italic>
@@ -717,7 +717,7 @@ p, li { white-space: pre-wrap; }
           </attribute>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="9" column="0" colspan="6">
-            <widget class="QTableWidget" name="table_datalog">
+            <widget class="QTableWidget" name="table_data_log">
              <property name="frameShape">
               <enum>QFrame::StyledPanel</enum>
              </property>
@@ -727,14 +727,14 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item row="0" column="0">
-            <widget class="QPushButton" name="datalog_opendir">
+            <widget class="QPushButton" name="data_log_open_dir">
              <property name="text">
               <string>Set Data Directory</string>
              </property>
             </widget>
            </item>
            <item row="0" column="1" colspan="3">
-            <widget class="QLabel" name="txt_datalogdir">
+            <widget class="QLabel" name="txt_data_log_dir">
              <property name="font">
               <font>
                <italic>true</italic>
@@ -746,7 +746,7 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item row="1" column="1" colspan="3">
-            <widget class="QLabel" name="txt_datalogsavefile">
+            <widget class="QLabel" name="txt_data_log_save_file">
              <property name="font">
               <font>
                <italic>true</italic>
@@ -758,7 +758,7 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item row="1" column="0">
-            <widget class="QPushButton" name="datalog_savefile">
+            <widget class="QPushButton" name="data_log_save_file">
              <property name="text">
               <string>Set Log Output File</string>
              </property>
@@ -768,35 +768,35 @@ p, li { white-space: pre-wrap; }
             <widget class="QWidget" name="widget_6" native="true">
              <layout class="QGridLayout" name="gridLayout_14">
               <item row="0" column="4">
-               <widget class="QPushButton" name="datalog_editkeywords">
+               <widget class="QPushButton" name="data_log_edit_keywords">
                 <property name="text">
                  <string>Edit Keywords ...</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QPushButton" name="datalog_forcewrite">
+               <widget class="QPushButton" name="data_log_force_write">
                 <property name="text">
                  <string>Force Write</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="2">
-               <widget class="QPushButton" name="datalog_addrow">
+               <widget class="QPushButton" name="data_log_add_row">
                 <property name="text">
                  <string>Add a Blank Row</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="3">
-               <widget class="QPushButton" name="datalog_deleterow">
+               <widget class="QPushButton" name="data_log_delete_row">
                 <property name="text">
                  <string>Remove Highlighted Row</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="0">
-               <widget class="QPushButton" name="datalog_forceupdate">
+               <widget class="QPushButton" name="data_log_force_update">
                 <property name="text">
                  <string>Force Update</string>
                 </property>
@@ -809,7 +809,7 @@ p, li { white-space: pre-wrap; }
             <widget class="QWidget" name="widget_5" native="true">
              <layout class="QGridLayout" name="gridLayout_12">
               <item row="1" column="3">
-               <widget class="QComboBox" name="datalog_instrumentselect">
+               <widget class="QComboBox" name="data_log_instrument_select">
                 <item>
                  <property name="text">
                   <string>HAWC+ (Flight)</string>
@@ -820,10 +820,25 @@ p, li { white-space: pre-wrap; }
                   <string>HAWC+ (Ground)</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>FORCAST</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>FLIGHTCAM</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>FIFI-LS</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QCheckBox" name="datalog_autoupdate">
+               <widget class="QCheckBox" name="data_log_autoupdate">
                 <property name="text">
                  <string>Autoupdate every:</string>
                 </property>
@@ -833,7 +848,7 @@ p, li { white-space: pre-wrap; }
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QLabel" name="txt_datalog_instrument">
+               <widget class="QLabel" name="txt_data_log_instrument">
                 <property name="text">
                  <string>Instrument:</string>
                 </property>
@@ -843,7 +858,7 @@ p, li { white-space: pre-wrap; }
                </widget>
               </item>
               <item row="0" column="3">
-               <widget class="QSpinBox" name="datalog_updateinterval">
+               <widget class="QSpinBox" name="data_log_update_interval">
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
                 </property>

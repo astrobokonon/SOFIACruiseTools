@@ -93,7 +93,7 @@ class seriesreview(object):
         for fhash in flighthashes:
             flight = self.flights[fhash]
             for eachleg in flight.legs:
-                if eachleg.legtype == "Observing":
+                if eachleg.leg_type == "Observing":
                     # Group in an obsplan by target name to catch obs
                     #   that are split across multiple flights
                     bundle = {eachleg.target: [[str(flight.takeoff.date()),
@@ -221,7 +221,7 @@ class legprofile(object):
 
     def __init__(self):
         self.legno = 0
-        self.legtype = ''
+        self.leg_type = ''
         self.target = ''
         self.nonsiderial = False
         self.start = ''
@@ -269,16 +269,16 @@ class legprofile(object):
         """
         txtSumm = ''
 
-        if self.legtype == 'Takeoff':
+        if self.leg_type == 'Takeoff':
             txtSumm = "%02d -- %s" %\
-                         (self.legno, self.legtype)
-        elif self.legtype == 'Landing':
+                         (self.legno, self.leg_type)
+        elif self.leg_type == 'Landing':
             txtSumm = "%02d -- %s" %\
-                         (self.legno, self.legtype)
-        elif self.legtype == 'Other':
+                         (self.legno, self.leg_type)
+        elif self.leg_type == 'Other':
             txtSumm = "%02d -- %s" %\
-                         (self.legno, self.legtype)
-        elif self.legtype == 'Observing':
+                         (self.legno, self.leg_type)
+        elif self.leg_type == 'Observing':
             txtSumm = "%02d -- %s, RA: %s, Dec: %s, LegDur: %s, ObsDur: %s" %\
                        (self.legno, self.target, self.ra, self.dec,
                         str(self.duration),
@@ -701,12 +701,12 @@ def parseLegMetadata(i, words, ltype=None):
     # Now we begin the itterative approach to parsing (with some help)
     if ltype == 'Takeoff':
         newleg.target = 'Takeoff'
-        newleg.legtype = 'Takeoff'
+        newleg.leg_type = 'Takeoff'
         newleg.obsblk = 'None'
         return newleg
     elif ltype == 'Landing':
         newleg.target = 'Landing'
-        newleg.legtype = 'Landing'
+        newleg.leg_type = 'Landing'
         newleg.obsblk = 'None'
         return newleg
     else:
@@ -716,7 +716,7 @@ def parseLegMetadata(i, words, ltype=None):
                           keytype='key+nextkey')
         if target is None:
             target = 'Undefined'
-            newleg.legtype = 'Other'
+            newleg.leg_type = 'Other'
         else:
             target = isItBlankOrNot(target.groups()[1])
 #            target = target.groups()[1].split(':')[1].strip()
@@ -725,7 +725,7 @@ def parseLegMetadata(i, words, ltype=None):
 #            newleg.target = target
             # Added this to help with exporting to confluence down the line
             newleg.target = target.replace('[', '').replace(']', '')
-            newleg.legtype = 'Observing'
+            newleg.leg_type = 'Observing'
 
             odur = regExper(words, 'Obs Dur', howmany=1, keytype='key:val')
             newleg.obsdur = keyValuePairTD(odur.group(), "Obs Dur")
