@@ -827,12 +827,22 @@ p, li { white-space: pre-wrap; }
                 </item>
                 <item>
                  <property name="text">
-                  <string>FLIGHTCAM</string>
+                  <string>FLITECAM</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
                   <string>FIFI-LS</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>EXES</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>GREAT</string>
                  </property>
                 </item>
                </widget>

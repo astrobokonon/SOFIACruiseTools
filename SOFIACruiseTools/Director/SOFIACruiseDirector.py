@@ -99,6 +99,20 @@ def header_dict(infile, headerlist, HDU=0):
 
     return item
 
+#class instrumentWarning(QtWidgets.QDialog,fkwp.Ui_instrumentDialog):
+#    '''
+#    A popup to warn that changing the instrument clears the data log
+#    '''
+#    def __init__(self,parent=None):
+#        self.setupUi(self)
+#        
+#        # Connect the buttons
+#        self.acceptance.clicked.connect(self.record_result)
+#
+#    
+#    def record_result():
+#        self.result = 
+        
 
 class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     """
@@ -262,6 +276,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.log_outname = ''
         self.headers = []
         self.fits_hdu = 0
+
+        # Set the default instrument and FITS headers
+        self.last_instrument_index = -1
+        self.select_instrument(0)
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
         # The addition of the NOTES column happens in here
@@ -318,9 +336,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_log_delete_row.clicked.connect(self.del_data_log_row)
 
         # Instrument selection
-        #self.data_log_instrument_select.activated.connect(self.inst)
-        #self.data_log_instrument_select.currentIndexChanged.connect(self.instrument)
-        self.data_log_instrument_select.activated[str].connect(self.select_inst)
+        self.data_log_instrument_select.activated.connect(self.select_instrument)
         #self.connect(self.data_log_instrument_select,
         #            QtCore.SIGNAL('activated(QString)'),
         #            self.instrument)
@@ -334,18 +350,49 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.show_lcd()
 
-    def select_inst(self,text):
-        if text in ['FLITECAM','FIFI-LS','FORECAST']:
-            self.instrument = text
-            key = text.lower()
-        elif 'HAWC' in text:
+    def select_instrument(self,index):
+        """
+        Sets the instrument and default FITS headers
+
+        Controlled by the instrument selector on the data log tab. 
+        When a new instrument is selected, the current instrument is
+        changed to it, default headers are selected, and the data log 
+        table is remade. This deletes the current data log table, so
+        a dialog box is presented to warn the user and ensure they want 
+        to proceed with changing the instrument.
+        """
+
+        # Check to see if the selection is a different instrument
+        if index==self.last_instrument_index:
+            return
+        
+        text = self.data_log_instrument_select.itemText(index)
+
+        # Check if the table is populated
+        if self.table_data_log.rowCount()>0:
+            # Changing headers clears the table, inform user
+            choice = QtWidgets.QMessageBox.question(self,'Warning',
+                    'Warning!\nChanging the instrument will clear the log!\n'\
+                    'Continue?', QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
+            # If the user says to not continue thus keeping the data log,   
+            # reset the selector to the current instrument
+            if choice==QtWidgets.QMessageBox.No:
+                self.data_log_instrument_select.setCurrentIndex(
+                                                self.last_instrument_index)
+                nItems = self.data_log_instrument_select.count()
+                return
+            
+        # Set the current instrument name and last_instrument_index
+        if 'HAWC' in text:
+            # Use HAWCFlight to support current SI file storage method
             self.instrument = 'HAWCFlight'
             key = 'hawc'
-        
-        
-            
-        self.instrument = text
-        self.instrument = 'FLITECAM'
+        else:
+            self.instrument = text
+            key = text.lower()
+        self.last_instrument_index = index
+
+        # Default headers for each instrument
         flitecam_headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
                             'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
                             'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
@@ -354,11 +401,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                             'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
                             'telvpa', 'BBMODE', 'CBMODE', 'BGRESETS', 'GRSTCNT',
                             'missn-id', 'instcfg', 'instmode']
-
-        # HAWC instrument name and headers
-        # Use HAWCFlight to support current SI file storage method
-        self.instrument = 'HAWC'
-        self.instrument = 'HAWCFlight'
+        great_headers = list(flitecam_headers)
+        exes_headers = list(flitecam_headers)
         hawc_headers = ['date-obs', 'object', 'mccsmode',
                         'spectel1', 'spectel2',
                         'instcfg', 'instmode', 'obsmode', 'scnpatt',
@@ -378,23 +422,33 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                         'za_start', 'za_end', 'focus_st', 'focus_en',
                         'utcstart', 'utcend',
                         'missn-id']
-
-        # FIFI-LS instrument name and headers
-        self.instrument = 'FIFI-LS'
         fifi_headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
                         "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
                         "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
                         "DLAM_MAP", "DBET_MAP", "DET_ANGL",
                         "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
 
+        # Build a dictionary of default headers for each instrument
         headers = {}
-        headers['flite'] = flitecam_headers
+        headers['flitecam'] = flitecam_headers
+        headers['great'] = great_headers
+        headers['exes'] = exes_headers
         headers['hawc'] = hawc_headers
-        headers['fifi'] = fifi_headers
-        
+        headers['fifi-ls'] = fifi_headers
+        headers['forcast'] = flitecam_headers
         self.headers = headers[key]
-    
-        print(self.instrument,self.headers)
+
+        # Update the data_log headers
+        # Things are easier if the keywords are always in CAPS
+        self.headers = [each.upper() for each in self.headers]
+
+        # The addition of the NOTES column happens in here
+        # Remake the data log table
+        self.update_table_cols()
+        self.table_data_log.resizeColumnsToContents()
+        self.table_data_log.resizeRowsToContents()
+
+   
 
     def spawn_kw_window(self):
         '''
@@ -425,8 +479,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         spamkwwindow function.
 
         Sets:
-            table_datalog
+            table_data_log
         '''
+
+        # Get the size of the current table
+        cols = self.table_data_log.columnCount()
+        rows = self.table_data_log.rowCount()
+
+        # Clear the table
+        self.table_data_log.setColumnCount(0)
+        self.table_data_log.setRowCount(0)
 
         # This always puts the NOTES col. right next to the filename
         self.table_data_log.insertColumn(0)
