@@ -592,7 +592,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="directorLogTab">
           <attribute name="title">
@@ -600,49 +600,49 @@
           </attribute>
           <layout class="QGridLayout" name="gridLayout_10">
            <item row="0" column="0">
-            <widget class="QPushButton" name="log_quick_takeoff">
+            <widget class="QPushButton" name="log_takeoff">
              <property name="text">
               <string>Takeoff</string>
              </property>
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QPushButton" name="log_quick_on_heading">
+            <widget class="QPushButton" name="log_on_heading">
              <property name="text">
               <string>On Heading</string>
              </property>
             </widget>
            </item>
            <item row="0" column="2">
-            <widget class="QPushButton" name="log_quick_on_target">
+            <widget class="QPushButton" name="log_on_target">
              <property name="text">
               <string>On Target</string>
              </property>
             </widget>
            </item>
            <item row="0" column="3">
-            <widget class="QPushButton" name="log_quick_turning">
+            <widget class="QPushButton" name="log_turning">
              <property name="text">
               <string>Turning</string>
              </property>
             </widget>
            </item>
            <item row="0" column="4">
-            <widget class="QPushButton" name="log_quick_fault_mccs">
+            <widget class="QPushButton" name="log_fault_mccs">
              <property name="text">
               <string>MCCS Problem</string>
              </property>
             </widget>
            </item>
            <item row="0" column="5">
-            <widget class="QPushButton" name="log_quick_fault_si">
+            <widget class="QPushButton" name="log_fault_si">
              <property name="text">
               <string>SI Problem</string>
              </property>
             </widget>
            </item>
            <item row="0" column="6" colspan="2">
-            <widget class="QPushButton" name="log_quick_landing">
+            <widget class="QPushButton" name="log_landing">
              <property name="text">
               <string>Landing</string>
              </property>
