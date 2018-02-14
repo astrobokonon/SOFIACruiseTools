@@ -592,7 +592,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="directorLogTab">
           <attribute name="title">
@@ -827,22 +827,12 @@ p, li { white-space: pre-wrap; }
                 </item>
                 <item>
                  <property name="text">
-                  <string>FLITECAM</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
                   <string>FIFI-LS</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
                   <string>EXES</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>GREAT</string>
                  </property>
                 </item>
                </widget>

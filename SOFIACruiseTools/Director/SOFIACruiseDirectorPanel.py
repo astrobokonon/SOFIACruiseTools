@@ -446,8 +446,6 @@ class Ui_MainWindow(object):
         self.data_log_instrument_select.addItem("")
         self.data_log_instrument_select.addItem("")
         self.data_log_instrument_select.addItem("")
-        self.data_log_instrument_select.addItem("")
-        self.data_log_instrument_select.addItem("")
         self.gridLayout_12.addWidget(self.data_log_instrument_select, 1, 3, 1, 1)
         self.data_log_autoupdate = QtWidgets.QCheckBox(self.widget_5)
         self.data_log_autoupdate.setChecked(True)
@@ -469,7 +467,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -540,10 +538,8 @@ class Ui_MainWindow(object):
         self.data_log_instrument_select.setItemText(0, _translate("MainWindow", "HAWC+ (Flight)"))
         self.data_log_instrument_select.setItemText(1, _translate("MainWindow", "HAWC+ (Ground)"))
         self.data_log_instrument_select.setItemText(2, _translate("MainWindow", "FORCAST"))
-        self.data_log_instrument_select.setItemText(3, _translate("MainWindow", "FLITECAM"))
-        self.data_log_instrument_select.setItemText(4, _translate("MainWindow", "FIFI-LS"))
-        self.data_log_instrument_select.setItemText(5, _translate("MainWindow", "EXES"))
-        self.data_log_instrument_select.setItemText(6, _translate("MainWindow", "GREAT"))
+        self.data_log_instrument_select.setItemText(3, _translate("MainWindow", "FIFI-LS"))
+        self.data_log_instrument_select.setItemText(4, _translate("MainWindow", "EXES"))
         self.data_log_autoupdate.setText(_translate("MainWindow", "Autoupdate every:"))
         self.txt_data_log_instrument.setText(_translate("MainWindow", "Instrument:"))
         self.data_log_update_interval.setSuffix(_translate("MainWindow", " seconds"))
