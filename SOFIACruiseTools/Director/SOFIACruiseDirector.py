@@ -76,6 +76,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_date_time_edit_boxes()
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
+        self.data = FITSheader()
+
         # Is a list really the best way of handling this? Don't know yet.
         self.cruise_log = []
         self.start_data_log = False
@@ -101,8 +103,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Actually show the table
         self.table_data_log.show()
-
-
 
         ####
         # Set up buttons
@@ -373,8 +373,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if key in messages.keys():
             self.line_stamper(messages[key])
         elif key=='post':
-            line = self.log_input_line.text()
-            self.line_stamper(line)
+            self.line_stamper(self.log_input_line.text())
             # Clear the line
             self.log_input_line.setText('')
         else:
@@ -768,6 +767,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
 
         # Resize to minimum required, then display
+        self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
 
         # Seems to be more trouble than it's worth, so keep this commented
@@ -804,6 +804,86 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         print('\tFrom FITS: {0:s} = {1} ({2})'.format(hkey,val,type(val)))
         return val
 
+    def update_data(self):
+        """
+        Updates the data
+        
+        Reads in new FITS files and adds them to the header_vals
+        """
+         # Get the current list of FITS files in the location
+        if self.instrument == 'HAWCFlight':
+            self.data_current = glob.glob(str(self.data_log_dir)+'/*.grabme')
+        elif self.instrument == 'FIFI-LS':
+            cur_data = []
+            for root, dir_names, filenames in walk(str(self.data_log_dir)):
+                for filename in fnmatch.filter(filenames,'*.fits'):
+                    cur_data.append(join(root, filename))
+            self.data_current = cur_data
+        else:
+            self.data_current = glob.glob(str(self.data_log_dir) + '/*.fits')
+        bncur = [basename(x) for x in self.data_current]
+
+        # Correct the file listing to be ordered by modification time
+        self.data_current.sort(key=getmtime)
+
+        if self.instrument == 'HAWCFlight':
+            bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
+        else:
+            bnpre = [basename(x) for x in self.data_filenames]
+        
+        new_files = set(bncur) - set(bnpre)
+        for fname in new_files:
+            self.data.add_image(fname,self.headers,HDU=self.fits_hdu)
+            self.data_filenames.append(fname)
+        
+        # If new files exist, update the table widget and 
+        # write the new data to file    
+        if len(new_files)>0:
+            self.update_table()
+            self.data.write_data_to_file(self.log_out_name,self.headers)
+        
+
+    def update_table():
+        """
+        Updates the table widget
+        """
+
+        # Disable table features during alteration
+        self.table_data_log.setSortingEnabled(False)
+        self.table_data_log.horizontalHeader().setSectionsMovable(False)
+        self.table_data_log.horizontalHeader().setDragEnabled(False)
+        self.table_data_log.horizontalHeader().setDragDropMode(
+                                QtWidgets.QAbstractItemView.NoDragDrop)
+
+        # Get the number of rows to add
+        n_new_rows = len(self.data) - self.table_data_log.rowCount()
+        # Add rows to the table
+        row_position = self.table_data_log.rowCount()
+        self.table_data_log.insertRow(row_position)
+        
+        # Set the row labels
+        self.table_data_log.setVerticalHeaderLabels(self.data.keys())
+        
+        # Add the data to the table
+        for n,row in enumerate(self.data):
+            for m,(key,val) in enumerate(row.items()):
+                item = QtWidgets.QTableWidgetItem(str(val))
+                self.table_data_log.setItem(n+row_position,
+                                            m+1,item)
+                
+        self.table_data_log.resizeColumnsToContents()
+        self.table_data_log.resizeRowsToContents()
+
+        # Reenable features
+        self.table_data_log.horizontalHeader().setSectionsMovable(True)
+        self.table_data_log.horizontalHeader().setDragEnabled(True)
+        self.table_data_log.horizontalHeader().setDragDropMode(
+                                QtWidgets.QAbstractItemView.InternalMove)
+        self.table_data_log.show()
+        
+        self.table_data_log.scrollToBottom()
+        
+    
     def update_data_log(self):
         """
         Updates the Data Log.
@@ -905,6 +985,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                m + 1, new_item)
 
             # Resize to minimum required, then display
+            self.table_data_log.resizeColumnsToContents()
             self.table_data_log.resizeRowsToContents()
 
             # Seems to be more trouble than it's worth, so keep this commented
@@ -1267,6 +1348,61 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
             ched = self.fitskw_listing.item(j).text()
             self.headers.append(str(ched))
         self.headers = [hlab.upper() for hlab in self.headers]
+
+
+class FITSheader():
+    """
+    Oversees the data structure that holds FITS headers
+    """
+
+    def __init__(self):
+        
+        header_vals = {}
+
+    def add_image(self,infile,hkeys,HDU=0):
+        """
+        Adds FITS header to data structure
+
+        Opens the FITS file given by infile and selects out the
+        headers contained in headers. Adds these values to 
+        header_vals
+        """
+        try:
+            # Read in header from FITS
+            head = pyf.getheader(infile,ext=HDU)
+            # Select out the keywords of interest
+            head = {key: head[key] for key in hkeys}
+        except IOError:
+            # Could not read file, return empty dictionary
+            head = {key: '' for key in hkeys}
+        # Add to data structure with the filename as key
+        header_vals[basename(infile)] = head
+        
+
+    def remove_image(self,infile):
+        """
+        Removes an observation form the data set
+        """
+        try:
+            del self.header_vals[infile]
+        except KeyError:
+            print('Unable to remove {0:s} from header_vals'.format(infile))
+
+    def write_to_file(self,outname,hkeys):
+        """
+        Writes data strucutre to outname
+        """
+        f = open(outname,'wb')
+        with open(outname,'wb') as f:
+            fields = ['Filename,Notes']+hkeys
+            w = csv.DictWriter(f,fields)
+            w.writeheader()
+            for k in header_vals:
+                row = {field: header_vals[k].get(field) or k 
+                        for field in fields}
+                w.writerow(row)
+            f.close()
+
 
 def header_list(infile, headerlist, HDU=0):
     """
