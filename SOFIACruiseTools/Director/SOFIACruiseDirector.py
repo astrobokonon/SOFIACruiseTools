@@ -77,6 +77,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
         self.data = FITSheader()
+        print(self.data.header_vals)
 
         # Is a list really the best way of handling this? Don't know yet.
         self.cruise_log = []
@@ -571,6 +572,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Since the times were converted to local elsewhere,
         we ditch the tzinfo to make everything naive to subtract easier.
         """
+
         # Update the current local/utc times before computing timedeltas
         self.update_times()
         # We set the takeoff time to be in local time, and we know the
@@ -659,7 +661,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if self.start_data_log is True and\
            self.data_log_autoupdate.isChecked() is True:
             if self.utc_now.second%self.data_log_update_interval.value() == 0:
-                self.update_data_log()
+                #self.update_data_log()
+                self.update_data()
 #                print self.datatable
 
     def add_data_log_row(self):
@@ -810,6 +813,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         
         Reads in new FITS files and adds them to the header_vals
         """
+        self.new_files = []
          # Get the current list of FITS files in the location
         if self.instrument == 'HAWCFlight':
             self.data_current = glob.glob(str(self.data_log_dir)+'/*.grabme')
@@ -833,17 +837,20 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         
         new_files = set(bncur) - set(bnpre)
         for fname in new_files:
-            self.data.add_image(fname,self.headers,HDU=self.fits_hdu)
+            filename = join(self.data_log_dir,fname)
+            self.data.add_image(filename,self.headers,HDU=self.fits_hdu)
             self.data_filenames.append(fname)
+            self.new_files.append(fname)
         
         # If new files exist, update the table widget and 
         # write the new data to file    
         if len(new_files)>0:
             self.update_table()
-            self.data.write_data_to_file(self.log_out_name,self.headers)
+            if self.log_out_name!='':
+                self.data.write_to_file(self.log_out_name,self.headers)
         
 
-    def update_table():
+    def update_table(self):
         """
         Updates the table widget
         """
@@ -855,22 +862,24 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setDragDropMode(
                                 QtWidgets.QAbstractItemView.NoDragDrop)
 
-        # Get the number of rows to add
-        n_new_rows = len(self.data) - self.table_data_log.rowCount()
-        # Add rows to the table
-        row_position = self.table_data_log.rowCount()
-        self.table_data_log.insertRow(row_position)
-        
-        # Set the row labels
-        self.table_data_log.setVerticalHeaderLabels(self.data.keys())
-        
         # Add the data to the table
-        for n,row in enumerate(self.data):
-            for m,(key,val) in enumerate(row.items()):
+        init_row_count = self.table_data_log.rowCount()
+        rows_to_add = len(self.new_files)
+        #for n,(file_key,row) in enumerate(self.data.header_vals.items()):
+        for n,file_key in enumerate(self.new_files):
+            row_count = self.table_data_log.rowCount()
+            self.table_data_log.insertRow(row_count)
+            #for m,(key,val) in enumerate(row.items()):
+            for m,key in enumerate(self.headers):
+                val = self.data.header_vals[file_key][key]
+                #val = row[key]
                 item = QtWidgets.QTableWidgetItem(str(val))
-                self.table_data_log.setItem(n+row_position,
+                self.table_data_log.setItem(row_count,
                                             m+1,item)
                 
+        # Set the row labels
+        self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
+
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
 
@@ -1357,7 +1366,7 @@ class FITSheader():
 
     def __init__(self):
         
-        header_vals = {}
+        self.header_vals = {}
 
     def add_image(self,infile,hkeys,HDU=0):
         """
@@ -1371,12 +1380,13 @@ class FITSheader():
             # Read in header from FITS
             head = pyf.getheader(infile,ext=HDU)
             # Select out the keywords of interest
-            head = {key: head[key] for key in hkeys}
+            head = {key: head[key] if key in head else ''
+                        for key in hkeys}
         except IOError:
             # Could not read file, return empty dictionary
             head = {key: '' for key in hkeys}
         # Add to data structure with the filename as key
-        header_vals[basename(infile)] = head
+        self.header_vals[basename(infile)] = head
         
 
     def remove_image(self,infile):
@@ -1397,8 +1407,8 @@ class FITSheader():
             fields = ['Filename,Notes']+hkeys
             w = csv.DictWriter(f,fields)
             w.writeheader()
-            for k in header_vals:
-                row = {field: header_vals[k].get(field) or k 
+            for k in self.header_vals:
+                row = {field: self.header_vals[k].get(field) or k 
                         for field in fields}
                 w.writerow(row)
             f.close()
