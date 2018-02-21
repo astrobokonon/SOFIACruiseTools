@@ -35,9 +35,11 @@ import datetime
 import itertools
 from os import listdir, walk
 from os.path import join, basename, getmtime
+from collections import OrderedDict
 
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
+
 try:
     import astropy.io.fits as pyf
 except ImportError:
@@ -64,7 +66,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_pos = 0
         self.success_parse = False
         self.toggle_leg_param_values_off()
-        #self.leg_param_labels('off')
+        # self.leg_param_labels('off')
         self.met_counting = False
         self.ttl_counting = False
         self.leg_counting = False
@@ -76,8 +78,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_date_time_edit_boxes()
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
-        self.data = FITSheader()
-        print(self.data.header_vals)
+        self.data = FITSHeader()
 
         # Is a list really the best way of handling this? Don't know yet.
         self.cruise_log = []
@@ -98,6 +99,35 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # The addition of the NOTES column happens in here
         self.update_table_cols()
 
+        # Variables previously defined in function
+        self.data_log_dir = ''
+        self.timer_start_time = None
+        self.timer_end_time = None
+        self.takeoff = None
+        self.landing = None
+        self.utc_now = None
+        self.utc_now_str = None
+        self.utc_now_datetime_str = None
+        self.local_now = None
+        self.local_now_str = None
+        self.local_now_datetime_str = None
+        self.met = None
+        self.met_str = None
+        self.ttl = None
+        self.ttl_str = None
+        self.instrument = ''
+        self.leg_remain = None
+        self.leg_remain_str = None
+        self.leg_elapsed = None
+        self.leg_elapsed_str = None
+        self.new_files = None
+        self.data_new = None
+        self.last_data_row = None
+        self.leg_info = None
+        self.fname = None
+        self.err_msg = None
+        self.kwname = None
+
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
@@ -117,16 +147,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Start the flight progression timers
         self.set_takeoff_time.clicked.connect(lambda: self.flight_timer('met'))
         self.set_landing_time.clicked.connect(lambda: self.flight_timer('ttl'))
-        self.set_takeoff_landing.clicked.connect(lambda: 
-                                                self.flight_timer('both'))
+        self.set_takeoff_landing.clicked.connect(lambda:
+                                                 self.flight_timer('both'))
         # Leg timer control
         self.leg_timer_start.clicked.connect(lambda: self.leg_timer('start'))
         self.leg_timer_stop.clicked.connect(lambda: self.leg_timer('stop'))
         self.leg_timer_reset.clicked.connect(lambda: self.leg_timer('reset'))
         self.time_select_remaining.clicked.connect(lambda:
-                                           self.count_direction('remain'))
+                                                   self.count_direction('remain'))
         self.time_select_elapsed.clicked.connect(lambda:
-                                           self.count_direction('elapse'))
+                                                 self.count_direction('elapse'))
         # Text log stuff
         self.log_input_line.returnPressed.connect(self.post_log_line)
         self.log_save.clicked.connect(self.select_output_file)
@@ -142,7 +172,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.data_log_open_dir.clicked.connect(self.select_dir)
         self.data_log_save_file.clicked.connect(self.select_log_output_file)
-        self.data_log_force_write.clicked.connect(self.write_data_log)
+        self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
+                                                  self.log_out_name,
+                                                  self.headers))
+        # self.data_log_force_write.clicked.connect(self.write_data_log)
         self.data_log_force_update.clicked.connect(self.update_data_log)
         self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
@@ -160,7 +193,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.show_lcd()
 
-    def select_instr(self,index):
+    def select_instr(self, index):
         """
         Sets the instrument and default FITS headers
 
@@ -173,25 +206,28 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
 
         # Check to see if the selection is a different instrument
-        if index==self.last_instrument_index:
+        if index == self.last_instrument_index:
             return
         text = self.data_log_instrument_select.itemText(index)
 
         # Check if the table is populated
         if self.table_data_log.rowCount() > 0:
             # Changing headers clears the table, inform user
-            choice = QtWidgets.QMessageBox.question(self,'Warning',
-                    'Warning!\nChanging the instrument will clear the log!\n'\
-                    'Continue?', 
-                    QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
+            choice = QtWidgets.QMessageBox.question(self, 'Warning',
+                                                    'Warning!\n'
+                                                    'Changing the instrument '
+                                                    'will clear the log!\n'
+                                                    'Continue?',
+                                                    QtWidgets.QMessageBox.Yes |
+                                                    QtWidgets.QMessageBox.No)
             # If the user says to not continue thus keeping the data log,   
             # reset the selector to the current instrument
-            if choice==QtWidgets.QMessageBox.No:
+            if choice == QtWidgets.QMessageBox.No:
                 self.data_log_instrument_select.setCurrentIndex(
-                                                self.last_instrument_index)
-                nItems = self.data_log_instrument_select.count()
+                    self.last_instrument_index)
+                # num_items = self.data_log_instrument_select.count()
                 return
-            
+
         # Set the current instrument name and last_instrument_index
         if 'HAWC' in text:
             # Use HAWCFlight to support current SI file storage method
@@ -203,50 +239,46 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.last_instrument_index = index
 
         # Default headers for each instrument
-        flitecam_headers = ['object','aor_id','exptime','itime','co_adds',
-                            'spectel1','spectel2','fcfilta','fcfiltb',
-                            'date-obs','time_gps','sibs_x','sibs_y','nodcrsys',
-                            'nodangle','nodamp','nodbeam','dthpatt','dthnpos',
-                            'dthindex','dthxoff','dthyoff','dthoffs',
-                            'dthcrsys','telra','teldec','tellos','telrof',
-                            'telvpa','BBMODE','CBMODE','BGRESETS','GRSTCNT',
-                            'missn-id','instcfg','instmode']
+        flitecam_headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
+                            'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
+                            'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
+                            'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
+                            'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
+                            'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
+                            'telvpa', 'BBMODE', 'CBMODE', 'BGRESETS', 'GRSTCNT',
+                            'missn-id', 'instcfg', 'instmode']
         great_headers = list(flitecam_headers)
         exes_headers = list(flitecam_headers)
-        hawc_headers = ['date-obs','object','mccsmode',
-                        'spectel1','spectel2',
-                        'instcfg','instmode','obsmode','scnpatt',
-                        'calmode','exptime','nodtime','fcstoff',
-                        'chpamp1','chpamp2','chpfreq',
-                        'chpangle','chpcrsys','nodangle','nodcrsys',
-                        'aor_id','dthindex','dthnpos',
-                        'dthxoff','dthyoff','dthscale','dthunit',
-                        'dthcrsys','scnrate','scncrsys','scniters',
-                        'scnanglc','scnampel','scnampxl','scnfqrat',
-                        'scnphase','scntoff','scnnsubs','scnlen',
-                        'scnstep','scnsteps','scncross',
-                        'intcalv','diag_hz',
-                        'nhwp','hwpstart',
-                        'telra','teldec','telvpa',
-                        'obsra','obsdec','objra','objdec',
-                        'za_start','za_end','focus_st','focus_en',
-                        'utcstart','utcend',
+        hawc_headers = ['date-obs', 'object', 'mccsmode',
+                        'spectel1', 'spectel2',
+                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
+                        'calmode', 'exptime', 'nodtime', 'fcstoff',
+                        'chpamp1', 'chpamp2', 'chpfreq',
+                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
+                        'aor_id', 'dthindex', 'dthnpos',
+                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
+                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
+                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
+                        'scnstep', 'scnsteps', 'scncross',
+                        'intcalv', 'diag_hz',
+                        'nhwp', 'hwpstart',
+                        'telra', 'teldec', 'telvpa',
+                        'obsra', 'obsdec', 'objra', 'objdec',
+                        'za_start', 'za_end', 'focus_st', 'focus_en',
+                        'utcstart', 'utcend',
                         'missn-id']
-        fifi_headers = ['DATE-OBS','AOR_ID','OBJECT','EXPTIME',
-                        'OBSRA','OBSDEC','DETCHAN','DICHROIC',
-                        'ALTI_STA','ZA_START','NODSTYLE','NODBEAM',
-                        'DLAM_MAP','DBET_MAP','DET_ANGL',
-                        'OBSLAM','OBSBET','G_WAVE_B','G_WAVE_R']
+        fifi_headers = ['DATE-OBS', 'AOR_ID', 'OBJECT', 'EXPTIME',
+                        'OBSRA', 'OBSDEC', 'DETCHAN', 'DICHROIC',
+                        'ALTI_STA', 'ZA_START', 'NODSTYLE', 'NODBEAM',
+                        'DLAM_MAP', 'DBET_MAP', 'DET_ANGL',
+                        'OBSLAM', 'OBSBET', 'G_WAVE_B', 'G_WAVE_R']
 
         # Build a dictionary of default headers for each instrument
-        headers = {}
-        headers['flitecam'] = flitecam_headers
-        headers['great'] = great_headers
-        headers['exes'] = exes_headers
-        headers['hawc'] = hawc_headers
-        headers['fifi-ls'] = fifi_headers
-        headers['forcast'] = flitecam_headers
-        self.headers = headers[key]
+        headers = {'flitecam': flitecam_headers, 'great': great_headers,
+                   'exes': exes_headers, 'hawc': hawc_headers,
+                   'fifi-ls': fifi_headers, 'forcast': flitecam_headers}
+        self.headers = ['NOTES']+headers[key]
 
         # Update the data_log headers
         # Things are easier if the keywords are always in CAPS
@@ -273,10 +305,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         result = window.exec_()
         if result == 1:
             self.fits_hdu = np.int(window.fitskw_hdu.value())
-            #print('After closing, window headers = ',window.headers)
+            # print('After closing, window headers = ',window.headers)
             self.new_headers = window.headers
-            #print(self.fits_hdu)
-            #print('\nNew Headers:\n\t',self.new_headers)
+            if 'NOTES' not in self.new_headers:
+                self.new_headers.insert(0,'NOTES')
+            # print(self.fits_hdu)
+            # print('\nNew Headers:\n\t',self.new_headers)
 
             # NOT WORKING YET
             # Update the column data itself if we're actually logging
@@ -284,7 +318,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.repopulate_data_log(rescan=False)
 
         # Explicitly kill it
-#        del window
+
+    #        del window
 
     def update_table_cols(self):
         """
@@ -298,21 +333,22 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
 
         # Get the size of the current table
-        cols = self.table_data_log.columnCount()
-        rows = self.table_data_log.rowCount()
+        # cols = self.table_data_log.columnCount()
+        # rows = self.table_data_log.rowCount()
 
         # Clear the table
         self.table_data_log.setColumnCount(0)
         self.table_data_log.setRowCount(0)
 
         # This always puts the NOTES col. right next to the filename
-        self.table_data_log.insertColumn(0)
+        #self.table_data_log.insertColumn(0)
 
         # Add the number of columns we'll need for the header keys given
         for hkey in self.headers:
             col_position = self.table_data_log.columnCount()
             self.table_data_log.insertColumn(col_position)
-        self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
+        # self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
+        self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
     def select_dir(self):
         """
@@ -326,9 +362,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             startdatalog
         """
         dtxt = 'Select Data Directory'
-        self.data_log_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 
+        self.data_log_dir = QtWidgets.QFileDialog.getExistingDirectory(self,
                                                                        dtxt)
-        #print('In select_dir, data_log_dir = ',self.data_log_dir)
         if self.data_log_dir != '':
             self.txt_data_log_dir.setText(self.data_log_dir)
             self.start_data_log = True
@@ -345,35 +380,33 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Format log line
         time_stamp = datetime.datetime.utcnow()
         time_stamp = time_stamp.replace(microsecond=0)
-        #stamped_line = time_stamp.isoformat()+ '> ' + line
-        stamped_line = '{0:s}> {1:s}'.format(time_stamp.isoformat(),line)
+        stamped_line = '{0:s}> {1:s}'.format(time_stamp.isoformat(), line)
         # Write the log line to the cruise_log and log_display
         # cruise_log is a list
         # log_display is a QtWidgets.QTextEdit object
         self.cruise_log.append(stamped_line + '\n')
         self.log_display.append(stamped_line)
-        
+
         if self.output_name != '':
             try:
-                with open(self.output_name,'w') as f:
+                with open(self.output_name, 'w') as f:
                     f.writelines(self.cruise_log)
-            except Exception:
+            except IOError:
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
-    def mark_message(self,key):
-        '''
-        Write a message to the director's log
-        '''
-        messages = {'mccs':'MCCS fault encountered',
-                    'si':'SI fault encountered',
-                    'land':'End of flight, packing up and sitting down',
-                    'head':'On heading, TOs setting up',
-                    'target':'On target, SI taking over',
-                    'takeoff':'Beginning of flight, getting set up',
-                    'turn':'Turning off target'}
+    def mark_message(self, key):
+        """ Write a message to the director's log """
+
+        messages = {'mccs': 'MCCS fault encountered',
+                    'si': 'SI fault encountered',
+                    'land': 'End of flight, packing up and sitting down',
+                    'head': 'On heading, TOs setting up',
+                    'target': 'On target, SI taking over',
+                    'takeoff': 'Beginning of flight, getting set up',
+                    'turn': 'Turning off target'}
         if key in messages.keys():
             self.line_stamper(messages[key])
-        elif key=='post':
+        elif key == 'post':
             self.line_stamper(self.log_input_line.text())
             # Clear the line
             self.log_input_line.setText('')
@@ -390,14 +423,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Cruise Director Log tab is pressed.
         """
         default_name = 'SILog_{0:s}'.format(
-                                    self.utc_now.strftime('%Y%m%d.txt'))
+                                     self.utc_now.strftime('%Y%m%d.txt'))
         self.output_name = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                               'Save File',
-                                                               default_name)[0]
+                                                                 'Save File',
+                                                                 default_name)[0]
         if self.output_name != '':
             self.txt_log_output_name.setText('Writing to: {0:s}'.format(
-                                           basename(str(self.output_name))))
-                                            
+                basename(str(self.output_name))))
 
     def select_log_output_file(self):
         """
@@ -409,13 +441,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Log tab is pressed.
         """
         default_name = 'DataLog_{0:s}'.format(
-                                    self.utc_now.strftime('%Y%m%d.csv'))
+            self.utc_now.strftime('%Y%m%d.csv'))
         self.log_out_name = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                               'Save File',
-                                                               default_name)[0]
+                                                                  'Save File',
+                                                                  default_name)[0]
         if self.log_out_name != '':
             self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
-                                             basename(str(self.log_out_name))))
+                basename(str(self.log_out_name))))
 
     def post_log_line(self):
         """
@@ -430,54 +462,54 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Clear the line
         self.log_input_line.setText('')
 
-    def count_direction(self,key):
-        '''
+    def count_direction(self, key):
+        """
         Sets the direction the leg timer counts
-        '''
-        if key=='remain':
+        """
+        if key == 'remain':
             self.do_leg_count_elapsed = False
             self.do_leg_count_remaining = True
-        elif key=='elapse':
+        elif key == 'elapse':
             self.do_leg_count_elapsed = True
             self.do_leg_count_remaining = False
         else:
-            #print('Invalid key in count_direction: {0:s}'.format(key))
+            # print('Invalid key in count_direction: {0:s}'.format(key))
             return
-            
-    def leg_timer(self,key):
-        '''
+
+    def leg_timer(self, key):
+        """
         Controls the timer for the leg
-        '''
+        """
         if key in 'start reset'.split():
             self.leg_counting = True
             time_stamp = datetime.datetime.now()
             self.timer_start_time = time_stamp.replace(microsecond=0)
 
             hms = self.leg_duration.time().toPyTime()
-            # Calcuate the time until the leg ends
+            # Calculate the time until the leg ends
             # If a fresh start or restart, pull from 
             # info about leg. If  the timer is paused 
             # (indicated by leg_counting_stopped==True),
             # get the new duration from the remaining time 
             # on the display
-            if key=='start' and self.leg_counting_stopped is True:
-                dhour,dmin,dsec = [np.int(t) for t in 
-                                  self.txt_leg_timer.text().split(':')]
+            if key == 'start' and self.leg_counting_stopped is True:
+                dhour, dmin, dsec = [np.int(t) for t in
+                                     self.txt_leg_timer.text().split(':')]
             else:
-                dhour,dmin,dsec = hms.hour,hms.minute,hms.second
+                dhour, dmin, dsec = hms.hour, hms.minute, hms.second
 
             duration = datetime.timedelta(hours=dhour,
                                           minutes=dmin,
                                           seconds=dsec)
             self.timer_end_time = self.timer_start_time + duration
             self.leg_counting_stopped = False
-        elif key=='stop':
+        elif key == 'stop':
             self.leg_counting = False
             self.leg_counting_stopped = True
         else:
-            #print('Invalid key in leg_timer: {0:s}'.format(key))
+            # print('Invalid key in leg_timer: {0:s}'.format(key))
             return
-            
+
     def total_sec_to_hms_str(self, obj):
         """ Formats a datetime object into a time string """
         tsecs = obj.total_seconds()
@@ -486,15 +518,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             tsecs *= -1
         else:
             isneg = False
-        hours = tsecs/60./60.
+        hours = tsecs / 60. / 60.
         ihrs = np.int(hours)
-        minutes = (hours - ihrs)*60.
+        minutes = (hours - ihrs) * 60.
         imin = np.int(minutes)
-        seconds = (minutes - imin)*60.
+        seconds = (minutes - imin) * 60.
         if isneg is True:
-            done_str = '-{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs,imin,seconds)
+            done_str = '-{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
         else:
-            done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs,imin,seconds)
+            done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
         return done_str
 
     def set_date_time_edit_boxes(self):
@@ -517,10 +549,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.takeoff_time.setDateTime(cur)
         self.landing_time.setDateTime(cur)
 
-    def flight_timer(self,key):
-        '''
+    def flight_timer(self, key):
+        """
         Starts MET and/or TTL timers
-        '''
+        """
         if key in 'met both'.split():
             self.met_counting = True
             self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
@@ -532,7 +564,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Add tzinfo to this object to make it able to interact
             self.landing = self.landing.replace(tzinfo=self.localtz)
         if self.ttl_counting is False and self.met_counting is False:
-            #print('Invalid key in set_flight_timer: {0:s}'.format(key))
+            # print('Invalid key in set_flight_timer: {0:s}'.format(key))
             return
 
     def update_times(self):
@@ -552,14 +584,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.utc_now = self.utc_now.replace(microsecond=0)
         self.utc_now_str = self.utc_now.strftime(' %H:%M:%S UTC')
         self.utc_now_datetime_str = self.utc_now.strftime(
-                                                '%m/%d/%Y %H:%M:%S $Z')
+            '%m/%d/%Y %H:%M:%S $Z')
 
         # Safest way to sensibly go from UTC -> local timezone...?
         self.local_now = self.utc_now.replace(
             tzinfo=pytz.utc).astimezone(self.localtz)
         self.local_now_str = self.local_now.strftime(' %H:%M:%S %Z')
         self.local_now_datetime_str = self.local_now.strftime(
-                                                '%m/%d/%Y %H:%M:%S')
+            '%m/%d/%Y %H:%M:%S')
 
     def show_lcd(self):
         """
@@ -585,8 +617,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
-            self.met_str = '{0:s} MET'.format(self.total_sec_to_hms_str(
-                                                self.met))
+            self.met_str = '{0:s} MET'.format(self.total_sec_to_hms_str(self.met))
             self.txt_met.setText(self.met_str)
         if self.ttl_counting is True:
             # Only runs if "Start TTL" or "Start Both" button is pressed
@@ -598,16 +629,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             local2 = self.local_now.replace(tzinfo=None)
             landing2 = self.landing.replace(tzinfo=None)
             self.ttl = landing2 - local2
-            self.ttl_str = '{0:s} TTL'.format(self.total_sec_to_hms_str(
-                                                self.ttl))
+            self.ttl_str = '{0:s} TTL'.format(self.total_sec_to_hms_str(self.ttl))
             self.txt_ttl.setText(self.ttl_str)
 
             # Visual indicators setup; times are in seconds
             if self.ttl.total_seconds() >= 7200:
                 self.txt_ttl.setStyleSheet('QLabel { color : black; }')
 
-            elif self.ttl.total_seconds() < 7200 and\
-                    self.ttl.total_seconds() >= 5400:
+            elif 7200 > self.ttl.total_seconds() >= 5400:
                 self.txt_ttl.setStyleSheet('QLabel { color : darkyellow; }')
 
             elif self.ttl.total_seconds() < 5400:
@@ -629,20 +658,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 #     1.5 < Time left < 2 hours = dark yellow
                 #     Time left < 1.5 hours = red
                 self.leg_remain = leg_end - local2
-                self.leg_remain_str = self.total_sec_to_hms_str(
-                                            self.leg_remain)
+                self.leg_remain_str = self.total_sec_to_hms_str(self.leg_remain)
                 self.txt_leg_timer.setText(self.leg_remain_str)
 
                 # Visual indicators setup
                 if self.leg_remain.total_seconds() >= 3600:
-                    self.txt_leg_timer.setStyleSheet(
-                        'QLabel { color : black; }')
-
-                elif self.leg_remain.total_seconds() < 3600 and\
-                        self.leg_remain.total_seconds() >= 2400:
+                    self.txt_leg_timer.setStyleSheet('QLabel { color : black; }')
+                elif 3600 > self.leg_remain.total_seconds() >= 2400:
                     self.txt_leg_timer.setStyleSheet(
                         'QLabel { color : darkyellow; }')
-
                 elif self.leg_remain.total_seconds() < 2400:
                     self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
 
@@ -650,20 +674,19 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # Formats the Leg Timer to show how much time has elapsed
                 self.leg_elapsed = local2 - leg_start
                 self.leg_elapsed_str = self.total_sec_to_hms_str(
-                                            self.leg_elapsed)
+                    self.leg_elapsed)
                 self.txt_leg_timer.setText(self.leg_elapsed_str)
 
         # Update the UTC and Local Clocks in the 'World Times' panel
         self.txt_utc.setText(self.utc_now_str)
-        #self.txfplocal_time.setText(self.local_now_str)
         self.txt_local_time.setText(self.local_now_str)
 
-        if self.start_data_log is True and\
-           self.data_log_autoupdate.isChecked() is True:
-            if self.utc_now.second%self.data_log_update_interval.value() == 0:
-                #self.update_data_log()
+        if self.start_data_log is True and \
+                self.data_log_autoupdate.isChecked() is True:
+            if self.utc_now.second % self.data_log_update_interval.value() == 0:
+                # self.update_data_log()
                 self.update_data()
-#                print self.datatable
+                # print self.datatable
 
     def add_data_log_row(self):
         """
@@ -677,7 +700,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_filenames.append('--> ')
         # Actually set the labels for rows
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
-        self.write_data_log()
+        # self.write_data_log()
+        self.data.write_to_file(self.log_out_name,self.headers)
 
     def del_data_log_row(self):
         """
@@ -695,7 +719,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.table_data_log.removeRow(self.table_data_log.currentRow())
             # Redraw
             self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
-            self.write_data_log()
+            self.data.write_to_file(self.log_out_name,self.headers)
 
     def repopulate_data_log(self, rescan=False):
         """
@@ -705,19 +729,20 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         use this to redraw the table in the new positions.
         Currently not working.
         """
-        #print('Repopulating')
+        # print('Repopulating')
         # Disable fun stuff while we update
         self.table_data_log.setSortingEnabled(False)
         self.table_data_log.horizontalHeader().setSectionsMovable(False)
         self.table_data_log.horizontalHeader().setDragEnabled(False)
         self.table_data_log.horizontalHeader().setDragDropMode(
-                                QtWidgets.QAbstractItemView.NoDragDrop)
+            QtWidgets.QAbstractItemView.NoDragDrop)
 
-        thed_list = ['NOTES'] + self.headers
+        # thed_list = ['NOTES'] + self.headers
+        thed_list = self.headers
 
         # First, grab the current table's contents
         tab_list = []
-        for n in range(0,self.table_data_log.rowCount()):
+        for n in range(0, self.table_data_log.rowCount()):
             row_data = {}
             for m, hkey in enumerate(thed_list):
                 if rescan is True:
@@ -725,7 +750,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     #   original listing of files (with path) to go rescan
                     fname = ''
                     row_data = header_dict(fname, self.headers,
-                                         HDU=self.fitshdu)
+                                           HDU=self.fitshdu)
                 else:
                     rdat = self.table_data_log.item(n, m)
                     if rdat is not None:
@@ -740,8 +765,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Actually assign the new headers
         self.headers = self.new_headers
 
-        # Update with the new number of colums
-        self.table_data_log.setColumnCount(len(self.headers) + 1)
+        # Update with the new number of columns
+        #self.table_data_log.setColumnCount(len(self.headers) + 1)
+        self.table_data_log.setColumnCount(len(self.headers))
         self.table_data_log.setRowCount(len(tab_list))
 
         # Actually set the labels for rows
@@ -752,59 +778,54 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         for n, row in enumerate(tab_list):
             for m, hkey in enumerate(self.headers):
                 try:
-                    if row[hkey]=='':
+                    if row[hkey] == '':
                         # Field in the original table was empty
-                        val = self.fill_space_from_header(n,hkey)
+                        val = self.fill_space_from_header(n, hkey)
                     else:
                         # Field in the original table contained a value
                         val = row[hkey]
                 except KeyError:
                     # Key not in the original table
-                    val = self.fill_space_from_header(n,hkey)
+                    val = self.fill_space_from_header(n, hkey)
                 # Conver the value to a QTableWidgetItem object 
                 new_item = QtWidgets.QTableWidgetItem(val)
                 # Add to the table
-                self.table_data_log.setItem(n, m + 1, new_item)
+                #self.table_data_log.setItem(n, m + 1, new_item)
+                self.table_data_log.setItem(n, m , new_item)
 
         # Update with the new column labels
-        self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
+        # self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
+        self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
         # Resize to minimum required, then display
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
 
         # Seems to be more trouble than it's worth, so keep this commented
-#        self.table_datalog.setSortingEnabled(True)
+        #        self.table_datalog.setSortingEnabled(True)
 
-        # Reenable fun stuff
+        # Re-enable fun stuff
         self.table_data_log.horizontalHeader().setSectionsMovable(True)
         self.table_data_log.horizontalHeader().setDragEnabled(True)
         self.table_data_log.horizontalHeader().setDragDropMode(
-                                QtWidgets.QAbstractItemView.InternalMove)
+            QtWidgets.QAbstractItemView.InternalMove)
         self.table_data_log.show()
 
         # Should add this as a checkbox option to always scroll to bottom
         #   whenever a new file comes in...
         self.table_data_log.scrollToBottom()
 
-
-    def fill_space_from_header(self,n,hkey):
-        '''
-        If a cell in the data_log is empty after a change in 
+    def fill_space_from_header(self, n, hkey):
+        """
+        If a cell in the data_log is empty after a change in
         keyword headers, read through the file headers again
-        to see if the keyword is there. 
-        '''
-        
-        fname = join(self.data_log_dir,
-                     self.data_filenames[n])
-        #print(fname)
-        head = pyf.getheader(fname,ext=self.fits_hdu)
+        to see if the keyword is there.
+        """
+        fname = self.data_filenames[n]
         try:
-            #val = head[hkey]
-            val = '{0}'.format(head[hkey])
+            val = '{0}'.format(self.data.header_vals[fname][hkey])
         except KeyError:
             val = ''
-        print('\tFrom FITS: {0:s} = {1} ({2})'.format(hkey,val,type(val)))
         return val
 
     def update_data(self):
@@ -814,13 +835,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Reads in new FITS files and adds them to the header_vals
         """
         self.new_files = []
-         # Get the current list of FITS files in the location
+        # Get the current list of FITS files in the location
         if self.instrument == 'HAWCFlight':
-            self.data_current = glob.glob(str(self.data_log_dir)+'/*.grabme')
+            self.data_current = glob.glob(str(self.data_log_dir) + '/*.grabme')
         elif self.instrument == 'FIFI-LS':
             cur_data = []
             for root, dir_names, filenames in walk(str(self.data_log_dir)):
-                for filename in fnmatch.filter(filenames,'*.fits'):
+                for filename in fnmatch.filter(filenames, '*.fits'):
                     cur_data.append(join(root, filename))
             self.data_current = cur_data
         else:
@@ -834,21 +855,20 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
         else:
             bnpre = [basename(x) for x in self.data_filenames]
-        
+
         new_files = set(bncur) - set(bnpre)
         for fname in new_files:
-            filename = join(self.data_log_dir,fname)
-            self.data.add_image(filename,self.headers,HDU=self.fits_hdu)
+            filename = join(self.data_log_dir, fname)
+            self.data.add_image(filename, self.headers, HDU=self.fits_hdu)
             self.data_filenames.append(fname)
             self.new_files.append(fname)
-        
+
         # If new files exist, update the table widget and 
         # write the new data to file    
-        if len(new_files)>0:
+        if len(new_files) > 0:
             self.update_table()
-            if self.log_out_name!='':
-                self.data.write_to_file(self.log_out_name,self.headers)
-        
+            if self.log_out_name != '':
+                self.data.write_to_file(self.log_out_name, self.headers)
 
     def update_table(self):
         """
@@ -860,23 +880,24 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setSectionsMovable(False)
         self.table_data_log.horizontalHeader().setDragEnabled(False)
         self.table_data_log.horizontalHeader().setDragDropMode(
-                                QtWidgets.QAbstractItemView.NoDragDrop)
+            QtWidgets.QAbstractItemView.NoDragDrop)
 
         # Add the data to the table
-        init_row_count = self.table_data_log.rowCount()
-        rows_to_add = len(self.new_files)
-        #for n,(file_key,row) in enumerate(self.data.header_vals.items()):
-        for n,file_key in enumerate(self.new_files):
+        # init_row_count = self.table_data_log.rowCount()
+        # rows_to_add = len(self.new_files)
+        # for n,(file_key,row) in enumerate(self.data.header_vals.items()):
+        for n, file_key in enumerate(self.new_files):
             row_count = self.table_data_log.rowCount()
             self.table_data_log.insertRow(row_count)
-            #for m,(key,val) in enumerate(row.items()):
-            for m,key in enumerate(self.headers):
+            # for m,(key,val) in enumerate(row.items()):
+            for m, key in enumerate(self.headers):
                 val = self.data.header_vals[file_key][key]
-                #val = row[key]
+                # val = row[key]
                 item = QtWidgets.QTableWidgetItem(str(val))
                 self.table_data_log.setItem(row_count,
-                                            m+1,item)
-                
+                                            m, item)
+                                            #m + 1, item)
+
         # Set the row labels
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
 
@@ -887,12 +908,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setSectionsMovable(True)
         self.table_data_log.horizontalHeader().setDragEnabled(True)
         self.table_data_log.horizontalHeader().setDragDropMode(
-                                QtWidgets.QAbstractItemView.InternalMove)
+            QtWidgets.QAbstractItemView.InternalMove)
         self.table_data_log.show()
-        
+
         self.table_data_log.scrollToBottom()
-        
-    
+
     def update_data_log(self):
         """
         Updates the Data Log.
@@ -908,11 +928,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         # Get the current list of FITS files in the location
         if self.instrument == 'HAWCFlight':
-            self.data_current = glob.glob(str(self.data_log_dir)+'/*.grabme')
+            self.data_current = glob.glob(str(self.data_log_dir) + '/*.grabme')
         elif self.instrument == 'FIFI-LS':
             cur_data = []
             for root, dir_names, filenames in walk(str(self.data_log_dir)):
-                for filename in fnmatch.filter(filenames,'*.fits'):
+                for filename in fnmatch.filter(filenames, '*.fits'):
                     cur_data.append(join(root, filename))
             self.data_current = cur_data
         else:
@@ -939,7 +959,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
             # Compare the new listing to the unique set of the old ones
             #   Previous logic was:
-#            diff = [x for x in self.data_current if x not in s]
+            #            diff = [x for x in self.data_current if x not in s]
             # Unrolled logic (might be easier to spot a goof-up)
             diff = []
             idxs = []
@@ -958,19 +978,20 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     realfile = self.data_current[idx][:-6] + 'fits'
                 else:
                     realfile = self.data_current[idx]
-                #print('Newfile: {0:s}'.format(realfile))
+                # print('Newfile: {0:s}'.format(realfile))
                 # Save the filenames
                 self.data_filenames.append(basename(realfile))
                 # Add number of rows for files to go into first
                 row_position = self.table_data_log.rowCount()
                 self.table_data_log.insertRow(row_position)
                 # Actually get the header data
-                the_data = header_dict(realfile,self.headers,HDU=self.fits_hdu)
-#                self.allData.append(theData)
+                the_data = header_dict(realfile, self.headers, hdu=self.fits_hdu)
+                #                self.allData.append(theData)
                 self.data_new.append(the_data)
 
             self.set_table_data()
-            self.write_data_log()
+            # self.write_data_log()
+            self.data.write_to_file(self.log_out_name,self.headers)
 
     def set_table_data(self):
         """ Writes data to table_data_log """
@@ -980,7 +1001,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.table_data_log.horizontalHeader().setSectionsMovable(False)
             self.table_data_log.horizontalHeader().setDragEnabled(False)
             self.table_data_log.horizontalHeader().setDragDropMode(
-                                    QtWidgets.QAbstractItemView.NoDragDrop)
+                QtWidgets.QAbstractItemView.NoDragDrop)
 
             # Actually set the labels for rows
             self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
@@ -991,20 +1012,21 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 for m, hkey in enumerate(self.headers):
                     new_item = QtWidgets.QTableWidgetItem(str(row[hkey]))
                     self.table_data_log.setItem(n + self.last_data_row,
-                                               m + 1, new_item)
+                                                m, new_item)
+                                                #m + 1, new_item)
 
             # Resize to minimum required, then display
             self.table_data_log.resizeColumnsToContents()
             self.table_data_log.resizeRowsToContents()
 
             # Seems to be more trouble than it's worth, so keep this commented
-#            self.table_datalog.setSortingEnabled(True)
+            #            self.table_datalog.setSortingEnabled(True)
 
             # Reenable fun stuff
             self.table_data_log.horizontalHeader().setSectionsMovable(True)
             self.table_data_log.horizontalHeader().setDragEnabled(True)
             self.table_data_log.horizontalHeader().setDragDropMode(
-                                    QtWidgets.QAbstractItemView.InternalMove)
+                QtWidgets.QAbstractItemView.InternalMove)
 
             self.table_data_log.show()
 
@@ -1020,48 +1042,62 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         Runs after every update to the data log
         """
+        print('Using wrong write function!')
+        sys.exit()
         print('Writing data log to {0:s}'.format(self.log_out_name))
-        if self.log_out_name != '':
-            try:
-                f = open(self.log_out_name, 'w')
-                writer = csv.writer(f)
-                # Write the column labels first...assumes that the
-                #   filename and notes column are first and second
-                clabs = ['FILENAME','NOTES'] + self.headers
-                writer.writerow(clabs)
-                for row in range(self.table_data_log.rowCount()):
-                    row_data = []
-                    row_data.append(self.data_filenames[row])
-                    for column in range(self.table_data_log.columnCount()):
-                        item = self.table_data_log.item(row, column)
-                        if item is not None:
-                            row_data.append(item.text())
-                        else:
-                            row_data.append('')
-                    writer.writerow(row_data)
-                f.close()
-            except Exception as why:
-                #print(str(why))
-                self.txt_data_log_save_file.setText('ERROR WRITING TO FILE!')
+#        if self.log_out_name != '':
+#            try:
+#                f = open(self.log_out_name, 'w')
+#                writer = csv.writer(f)
+#                # Write the column labels first...assumes that the
+#                #   filename and notes column are first and second
+#                clabs = ['FILENAME', 'NOTES'] + self.headers
+#                writer.writerow(clabs)
+#                for row in range(self.table_data_log.rowCount()):
+#                    row_data = [self.data_filenames[row]]
+#                    for column in range(self.table_data_log.columnCount()):
+#                        item = self.table_data_log.item(row, column)
+#                        if item is not None:
+#                            row_data.append(item.text())
+#                        else:
+#                            row_data.append('')
+#                    writer.writerow(row_data)
+#                f.close()
+#            except IOError:
+#                self.txt_data_log_save_file.setText('ERROR WRITING TO FILE!')
 
-    def leg_param_labels(self,key):
-        '''
+        if self.log_out_name != '':
+            # fields = 'FILENAME NOTES'.split()+self.headers
+            fields = ['FILENAME']+self.headers
+            with open(self.log_out_name,'wb') as f:
+                w = csv.DictWriter(f, fields)
+                w.writeheader()
+                # Loop over filenames
+                for k in self.data.header_vals:
+                    row = {field: self.data.header_vals[k].get(field)
+                           for field in fields}
+                    row['FILENAME'] = k
+                    print(row)
+                    w.writerow(row)
+
+    def leg_param_labels(self, key):
+        """
         Toggle the visibility of the leg parameter labels
-        '''
-        if key=='on':
+        """
+        if key == 'on':
             self.txt_elevation.setVisible(True)
             self.txt_obs_plan.setVisible(True)
             self.txt_rof.setVisible(True)
             self.txt_target.setVisible(True)
-        elif key=='off':
+        elif key == 'off':
             self.txt_elevation.setVisible(False)
             self.txt_obs_plan.setVisible(False)
             self.txt_rof.setVisible(False)
             self.txt_target.setVisible(False)
         else:
-            #print('Invalid key in toggle_leg_param_labels: {0:s}'.format(key))
+            # print('Invalid key in toggle_leg_param_labels: {0:s}'.format(key))
             return
-    
+
     def toggle_leg_param_values_off(self):
         """
         Clears the leg parameter values.
@@ -1072,7 +1108,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_obs_block.setText('')
         self.leg_rof_rof_rate.setText('')
         self.leg_target.setText('')
-
 
     def update_leg_info_window(self):
         """
@@ -1085,7 +1120,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if self.success_parse is True:
             # Quick and dirty way to show the leg type
             legtxt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
-                                          self.leg_info.leg_type)
+                                           self.leg_info.leg_type)
             self.leg_number.setText(legtxt)
 
             # Target name
@@ -1093,27 +1128,27 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
             # If the leg type is an observing leg, show the deets
             if self.leg_info.leg_type is 'Observing':
-                self.leg_param_labels('on')            
+                self.leg_param_labels('on')
                 elevation_label = '{0:.1f} to {1:.1f}'.format(
-                                  self.leg_info.range_elev[0],
-                                  self.leg_info.range_elev[1])
+                    self.leg_info.range_elev[0],
+                    self.leg_info.range_elev[1])
                 self.leg_elevation.setText(elevation_label)
                 rof_label = '{0:.1f} to {1:.1f} | {2:.1f} to {3:.1f}'.format(
-                                                self.leg_info.range_rof[0], 
-                                                self.leg_info.range_rof[1],
-                                                self.leg_info.range_rofrt[0], 
-                                                self.leg_info.range_rofrt[1])
+                    self.leg_info.range_rof[0],
+                    self.leg_info.range_rof[1],
+                    self.leg_info.range_rofrt[0],
+                    self.leg_info.range_rofrt[1])
                 self.leg_rof_rof_rate.setText(rof_label)
-                try:
-                    self.leg_obs_block.setText(self.leginfo.obs_plan)
-                except:
-                    pass
+#                try:
+#                    self.leg_obs_block.setText(self.leginfo.obs_plan)
+#                except:
+#                    pass
             else:
                 # If it's a dead leg, update the leg number and we'll move on
                 # Clear values since they're probably crap
                 self.toggle_leg_param_values_off()
                 # Quick and dirty way to show the leg type
-                #leg_txt = "%i\t%s" % (self.leg_pos + 1, self.leg_info.leg_type)
+                # leg_txt = "%i\t%s" % (self.leg_pos + 1, self.leg_info.leg_type)
                 leg_txt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
                                                 self.leg_info.leg_type)
                 self.leg_number.setText(leg_txt)
@@ -1121,7 +1156,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Now take the duration and autoset our timer duration
             time_parts = str(self.leg_info.duration).split(':')
             time_parts = [np.int(x) for x in time_parts]
-            dur_time = QtCore.QTime(time_parts[0],time_parts[1],time_parts[2])
+            dur_time = QtCore.QTime(time_parts[0], time_parts[1], time_parts[2])
             self.leg_duration.setTime(dur_time)
 
     def prev_leg(self):
@@ -1152,29 +1187,29 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             pass
         self.update_leg_info_window()
 
-    def update_flight_time(self,key):
-        '''
+    def update_flight_time(self, key):
+        """
         Fills the takeoff or landing time fields
 
         Grab the flight takeoff time from the flight plan, which is in UTC,
         and turn it into the time at the local location.
         Then, take that time and update the DateTimeEdit box in the GUI
-        '''
-        if key=='takeoff':
+        """
+        if key == 'takeoff':
             time = self.flight_info.takeoff.replace(tzinfo=pytz.utc)
-        elif key=='landing':
+        elif key == 'landing':
             time = self.flight_info.landing.replace(tzinfo=pytz.utc)
         else:
-            #print('Invalid key in update_flight_time: {0:s}'.format(key))
+            # print('Invalid key in update_flight_time: {0:s}'.format(key))
             return
         time = time.astimezone(self.localtz)
         time_str = time.strftime('%m/%d/%Y %H:%M:%S')
-        time_qt = QtCore.QDateTime.fromString(time_str,'MM/dd/yyyy HH:mm:ss')
-        if key=='takeoff': 
+        time_qt = QtCore.QDateTime.fromString(time_str, 'MM/dd/yyyy HH:mm:ss')
+        if key == 'takeoff':
             self.takeoff_time.setDateTime(time_qt)
         else:
             self.landing_time.setDateTime(time_qt)
-            
+
     def select_input_file(self):
         """
         Parses flight plan from .msi file. 
@@ -1199,8 +1234,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.update_flight_time('takeoff')
             if self.set_landing_fp.isChecked() is True:
                 self.update_flight_time('landing')
-        except Exception as why:
-            #print(str(why))
+        except IOError:
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing File!'
             self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
@@ -1215,8 +1249,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # In case there are any existing elements in the list
         self.listWidget.clear()
         title_str = 'Choose a SOFIA mission file (.mis)'
-        directory = QtWidgets.QFileDialog.getExistingDirectory(self, 
-                                                               titlestr)[0]
+        directory = QtWidgets.QFileDialog.getExistingDirectory(self,
+                                                               title_str)[0]
 
         # if user didn't pick a directory don't continue
         if directory:
@@ -1225,12 +1259,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # add file to the listWidget
                 self.listWidget.addItem(file_name)
 
+
 class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     """
     Dialog box to allow for interactive selection of FITS keywords
 
     Currently non-functional
     """
+
     def __init__(self, parent=None):
         super(FITSKeyWordDialog, self).__init__(parent)
 
@@ -1240,13 +1276,10 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         self.fitskw_remove.clicked.connect(self.remove_keyword_from_list)
         self.fitskw_model = self.fitskw_listing.model()
         self.fitskw_model.layoutChanged.connect(self.reordered_head_list)
-
         self.fitskw_savelist.clicked.connect(self.kw_save_list)
         self.fitskw_loadlist.clicked.connect(self.kw_load_list)
-
         self.fitskw_dialogbutts.accepted.connect(self.accept)
         self.fitskw_dialogbutts.rejected.connect(self.reject)
-
         self.utc_now = self.parent().utc_now
 
         # Grab a few things from the parent widget to use here
@@ -1273,7 +1306,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                         rowdata.append('')
                 writer.writerow(rowdata)
                 f.close()
-                #statusline = "File Written: %s" % str(self.kwname)
+                # statusline = "File Written: %s" % str(self.kwname)
                 statusline = 'File Written: {0:s}'.format(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
             except Exception as why:
@@ -1289,7 +1322,6 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                 reader = csv.reader(f)
                 for row in reader:
                     self.headers.append(row)
-                #statusline = "File Loaded: %s" % str(self.kwname)
                 statusline = 'File Loaded: {0:s}'.format(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
             except Exception as why:
@@ -1312,13 +1344,9 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                                                   QtWidgets.QLineEdit.Normal,
                                                   QtCore.QDir.home().dirName())
         text = str(text)
-        #print('New keyword: {0:s}'.format(text))
-        #print('ok = ',ok)
-        #print(type(self.headers))
         if ok and text != '':
             text = text.strip()
             text = text.upper()
-            #print('Keyword to add = {0:s}'.format(text))
             self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(text))
             self.headers.append(text)
             self.reorder_kw_widget()
@@ -1339,9 +1367,9 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
 
         """
         defaultname = 'KWList_{0:s}{1:s}'.format(
-                                self.parentWidget().instrument,
-                                self.utc_now.strftime('_%Y%m%d.txt'))
-                            
+            self.parentWidget().instrument,
+            self.utc_now.strftime('_%Y%m%d.txt'))
+
         if kind == 'save':
             self.kwname = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                 'Save File',
@@ -1359,16 +1387,16 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         self.headers = [hlab.upper() for hlab in self.headers]
 
 
-class FITSheader():
+class FITSHeader():
     """
     Oversees the data structure that holds FITS headers
     """
 
     def __init__(self):
-        
-        self.header_vals = {}
 
-    def add_image(self,infile,hkeys,HDU=0):
+        self.header_vals = dict()
+
+    def add_image(self, infile, hkeys, HDU=0):
         """
         Adds FITS header to data structure
 
@@ -1378,18 +1406,17 @@ class FITSheader():
         """
         try:
             # Read in header from FITS
-            head = pyf.getheader(infile,ext=HDU)
+            head = pyf.getheader(infile, ext=HDU)
             # Select out the keywords of interest
             head = {key: head[key] if key in head else ''
-                        for key in hkeys}
+                    for key in hkeys}
         except IOError:
             # Could not read file, return empty dictionary
             head = {key: '' for key in hkeys}
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = head
-        
 
-    def remove_image(self,infile):
+    def remove_image(self, infile):
         """
         Removes an observation form the data set
         """
@@ -1398,46 +1425,58 @@ class FITSheader():
         except KeyError:
             print('Unable to remove {0:s} from header_vals'.format(infile))
 
-    def write_to_file(self,outname,hkeys):
+    def write_to_file(self, outname, hkeys):
         """
-        Writes data strucutre to outname
+        Writes data structure to outname
         """
-        f = open(outname,'wb')
-        with open(outname,'wb') as f:
-            fields = ['Filename,Notes']+hkeys
-            w = csv.DictWriter(f,fields)
-            w.writeheader()
-            for k in self.header_vals:
-                row = {field: self.header_vals[k].get(field) or k 
-                        for field in fields}
-                w.writerow(row)
-            f.close()
+        # f = open(outname, 'wb')
+        # with open(outname, 'wb') as f:
+        #    # fields = ['Filename,Notes'] + hkeys
+        #    fields = ['Filename'] + hkeys
+        #    w = csv.DictWriter(f, fields)
+        #    w.writeheader()
+        #    for k in self.header_vals:
+        #        row = {field: self.header_vals[k].get(field) or k
+        #               for field in fields}
+        #        w.writerow(row)
+        #    f.close()
 
+        # if self.log_out_name != '':
+        if outname != '':
+            # fields = 'FILENAME NOTES'.split()+self.headers
+            fields = ['FILENAME']+hkeys
+            with open(outname,'wb') as f:
+                w = csv.DictWriter(f, fields)
+                w.writeheader()
+                # Loop over filenames
+                for k in self.header_vals:
+                    row = {field: self.header_vals[k].get(field)
+                           for field in fields}
+                    row['FILENAME'] = k
+                    print(row)
+                    w.writerow(row)
 
-def header_list(infile, headerlist, HDU=0):
+def header_list(infile, header_keys, hdu=0):
     """
     Given a FITS file and a list of header keywords of interest,
     parse those two together and return the result as a tuple of
     base filename and an sequential list of the keywords.
     """
-    key = ''
-    bname = basename(infile)
     try:
-        hed = pyf.getheader(infile, ext=HDU)
-    except:
+        hed = pyf.getheader(infile, ext=hdu)
+    except IOError:
         hed = ' '
-
     item = []
-    for key in headerlist:
+    for key in header_keys:
         try:
             item.append(hed[key])
-        except:
+        except KeyError:
             item.append('')
 
-    return bname, item
+    return basename(infile), item
 
 
-def header_dict(infile, headerlist, HDU=0):
+def header_dict(infile, header_keys, hdu=0):
     """
     Given a filename (fullpath), return a dict of the desired header keywords.
     """
@@ -1445,18 +1484,14 @@ def header_dict(infile, headerlist, HDU=0):
     # If that keyword is not in hed, fill the new dictionary with 
     # a blank string
     try:
-        hed = pyf.getheader(infile, ext=HDU)
-        failed = False
-        item = {key: hed.get(key,'') for key in headerlist}
+        hed = pyf.getheader(infile, ext=hdu)
+        item = {key: hed.get(key, '') for key in header_keys}
     except IOError:
         # Problem reading header, return an empty dictionary
-        item = {key: '' for key in headerlist}
-        failed = True
-    # NOTE: This isn't just called 'filename' beacuse I didn't want to risk
-    # it getting clobbered if the user was actually interested in
-    # a FITS keyword called 'FILENAME' at some point in the future...
-    bname = basename(infile)
-    item['PhysicalFilename'] = bname
+        item = {key: '' for key in header_keys}
+    # To avoid overlapping a possible FITS keyword named 'FILENAME', give
+    # the filename the key of 'PhysicalFilename'
+    item['PhysicalFilename'] = basename(infile)
     return item
 
 
