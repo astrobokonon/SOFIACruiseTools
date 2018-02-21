@@ -127,6 +127,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.fname = None
         self.err_msg = None
         self.kwname = None
+        self.new_headers = None
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -175,7 +176,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
                                                   self.log_out_name,
                                                   self.headers))
-        # self.data_log_force_write.clicked.connect(self.write_data_log)
         self.data_log_force_update.clicked.connect(self.update_data_log)
         self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
@@ -305,27 +305,19 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         result = window.exec_()
         if result == 1:
             self.fits_hdu = np.int(window.fitskw_hdu.value())
-            # print('After closing, window headers = ',window.headers)
             self.new_headers = window.headers
             if 'NOTES' not in self.new_headers:
-                self.new_headers.insert(0,'NOTES')
-            # print(self.fits_hdu)
-            # print('\nNew Headers:\n\t',self.new_headers)
+                self.new_headers.insert(0, 'NOTES')
 
-            # NOT WORKING YET
             # Update the column data itself if we're actually logging
             if self.start_data_log is True:
                 self.repopulate_data_log(rescan=False)
-
-        # Explicitly kill it
-
-    #        del window
 
     def update_table_cols(self):
         """
         Updates the columns in the QTable Widget in the Data Log tab.
 
-        Called intially when the window is first opened and again if the 
+        Called initially when the window is first opened and again if the
         FITS keywords are changed via the repopulateDatalog function in  
         spamkwwindow function.
         Sets:
@@ -341,7 +333,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.setRowCount(0)
 
         # This always puts the NOTES col. right next to the filename
-        #self.table_data_log.insertColumn(0)
+        # self.table_data_log.insertColumn(0)
 
         # Add the number of columns we'll need for the header keys given
         for hkey in self.headers:
@@ -700,7 +692,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_filenames.append('--> ')
         # Actually set the labels for rows
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
-        # self.write_data_log()
         self.data.write_to_file(self.log_out_name,self.headers)
 
     def del_data_log_row(self):
@@ -729,7 +720,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         use this to redraw the table in the new positions.
         Currently not working.
         """
-        # print('Repopulating')
         # Disable fun stuff while we update
         self.table_data_log.setSortingEnabled(False)
         self.table_data_log.horizontalHeader().setSectionsMovable(False)
@@ -750,7 +740,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     #   original listing of files (with path) to go rescan
                     fname = ''
                     row_data = header_dict(fname, self.headers,
-                                           HDU=self.fitshdu)
+                                           hdu=self.fitshdu)
                 else:
                     rdat = self.table_data_log.item(n, m)
                     if rdat is not None:
@@ -766,7 +756,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.headers = self.new_headers
 
         # Update with the new number of columns
-        #self.table_data_log.setColumnCount(len(self.headers) + 1)
         self.table_data_log.setColumnCount(len(self.headers))
         self.table_data_log.setRowCount(len(tab_list))
 
@@ -774,7 +763,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
 
         # Create the data table items and populate things
-        #   Note! This is for use with header_dict style of grabbing stuff
         for n, row in enumerate(tab_list):
             for m, hkey in enumerate(self.headers):
                 try:
@@ -787,14 +775,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 except KeyError:
                     # Key not in the original table
                     val = self.fill_space_from_header(n, hkey)
-                # Conver the value to a QTableWidgetItem object 
+                # Convert the value to a QTableWidgetItem object
                 new_item = QtWidgets.QTableWidgetItem(val)
                 # Add to the table
-                #self.table_data_log.setItem(n, m + 1, new_item)
-                self.table_data_log.setItem(n, m , new_item)
+                self.table_data_log.setItem(n, m, new_item)
 
         # Update with the new column labels
-        # self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
         self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
         # Resize to minimum required, then display
@@ -859,7 +845,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         new_files = set(bncur) - set(bnpre)
         for fname in new_files:
             filename = join(self.data_log_dir, fname)
-            self.data.add_image(filename, self.headers, HDU=self.fits_hdu)
+            self.data.add_image(filename, self.headers, hdu=self.fits_hdu)
             self.data_filenames.append(fname)
             self.new_files.append(fname)
 
@@ -978,7 +964,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     realfile = self.data_current[idx][:-6] + 'fits'
                 else:
                     realfile = self.data_current[idx]
-                # print('Newfile: {0:s}'.format(realfile))
                 # Save the filenames
                 self.data_filenames.append(basename(realfile))
                 # Add number of rows for files to go into first
@@ -990,7 +975,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.data_new.append(the_data)
 
             self.set_table_data()
-            # self.write_data_log()
             self.data.write_to_file(self.log_out_name,self.headers)
 
     def set_table_data(self):
@@ -1036,15 +1020,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             print('No new files!')
 
-    def write_data_log(self):
-        """
-        Writes the data log to a csv file.
-
-        Runs after every update to the data log
-        """
-        print('Using wrong write function!')
-        sys.exit()
-        print('Writing data log to {0:s}'.format(self.log_out_name))
+#    def write_data_log(self):
+#        """
+#        Writes the data log to a csv file.
+#
+#        Runs after every update to the data log
+#        """
+#        print('Using wrong write function!')
+#        sys.exit()
 #        if self.log_out_name != '':
 #            try:
 #                f = open(self.log_out_name, 'w')
@@ -1066,19 +1049,19 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 #            except IOError:
 #                self.txt_data_log_save_file.setText('ERROR WRITING TO FILE!')
 
-        if self.log_out_name != '':
-            # fields = 'FILENAME NOTES'.split()+self.headers
-            fields = ['FILENAME']+self.headers
-            with open(self.log_out_name,'wb') as f:
-                w = csv.DictWriter(f, fields)
-                w.writeheader()
-                # Loop over filenames
-                for k in self.data.header_vals:
-                    row = {field: self.data.header_vals[k].get(field)
-                           for field in fields}
-                    row['FILENAME'] = k
-                    print(row)
-                    w.writerow(row)
+#        if self.log_out_name != '':
+#            # fields = 'FILENAME NOTES'.split()+self.headers
+#            fields = ['FILENAME']+self.headers
+#            with open(self.log_out_name,'wb') as f:
+#                w = csv.DictWriter(f, fields)
+#                w.writeheader()
+#                # Loop over filenames
+#                for k in self.data.header_vals:
+#                    row = {field: self.data.header_vals[k].get(field)
+#                           for field in fields}
+#                    row['FILENAME'] = k
+#                    print(row)
+#                    w.writerow(row)
 
     def leg_param_labels(self, key):
         """
@@ -1394,9 +1377,10 @@ class FITSHeader():
 
     def __init__(self):
 
-        self.header_vals = dict()
+        # self.header_vals = {}
+        self.header_vals = OrderedDict()
 
-    def add_image(self, infile, hkeys, HDU=0):
+    def add_image(self, infile, hkeys, hdu=0):
         """
         Adds FITS header to data structure
 
@@ -1404,17 +1388,20 @@ class FITSHeader():
         headers contained in headers. Adds these values to 
         header_vals
         """
+        header = OrderedDict()
         try:
             # Read in header from FITS
-            head = pyf.getheader(infile, ext=HDU)
-            # Select out the keywords of interest
-            head = {key: head[key] if key in head else ''
-                    for key in hkeys}
+            head = pyf.getheader(infile, ext=hdu)
         except IOError:
             # Could not read file, return empty dictionary
-            head = {key: '' for key in hkeys}
+            for key in hkeys:
+                header[key] = ''
+        else:
+            # Select out the keywords of interest
+            for key in hkeys:
+                header[key] = head[key] if key in head else ''
         # Add to data structure with the filename as key
-        self.header_vals[basename(infile)] = head
+        self.header_vals[basename(infile)] = header
 
     def remove_image(self, infile):
         """
@@ -1453,8 +1440,8 @@ class FITSHeader():
                     row = {field: self.header_vals[k].get(field)
                            for field in fields}
                     row['FILENAME'] = k
-                    print(row)
                     w.writerow(row)
+
 
 def header_list(infile, header_keys, hdu=0):
     """
