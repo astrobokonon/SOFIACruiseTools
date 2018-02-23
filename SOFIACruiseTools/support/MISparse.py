@@ -832,9 +832,11 @@ def parseMISPreamble(lines, flight, summarize=False):
     # Attempt to parse stuff from the Flight Plan ID bit. Fancy logic for
     #   grabbing the fancy name, which didn't always exist
     try:
-        flightid = regExper(lines, 'Flight Plan ID', howmany=1,
+        #flightid = regExper(lines, 'Flight Plan ID', howmany=1,
+        flightid = regExper(lines, 'Filename', howmany=1,
                             keytype='key:val')
-        fid = keyValuePair(flightid.group(), "Flight Plan ID", dtype=str)
+        #fid = keyValuePair(flightid.group(), "Flight Plan ID", dtype=str)
+        fid = keyValuePair(flightid.group(), "Filename", dtype=str)
         fid = fid.strip().split("_")
         if fid[1] != '':
             try:
