@@ -36,6 +36,7 @@ import itertools
 from os import listdir, walk
 from os.path import join, basename, getmtime
 from collections import OrderedDict
+from configobj import ConfigObj
 
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -48,6 +49,7 @@ except ImportError:
 from .. import support as fpmis
 from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
+from . import directorStartupDialog as ds
 
 
 class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
@@ -140,6 +142,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Set up buttons
         ####
 
+        # Control buttons
+        self.setup_button.clicked.connect(self.setup)
+        self.start_button.clicked.connect(self.start_run)
+        self.end_button.clicked.connect(self.end_run)
+
         # Open the file chooser for the flight plan input
         self.flight_plan_openfile.clicked.connect(self.select_input_file)
         # Flight plan progression
@@ -186,12 +193,82 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Add an action that detects when a cell is changed by the user
         #  in table_datalog!
 
+        # Hide buttons that aren't needed anymore due to setup prompt
+        self.flight_plan_openfile.hide()
+        self.data_log_open_dir.hide()
+        self.data_log_save_file.hide()
+        self.log_save.hide()
+
+
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         # Set up the time to run self.showlcd() every 500 ms
         timer.timeout.connect(self.show_lcd)
         timer.start(500)
         self.show_lcd()
+
+    def setup(self):
+        print('Open setup panel')
+        window = startupApp(self)
+        result = window.exec_()
+
+        if not window.fname:
+            self.err_msg = 'ERROR: Failure Parsing File!'
+            self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
+            self.flight_plan_filename.setText(self.err_msg)
+            return
+
+        # Flight information
+        print('Setting flight info')
+        self.select_input_file(window.fname)
+
+        # Instrument
+        print('Setting instrument')
+        self.instrument = window.instrument
+        index = self.data_log_instrument_select.findText(self.instrument,
+                QtCore.Qt.MatchFixedString)
+        if index>0:
+            self.data_log_instrument_select.setCurrentIndex(index)
+        print(self.instrument,index)
+        
+        # Data Log filename
+        if not window.datalog_name:
+            print('Setting data log filename to {0:s}'.format(window.datalog_name))
+            self.log_out_name = window.datalog_name
+            self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
+                basename(str(self.log_out_name))))
+
+        # Cruise Director Log filename
+        if not window.dirlog_name:
+            print('Setting director log filename to {0:s}'.format(window.dirlog_name))
+            self.output_name = window.dirlog_name
+            self.txt_log_output_name.setText('Writing to: {0:s}'.format(
+                basename(str(self.output_name))))
+
+        # Location of data
+        if window.data_dir:
+            print('Setting data location to {0:s}'.format(window.datalog_name))
+            self.data_log_dir = window.data_dir
+            self.txt_data_log_dir.setText(self.data_log_dir)
+
+        # Data headers
+        print('Setting headers')
+        self.headers = window.headers
+        self.update_table_cols()
+        self.table_data_log.resizeColumnsToContents()
+        self.table_data_log.resizeRowsToContents()
+
+    def start_run(self):
+        print('Start run')
+        # Start collecting data
+        self.start_data_log = True
+        
+        # Start MET and TTL timers
+        self.flight_timer('both')
+
+    def end_run(self):
+        print('Ending run')
+        self.close()
 
     def select_instr(self, index):
         """
@@ -1193,7 +1270,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.landing_time.setDateTime(time_qt)
 
-    def select_input_file(self):
+    def select_input_file(self,from_gui=None):
         """
         Parses flight plan from .msi file. 
 
@@ -1203,7 +1280,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         If unsuccessful, make the label text red and angry and give the
         user another chance
         """
-        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
+        # If from_gui is None, prompt the user to select a filename 
+        if not from_gui:
+            self.fname = QtWidgets.QFileDialog.getOpenFileName(
+                            caption='Select Flight Plan')[0]
+        else:
+            self.fname = from_gui
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flight_plan_filename.setStyleSheet('QLabel { color : black; }')
@@ -1442,6 +1524,147 @@ class FITSHeader():
                     row['FILENAME'] = k
                     w.writerow(row)
 
+class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
+    def __init__(self, parent=None):
+
+        #super(self.__class__,self).__init__()
+        super(startupApp,self).__init__(parent)
+    
+        self.setupUi(self)
+
+        self.flightButton.clicked.connect(self.load_flight)
+        self.instSelect.activated.connect(self.select_instr)
+        self.logOutButton.clicked.connect(self.select_log_file)
+        self.datalocButton.clicked.connect(self.select_data_loc)
+        self.datalogButton.clicked.connect(self.select_data_log)
+        self.fitkwButton.clicked.connect(self.select_kw)
+#        self.startButton.clicked.connect(self.start)
+        self.buttonBox.rejected.connect(self.close)
+        self.buttonBox.accepted.connect(self.start)
+
+        self.instrument = str(self.instSelect.currentText())
+        if 'HAWC' in self.instrument:
+            self.instrument = 'HAWC'
+        self.select_kw(default=1)
+        self.dirlog_name = ''
+        self.data_dir = ''
+        self.datalog_name = ''
+        self.fname = ''
+
+        # Grab stuff from parent
+        #self.utc_now = datetime.datetime.utcnow()
+        self.utc_now = self.parent().utc_now
+#        self.headers = self.parentWidget().headers
+        self.fits_hdu = self.parentWidget().fits_hdu
+
+
+    def start(self):
+        """
+        Closes this window and passes results to main program
+        """
+
+        print('Checking close')
+        # Read the instrument selection
+        self.instrument = str(self.instSelect.currentText())
+        if 'HAWC' in self.instrument:
+            self.instrument = 'HAWCFLIGHT'
+        self.close()
+
+
+    def load_flight(self):
+        """
+        Parses flight plan from .msi file. 
+
+        Spawn the file chooser diaglog box and return the result, attempting
+        to parse the file as a SOFIA flight plan (.mis).
+        If successful, set the various state parameters for further use.
+        If unsuccessful, make the label text red and angry and give the
+        user another chance
+        """
+        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
+        # Make sure the label text is black every time we start, and
+        #   cut out the path so we just have the filename instead of huge str
+        self.flightText.setStyleSheet('QLabel { color : black; }')
+        self.flightText.setText(basename(str(self.fname)))
+        try:
+            self.flight_info = fpmis.parseMIS(self.fname)
+            self.success_parse = True
+            index = self.instSelect.findText(self.flight_info.instrument,
+                                            QtCore.Qt.MatchFixedString)
+            if index >= 0: 
+                self.instSelect.setCurrentIndex(index)
+        except IOError:
+            self.flight_info = ''
+            self.err_msg = 'ERROR: Failure Parsing File!'
+            self.flightText.setStyleSheet('QLabel { color : red; }')
+            self.flightText.setText(self.err_msg)
+            self.success_parse = False
+
+
+    def select_instr(self):
+        """
+        Selects the instrument
+        """
+        self.instrument = str(self.instSelect.currentText())
+        if 'HAWC' in self.instrument:
+            self.instrument = 'HAWC'
+
+
+    def select_log_file(self):
+        """
+        Selects the output file for the director log
+        """
+        
+        default = 'SILog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
+        self.dirlog_name = QtWidgets.QFileDialog.getSaveFileName(self,
+                                'Save File',default)[0]
+        if self.dirlog_name:
+            self.logOutText.setText('{0:s}'.format(basename(str(self.dirlog_name))))
+
+
+    def select_data_loc(self):
+        """
+        Sets where to look for data files
+        """
+        
+        dtxt = 'Select Data Directory'
+        self.data_dir = QtWidgets.QFileDialog.getExistingDirectory(self,dtxt)
+        
+        if self.data_dir:
+            self.datalocText.setText(self.data_dir)
+
+ 
+    def select_data_log(self):
+        """
+        Selects where to store the data log
+        """
+        default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
+        self.datalog_name = QtWidgets.QFileDialog.getSaveFileName(self,
+                                'Save File',default)[0]
+        if self.datalog_name:
+            self.datalogText.setText('{0:s}'.format(basename(str(self.datalog_name))))
+
+    def select_kw(self,default=None):
+        """
+        Selects what FITS keywords to use
+        """
+        print('Selecting FITS keywords')
+
+        # Read the default keywords for each instrument
+        fname = 'director.ini'
+        config = ConfigObj(fname)
+        self.headers = config['keywords'][self.instrument.lower()]
+    
+        if not default:
+            window = FITSKeyWordDialog(self)
+            result = window.exec_()
+            if result == 1:
+                self.fits_hdu = np.int(window.fitskw_hdu.value())
+                self.headers = window.headers
+                if 'NOTES' not in self.headers:
+                    self.headers.insert(0,'NOTES')
+                self.fitskwText.setText('Custom')
+    
 
 def header_list(infile, header_keys, hdu=0):
     """
