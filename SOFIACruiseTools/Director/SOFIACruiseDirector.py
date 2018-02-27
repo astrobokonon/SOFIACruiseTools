@@ -95,7 +95,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Set the default instrument and FITS headers
         self.last_instrument_index = -1
-        self.select_instr(0)
+        #self.select_instr(0)
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
         # The addition of the NOTES column happens in here
@@ -180,16 +180,22 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.data_log_open_dir.clicked.connect(self.select_dir)
         self.data_log_save_file.clicked.connect(self.select_log_output_file)
+
+
+
+
         self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
                                                   self.log_out_name,
                                                   self.headers))
-        self.data_log_force_update.clicked.connect(self.update_data_log)
+                                                  #self.table_data_log,
+                                                  #self.data_filenames))
+        #self.data_log_force_update.clicked.connect(self.update_data_log)
         self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
         self.data_log_delete_row.clicked.connect(self.del_data_log_row)
 
         # Instrument selection
-        self.data_log_instrument_select.activated.connect(self.select_instr)
+        #self.data_log_instrument_select.activated.connect(self.select_instr)
         # Add an action that detects when a cell is changed by the user
         #  in table_datalog!
 
@@ -199,7 +205,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_log_save_file.hide()
         self.log_save.hide()
 
-
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         # Set up the time to run self.showlcd() every 500 ms
@@ -208,10 +213,19 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.show_lcd()
 
     def setup(self):
-        print('Open setup panel')
-        window = startupApp(self)
+        """
+        Prompts user for files needed to run program.
+
+        Opens a dialog and prompts the user for the flight plan, location
+        of data, where to write the data log to, where to write the director's
+        log to, and the option to change the FITS keywords to use.
+        """
+    
+        # Open the dialog
+        window = StartupApp(self)
         result = window.exec_()
 
+        # Parse the results of the dialog. 
         if not window.fname:
             self.err_msg = 'ERROR: Failure Parsing File!'
             self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
@@ -219,153 +233,157 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             return
 
         # Flight information
-        print('Setting flight info')
         self.select_input_file(window.fname)
 
         # Instrument
-        print('Setting instrument')
         self.instrument = window.instrument
-        index = self.data_log_instrument_select.findText(self.instrument,
-                QtCore.Qt.MatchFixedString)
-        if index>0:
-            self.data_log_instrument_select.setCurrentIndex(index)
-        print(self.instrument,index)
-        
-        # Data Log filename
-        if not window.datalog_name:
-            print('Setting data log filename to {0:s}'.format(window.datalog_name))
-            self.log_out_name = window.datalog_name
-            self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
-                basename(str(self.log_out_name))))
-
+       
         # Cruise Director Log filename
-        if not window.dirlog_name:
-            print('Setting director log filename to {0:s}'.format(window.dirlog_name))
+        if window.dirlog_name:
             self.output_name = window.dirlog_name
             self.txt_log_output_name.setText('Writing to: {0:s}'.format(
                 basename(str(self.output_name))))
 
         # Location of data
         if window.data_dir:
-            print('Setting data location to {0:s}'.format(window.datalog_name))
             self.data_log_dir = window.data_dir
-            self.txt_data_log_dir.setText(self.data_log_dir)
+            self.txt_data_log_dir.setText('Data Location: {0:s}'.format(
+                                            self.data_log_dir))
+ 
+        # Data Log filename
+        if window.datalog_name:
+            self.log_out_name = window.datalog_name
+            self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
+                basename(str(self.log_out_name))))
 
         # Data headers
-        print('Setting headers')
         self.headers = window.headers
         self.update_table_cols()
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
 
     def start_run(self):
-        print('Start run')
-        # Start collecting data
-        self.start_data_log = True
-        
-        # Start MET and TTL timers
-        self.flight_timer('both')
-
-    def end_run(self):
-        print('Ending run')
-        self.close()
-
-    def select_instr(self, index):
         """
-        Sets the instrument and default FITS headers
+        Starts the inner workings of the program.
 
-        Controlled by the instrument selector on the data log tab. 
-        When a new instrument is selected, the current instrument is
-        changed to it, default headers are selected, and the data log 
-        table is remade. This deletes the current data log table, so
-        a dialog box is presented to warn the user and ensure they want 
-        to proceed with changing the instrument.
+        Flips the flags so the code starts looking for FITS files
+        and starts the flight timers
         """
-
-        # Check to see if the selection is a different instrument
-        if index == self.last_instrument_index:
-            return
-        text = self.data_log_instrument_select.itemText(index)
-
-        # Check if the table is populated
-        if self.table_data_log.rowCount() > 0:
-            # Changing headers clears the table, inform user
-            choice = QtWidgets.QMessageBox.question(self, 'Warning',
-                                                    'Warning!\n'
-                                                    'Changing the instrument '
-                                                    'will clear the log!\n'
-                                                    'Continue?',
-                                                    QtWidgets.QMessageBox.Yes |
-                                                    QtWidgets.QMessageBox.No)
-            # If the user says to not continue thus keeping the data log,   
-            # reset the selector to the current instrument
-            if choice == QtWidgets.QMessageBox.No:
-                self.data_log_instrument_select.setCurrentIndex(
-                    self.last_instrument_index)
-                # num_items = self.data_log_instrument_select.count()
-                return
-
-        # Set the current instrument name and last_instrument_index
-        if 'HAWC' in text:
-            # Use HAWCFlight to support current SI file storage method
-            self.instrument = 'HAWCFlight'
-            key = 'hawc'
+        if self.fname:
+            # Start collecting data
+            self.start_data_log = True
+            # Start MET and TTL timers
+            self.flight_timer('both')
+            self.instrument_text.setText(self.instrument)
         else:
-            self.instrument = text
-            key = text.lower()
-        self.last_instrument_index = index
+            self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
+            
+    def end_run(self):
+        """ Ends the program after prompting for confirmation. """
+        choice = QtWidgets.QMessageBox.question(self,'Confirm',
+                                                'Quit Cruise Director?',
+                                                QtWidgets.QMessageBox.Yes |
+                                                QtWidgets.QMessageBox.No)
+        if choice == QtWidgets.QMessageBox.Yes:
+            self.close()
 
-        # Default headers for each instrument
-        flitecam_headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
-                            'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
-                            'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
-                            'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
-                            'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
-                            'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
-                            'telvpa', 'BBMODE', 'CBMODE', 'BGRESETS', 'GRSTCNT',
-                            'missn-id', 'instcfg', 'instmode']
-        great_headers = list(flitecam_headers)
-        exes_headers = list(flitecam_headers)
-        hawc_headers = ['date-obs', 'object', 'mccsmode',
-                        'spectel1', 'spectel2',
-                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
-                        'calmode', 'exptime', 'nodtime', 'fcstoff',
-                        'chpamp1', 'chpamp2', 'chpfreq',
-                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
-                        'aor_id', 'dthindex', 'dthnpos',
-                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
-                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
-                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
-                        'scnstep', 'scnsteps', 'scncross',
-                        'intcalv', 'diag_hz',
-                        'nhwp', 'hwpstart',
-                        'telra', 'teldec', 'telvpa',
-                        'obsra', 'obsdec', 'objra', 'objdec',
-                        'za_start', 'za_end', 'focus_st', 'focus_en',
-                        'utcstart', 'utcend',
-                        'missn-id']
-        fifi_headers = ['DATE-OBS', 'AOR_ID', 'OBJECT', 'EXPTIME',
-                        'OBSRA', 'OBSDEC', 'DETCHAN', 'DICHROIC',
-                        'ALTI_STA', 'ZA_START', 'NODSTYLE', 'NODBEAM',
-                        'DLAM_MAP', 'DBET_MAP', 'DET_ANGL',
-                        'OBSLAM', 'OBSBET', 'G_WAVE_B', 'G_WAVE_R']
-
-        # Build a dictionary of default headers for each instrument
-        headers = {'flitecam': flitecam_headers, 'great': great_headers,
-                   'exes': exes_headers, 'hawc': hawc_headers,
-                   'fifi-ls': fifi_headers, 'forcast': flitecam_headers}
-        self.headers = ['NOTES']+headers[key]
-
-        # Update the data_log headers
-        # Things are easier if the keywords are always in CAPS
-        self.headers = [each.upper() for each in self.headers]
-
-        # The addition of the NOTES column happens in here
-        # Remake the data log table
-        self.update_table_cols()
-        self.table_data_log.resizeColumnsToContents()
-        self.table_data_log.resizeRowsToContents()
+#    def select_instr(self, index):
+#        """
+#        Sets the instrument and default FITS headers
+#
+#        Controlled by the instrument selector on the data log tab. 
+#        When a new instrument is selected, the current instrument is
+#        changed to it, default headers are selected, and the data log 
+#        table is remade. This deletes the current data log table, so
+#        a dialog box is presented to warn the user and ensure they want 
+#        to proceed with changing the instrument.
+#        """
+#        return
+#
+#        # Check to see if the selection is a different instrument
+#        if index == self.last_instrument_index:
+#            return
+#        text = self.data_log_instrument_select.itemText(index)
+#
+#        # Check if the table is populated
+#        if self.table_data_log.rowCount() > 0:
+#            # Changing headers clears the table, inform user
+#            choice = QtWidgets.QMessageBox.question(self, 'Warning',
+#                                                    'Warning!\n'
+#                                                    'Changing the instrument '
+#                                                    'will clear the log!\n'
+#                                                    'Continue?',
+#                                                    QtWidgets.QMessageBox.Yes |
+#                                                    QtWidgets.QMessageBox.No)
+#            # If the user says to not continue thus keeping the data log,   
+#            # reset the selector to the current instrument
+#            if choice == QtWidgets.QMessageBox.No:
+#                self.data_log_instrument_select.setCurrentIndex(
+#                    self.last_instrument_index)
+#                # num_items = self.data_log_instrument_select.count()
+#                return
+#
+#        # Set the current instrument name and last_instrument_index
+#        if 'HAWC' in text:
+#            # Use HAWCFlight to support current SI file storage method
+#            self.instrument = 'HAWCFlight'
+#            key = 'hawc'
+#        else:
+#            self.instrument = text
+#            key = text.lower()
+#        self.last_instrument_index = index
+#
+#        # Default headers for each instrument
+#        flitecam_headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
+#                            'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
+#                            'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
+#                            'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
+#                            'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
+#                            'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
+#                            'telvpa', 'BBMODE', 'CBMODE', 'BGRESETS', 'GRSTCNT',
+#                            'missn-id', 'instcfg', 'instmode']
+#        great_headers = list(flitecam_headers)
+#        exes_headers = list(flitecam_headers)
+#        hawc_headers = ['date-obs', 'object', 'mccsmode',
+#                        'spectel1', 'spectel2',
+#                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
+#                        'calmode', 'exptime', 'nodtime', 'fcstoff',
+#                        'chpamp1', 'chpamp2', 'chpfreq',
+#                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
+#                        'aor_id', 'dthindex', 'dthnpos',
+#                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
+#                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
+#                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
+#                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
+#                        'scnstep', 'scnsteps', 'scncross',
+#                        'intcalv', 'diag_hz',
+#                        'nhwp', 'hwpstart',
+#                        'telra', 'teldec', 'telvpa',
+#                        'obsra', 'obsdec', 'objra', 'objdec',
+#                        'za_start', 'za_end', 'focus_st', 'focus_en',
+#                        'utcstart', 'utcend',
+#                        'missn-id']
+#        fifi_headers = ['DATE-OBS', 'AOR_ID', 'OBJECT', 'EXPTIME',
+#                        'OBSRA', 'OBSDEC', 'DETCHAN', 'DICHROIC',
+#                        'ALTI_STA', 'ZA_START', 'NODSTYLE', 'NODBEAM',
+#                        'DLAM_MAP', 'DBET_MAP', 'DET_ANGL',
+#                        'OBSLAM', 'OBSBET', 'G_WAVE_B', 'G_WAVE_R']
+#
+#        # Build a dictionary of default headers for each instrument
+#        headers = {'flitecam': flitecam_headers, 'great': great_headers,
+#                   'exes': exes_headers, 'hawc': hawc_headers,
+#                   'fifi-ls': fifi_headers, 'forcast': flitecam_headers}
+#        self.headers = ['NOTES']+headers[key]
+#
+#        # Update the data_log headers
+#        # Things are easier if the keywords are always in CAPS
+#        self.headers = [each.upper() for each in self.headers]
+#
+#        # The addition of the NOTES column happens in here
+#        # Remake the data log table
+#        self.update_table_cols()
+#        self.table_data_log.resizeColumnsToContents()
+#        self.table_data_log.resizeRowsToContents()
 
     def spawn_kw_window(self):
         """
@@ -897,18 +915,45 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         
         Reads in new FITS files and adds them to the header_vals
         """
+
+        # Each instrument can store their data in a different way.
+        # Read in the correct method to use from the 
+        # director.ini config file
+        config = ConfigObj('director.ini')
+        config = config['search'][self.instrument]
+        print(config)
+        print(type(config))
         self.new_files = []
         # Get the current list of FITS files in the location
-        if self.instrument == 'HAWCFlight':
-            self.data_current = glob.glob(str(self.data_log_dir) + '/*.grabme')
-        elif self.instrument == 'FIFI-LS':
-            cur_data = []
-            for root, dir_names, filenames in walk(str(self.data_log_dir)):
-                for filename in fnmatch.filter(filenames, '*.fits'):
-                    cur_data.append(join(root, filename))
-            self.data_current = cur_data
+        if config['method']=='glob':
+            pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir), 
+                                             config['extension'])
+            self.data_current = glob.glob(pattern)
+
+        elif config['method']=='walk':
+            pattern = '*.{0:s}'.format(config['extension'])
+            currrent_data = []
+            for root, dir_name, filenames in walk(str(self.data_log_dir)):
+                for filename in fnmatch.filter(filenames,pattern):
+                    current_data.append(join(root,filename))
+            self.data_current = current_data
+
         else:
-            self.data_current = glob.glob(str(self.data_log_dir) + '/*.fits')
+            # Unknown method
+            print('Unknown method {0:s} for instrument {1:s}'.format(
+                    config['method'],self.instrument))
+            return
+
+#        if self.instrument == 'HAWCFlight':
+#            self.data_current = glob.glob(str(self.data_log_dir) + '/*.grabme')
+#        elif self.instrument == 'FIFI-LS':
+#            cur_data = []
+#            for root, dir_names, filenames in walk(str(self.data_log_dir)):
+#                for filename in fnmatch.filter(filenames, '*.fits'):
+#                    cur_data.append(join(root, filename))
+#            self.data_current = cur_data
+#        else:
+#            self.data_current = glob.glob(str(self.data_log_dir) + '/*.fits')
         bncur = [basename(x) for x in self.data_current]
 
         # Correct the file listing to be ordered by modification time
@@ -976,126 +1021,126 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.table_data_log.scrollToBottom()
 
-    def update_data_log(self):
-        """
-        Updates the Data Log.
+#    def update_data_log(self):
+#        """
+#        Updates the Data Log.
+#
+#        Called when either the 'Force Update' button in the Data Log
+#        tab is pressed or at the end of the show_lcd loop if the
+#        'Autoupdate every:' option is selected.
+#        General notes:
+#          glob.glob returns a randomly ordered result, so that can
+#          lead to jumbled results if you just use it blindly. Sort
+#          by modification time to get a sensible listing. (can't use
+#          creation time cross-platform)
+#        """
+#        # Get the current list of FITS files in the location
+#        if self.instrument == 'HAWCFlight':
+#            self.data_current = glob.glob(str(self.data_log_dir) + '/*.grabme')
+#        elif self.instrument == 'FIFI-LS':
+#            cur_data = []
+#            for root, dir_names, filenames in walk(str(self.data_log_dir)):
+#                for filename in fnmatch.filter(filenames, '*.fits'):
+#                    cur_data.append(join(root, filename))
+#            self.data_current = cur_data
+#        else:
+#            self.data_current = glob.glob(str(self.data_log_dir) + '/*.fits')
+#
+#        # Correct the file listing to be ordered by modification time
+#        self.data_current.sort(key=getmtime)
+#
+#        # Ok, lets try this beast again.
+#        #   Main difference here is the addition of a basename'd version
+#        #   of current and previous data. Maybe it's a network path bug?
+#        #   (grasping at any and all straws here)
+#        bncur = [basename(x) for x in self.data_current]
+#
+#        if self.instrument == 'HAWCFlight':
+#            bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
+#        else:
+#            bnpre = [basename(x) for x in self.data_filenames]
+#
+#        if len(bncur) != len(bnpre):
+#            self.data_new = []
+#            # Make the unique listing of old files
+#            s = set(bnpre)
+#
+#            # Compare the new listing to the unique set of the old ones
+#            #   Previous logic was:
+#            #            diff = [x for x in self.data_current if x not in s]
+#            # Unrolled logic (might be easier to spot a goof-up)
+#            diff = []
+#            idxs = []
+#            for i, x in enumerate(bncur):
+#                if x not in s:
+#                    idxs.append(i)
+#                    diff.append(x)
+#
+#            # Capture the last row position so we know where to start
+#            self.last_data_row = self.table_data_log.rowCount()
+#
+#            # Actually query the files for the desired headers
+#            for idx in idxs:
+#                # REMEMBER: THIS NEEDS TO REFERENCE THE ORIGINAL LIST!
+#                if self.instrument == 'HAWCFlight':
+#                    realfile = self.data_current[idx][:-6] + 'fits'
+#                else:
+#                    realfile = self.data_current[idx]
+#                # Save the filenames
+#                self.data_filenames.append(basename(realfile))
+#                # Add number of rows for files to go into first
+#                row_position = self.table_data_log.rowCount()
+#                self.table_data_log.insertRow(row_position)
+#                # Actually get the header data
+#                the_data = header_dict(realfile, self.headers, hdu=self.fits_hdu)
+#                #                self.allData.append(theData)
+#                self.data_new.append(the_data)
+#
+#            self.set_table_data()
+#            self.data.write_to_file(self.log_out_name,self.headers)
 
-        Called when either the 'Force Update' button in the Data Log 
-        tab is pressed or at the end of the show_lcd loop if the 
-        'Autoupdate every:' option is selected. 
-        General notes:
-          glob.glob returns a randomly ordered result, so that can 
-          lead to jumbled results if you just use it blindly. Sort 
-          by modification time to get a sensible listing. (can't use 
-          creation time cross-platform)
-        """
-        # Get the current list of FITS files in the location
-        if self.instrument == 'HAWCFlight':
-            self.data_current = glob.glob(str(self.data_log_dir) + '/*.grabme')
-        elif self.instrument == 'FIFI-LS':
-            cur_data = []
-            for root, dir_names, filenames in walk(str(self.data_log_dir)):
-                for filename in fnmatch.filter(filenames, '*.fits'):
-                    cur_data.append(join(root, filename))
-            self.data_current = cur_data
-        else:
-            self.data_current = glob.glob(str(self.data_log_dir) + '/*.fits')
-
-        # Correct the file listing to be ordered by modification time
-        self.data_current.sort(key=getmtime)
-
-        # Ok, lets try this beast again.
-        #   Main difference here is the addition of a basename'd version
-        #   of current and previous data. Maybe it's a network path bug?
-        #   (grasping at any and all straws here)
-        bncur = [basename(x) for x in self.data_current]
-
-        if self.instrument == 'HAWCFlight':
-            bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
-        else:
-            bnpre = [basename(x) for x in self.data_filenames]
-
-        if len(bncur) != len(bnpre):
-            self.data_new = []
-            # Make the unique listing of old files
-            s = set(bnpre)
-
-            # Compare the new listing to the unique set of the old ones
-            #   Previous logic was:
-            #            diff = [x for x in self.data_current if x not in s]
-            # Unrolled logic (might be easier to spot a goof-up)
-            diff = []
-            idxs = []
-            for i, x in enumerate(bncur):
-                if x not in s:
-                    idxs.append(i)
-                    diff.append(x)
-
-            # Capture the last row position so we know where to start
-            self.last_data_row = self.table_data_log.rowCount()
-
-            # Actually query the files for the desired headers
-            for idx in idxs:
-                # REMEMBER: THIS NEEDS TO REFERENCE THE ORIGINAL LIST!
-                if self.instrument == 'HAWCFlight':
-                    realfile = self.data_current[idx][:-6] + 'fits'
-                else:
-                    realfile = self.data_current[idx]
-                # Save the filenames
-                self.data_filenames.append(basename(realfile))
-                # Add number of rows for files to go into first
-                row_position = self.table_data_log.rowCount()
-                self.table_data_log.insertRow(row_position)
-                # Actually get the header data
-                the_data = header_dict(realfile, self.headers, hdu=self.fits_hdu)
-                #                self.allData.append(theData)
-                self.data_new.append(the_data)
-
-            self.set_table_data()
-            self.data.write_to_file(self.log_out_name,self.headers)
-
-    def set_table_data(self):
-        """ Writes data to table_data_log """
-        if len(self.data_new) != 0:
-            # Disable fun stuff while we update
-            self.table_data_log.setSortingEnabled(False)
-            self.table_data_log.horizontalHeader().setSectionsMovable(False)
-            self.table_data_log.horizontalHeader().setDragEnabled(False)
-            self.table_data_log.horizontalHeader().setDragDropMode(
-                QtWidgets.QAbstractItemView.NoDragDrop)
-
-            # Actually set the labels for rows
-            self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
-
-            # Create the data table items and populate things
-            #   Note! This is for use with header_dict style of grabbing stuff
-            for n, row in enumerate(self.data_new):
-                for m, hkey in enumerate(self.headers):
-                    new_item = QtWidgets.QTableWidgetItem(str(row[hkey]))
-                    self.table_data_log.setItem(n + self.last_data_row,
-                                                m, new_item)
-                                                #m + 1, new_item)
-
-            # Resize to minimum required, then display
-            self.table_data_log.resizeColumnsToContents()
-            self.table_data_log.resizeRowsToContents()
-
-            # Seems to be more trouble than it's worth, so keep this commented
-            #            self.table_datalog.setSortingEnabled(True)
-
-            # Reenable fun stuff
-            self.table_data_log.horizontalHeader().setSectionsMovable(True)
-            self.table_data_log.horizontalHeader().setDragEnabled(True)
-            self.table_data_log.horizontalHeader().setDragDropMode(
-                QtWidgets.QAbstractItemView.InternalMove)
-
-            self.table_data_log.show()
-
-            # Should add this as a checkbox option to always scroll to bottom
-            #   whenever a new file comes in...
-            self.table_data_log.scrollToBottom()
-        else:
-            print('No new files!')
+#    def set_table_data(self):
+#        """ Writes data to table_data_log """
+#        if len(self.data_new) != 0:
+#            # Disable fun stuff while we update
+#            self.table_data_log.setSortingEnabled(False)
+#            self.table_data_log.horizontalHeader().setSectionsMovable(False)
+#            self.table_data_log.horizontalHeader().setDragEnabled(False)
+#            self.table_data_log.horizontalHeader().setDragDropMode(
+#                QtWidgets.QAbstractItemView.NoDragDrop)
+#
+#            # Actually set the labels for rows
+#            self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
+#
+#            # Create the data table items and populate things
+#            #   Note! This is for use with header_dict style of grabbing stuff
+#            for n, row in enumerate(self.data_new):
+#                for m, hkey in enumerate(self.headers):
+#                    new_item = QtWidgets.QTableWidgetItem(str(row[hkey]))
+#                    self.table_data_log.setItem(n + self.last_data_row,
+#                                                m, new_item)
+#                                                #m + 1, new_item)
+#
+#            # Resize to minimum required, then display
+#            self.table_data_log.resizeColumnsToContents()
+#            self.table_data_log.resizeRowsToContents()
+#
+#            # Seems to be more trouble than it's worth, so keep this commented
+#            #            self.table_datalog.setSortingEnabled(True)
+#
+#            # Reenable fun stuff
+#            self.table_data_log.horizontalHeader().setSectionsMovable(True)
+#            self.table_data_log.horizontalHeader().setDragEnabled(True)
+#            self.table_data_log.horizontalHeader().setDragDropMode(
+#                QtWidgets.QAbstractItemView.InternalMove)
+#
+#            self.table_data_log.show()
+#
+#            # Should add this as a checkbox option to always scroll to bottom
+#            #   whenever a new file comes in...
+#            self.table_data_log.scrollToBottom()
+#        else:
+#            print('No new files!')
 
 #    def write_data_log(self):
 #        """
@@ -1270,7 +1315,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.landing_time.setDateTime(time_qt)
 
-    def select_input_file(self,from_gui=None):
+    def select_input_file(self, from_gui=None):
         """
         Parses flight plan from .msi file. 
 
@@ -1494,7 +1539,7 @@ class FITSHeader():
         except KeyError:
             print('Unable to remove {0:s} from header_vals'.format(infile))
 
-    def write_to_file(self, outname, hkeys):
+    def write_to_file(self, outname, hkeys, table=None, filenames=None):
         """
         Writes data structure to outname
         """
@@ -1511,6 +1556,11 @@ class FITSHeader():
         #    f.close()
 
         # if self.log_out_name != '':
+
+        # Check if any field has been changed
+        if table:
+            self.check_user_updates(table, filenames, hkeys)
+
         if outname != '':
             # fields = 'FILENAME NOTES'.split()+self.headers
             fields = ['FILENAME']+hkeys
@@ -1524,11 +1574,35 @@ class FITSHeader():
                     row['FILENAME'] = k
                     w.writerow(row)
 
-class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
+    def check_user_updates(self, table, filenames, hkeys):
+        """
+        Checks if the user has made any updates to the table.
+        :return:
+        """
+
+        # Cycle through the table
+        # Compare table contents with the contents of header_vals
+        # Update the header_vals to the contents of table
+        rowCount = table.rowCount()
+        colCount = table.columnCount()
+        for i in range(rowCount):
+            fname = filenames[i]
+            for j in range(colCount):
+                hkey = hkeys[j]
+                table_val = table.item(i,j).text()
+                data_val = self.header_vals[fname][hkey]
+                if table_val != data_val:
+                    self.header_vals[fname][hkey] = table_val
+
+
+
+
+
+class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
     def __init__(self, parent=None):
 
         #super(self.__class__,self).__init__()
-        super(startupApp,self).__init__(parent)
+        super(StartupApp,self).__init__(parent)
     
         self.setupUi(self)
 
@@ -1538,6 +1612,7 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.datalocButton.clicked.connect(self.select_data_loc)
         self.datalogButton.clicked.connect(self.select_data_log)
         self.fitkwButton.clicked.connect(self.select_kw)
+        self.fitkwButton.setText('Change')
 #        self.startButton.clicked.connect(self.start)
         self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
@@ -1551,12 +1626,13 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.datalog_name = ''
         self.fname = ''
 
+        print('In startupApp',self.instrument)
+
         # Grab stuff from parent
         #self.utc_now = datetime.datetime.utcnow()
         self.utc_now = self.parent().utc_now
 #        self.headers = self.parentWidget().headers
         self.fits_hdu = self.parentWidget().fits_hdu
-
 
     def start(self):
         """
@@ -1569,7 +1645,6 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         if 'HAWC' in self.instrument:
             self.instrument = 'HAWCFLIGHT'
         self.close()
-
 
     def load_flight(self):
         """
@@ -1589,17 +1664,17 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         try:
             self.flight_info = fpmis.parseMIS(self.fname)
             self.success_parse = True
-            index = self.instSelect.findText(self.flight_info.instrument,
-                                            QtCore.Qt.MatchFixedString)
-            if index >= 0: 
-                self.instSelect.setCurrentIndex(index)
+            self.flightButton.setText('Change')
+            instIndex = self.instSelect.findText(self.flight_info.instrument,
+                                                 QtCore.Qt.MatchFixedString)
+            if instIndex>0:
+                self.instSelect.setCurrentIndex(instIndex)
         except IOError:
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing File!'
             self.flightText.setStyleSheet('QLabel { color : red; }')
             self.flightText.setText(self.err_msg)
             self.success_parse = False
-
 
     def select_instr(self):
         """
@@ -1608,7 +1683,6 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.instrument = str(self.instSelect.currentText())
         if 'HAWC' in self.instrument:
             self.instrument = 'HAWC'
-
 
     def select_log_file(self):
         """
@@ -1620,7 +1694,7 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                                 'Save File',default)[0]
         if self.dirlog_name:
             self.logOutText.setText('{0:s}'.format(basename(str(self.dirlog_name))))
-
+            self.logOutButton.setText('Change')
 
     def select_data_loc(self):
         """
@@ -1632,8 +1706,8 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         
         if self.data_dir:
             self.datalocText.setText(self.data_dir)
+            self.datalocButton.setText('Change')
 
- 
     def select_data_log(self):
         """
         Selects where to store the data log
@@ -1643,6 +1717,7 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                                 'Save File',default)[0]
         if self.datalog_name:
             self.datalogText.setText('{0:s}'.format(basename(str(self.datalog_name))))
+            self.logOutButton.setText('Change')
 
     def select_kw(self,default=None):
         """
@@ -1654,6 +1729,8 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         fname = 'director.ini'
         config = ConfigObj(fname)
         self.headers = config['keywords'][self.instrument.lower()]
+        if 'NOTES' not in self.headers:
+            self.headers.insert(0,'NOTES')
     
         if not default:
             window = FITSKeyWordDialog(self)
@@ -1666,24 +1743,24 @@ class startupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                 self.fitskwText.setText('Custom')
     
 
-def header_list(infile, header_keys, hdu=0):
-    """
-    Given a FITS file and a list of header keywords of interest,
-    parse those two together and return the result as a tuple of
-    base filename and an sequential list of the keywords.
-    """
-    try:
-        hed = pyf.getheader(infile, ext=hdu)
-    except IOError:
-        hed = ' '
-    item = []
-    for key in header_keys:
-        try:
-            item.append(hed[key])
-        except KeyError:
-            item.append('')
-
-    return basename(infile), item
+#def header_list(infile, header_keys, hdu=0):
+#    """
+#    Given a FITS file and a list of header keywords of interest,
+#    parse those two together and return the result as a tuple of
+#    base filename and an sequential list of the keywords.
+#    """
+#    try:
+#        hed = pyf.getheader(infile, ext=hdu)
+#    except IOError:
+#        hed = ' '
+#    item = []
+#    for key in header_keys:
+#        try:
+#            item.append(hed[key])
+#        except KeyError:
+#            item.append('')
+#
+#    return basename(infile), item
 
 
 def header_dict(infile, header_keys, hdu=0):
