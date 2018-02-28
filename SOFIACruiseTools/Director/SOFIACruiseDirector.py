@@ -137,6 +137,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Actually show the table
         self.table_data_log.show()
+        
+        # Connect a signal to catch when the items in the table change
+        self.table_data_log.itemChanged.connect(self.table_update)
 
         ####
         # Set up buttons
@@ -211,6 +214,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.timeout.connect(self.show_lcd)
         timer.start(500)
         self.show_lcd()
+
+    def table_update(self,item):
+        """
+        Updates the data structure when the table is changed by the user
+        """
+        # Change the value
+        fname = self.table_data_log.verticalHeaderItem(item.row()).text()
+        hkey = self.table_data_log.horizontalHeaderItem(item.column()).text()
+        self.data.header_vals[fname][hkey] = item.text()
+
 
     def setup(self):
         """
@@ -782,12 +795,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Called when the 'Add Blank Row' button in the Data Log tab is pressed.
         Alters table_datalog
         """
+        self.table_data_log.blockSignals(True)
+
         row_position = self.table_data_log.rowCount()
         self.table_data_log.insertRow(row_position)
         self.data_filenames.append('--> ')
         # Actually set the labels for rows
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
         self.data.write_to_file(self.log_out_name,self.headers)
+
+        self.table_data_log.blockSignals(False)
 
     def del_data_log_row(self):
         """
@@ -800,12 +817,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         bad = self.table_data_log.currentRow()
         # -1 means we didn't select anything
         if bad != -1:
+            self.table_data_log.blockSignals(True)
             # Clear the data we don't need anymore
             del self.data_filenames[bad]
             self.table_data_log.removeRow(self.table_data_log.currentRow())
             # Redraw
             self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
             self.data.write_to_file(self.log_out_name,self.headers)
+            self.table_data_log.blockSignals(False)
 
     def repopulate_data_log(self, rescan=False):
         """
@@ -821,6 +840,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setDragEnabled(False)
         self.table_data_log.horizontalHeader().setDragDropMode(
             QtWidgets.QAbstractItemView.NoDragDrop)
+        self.table_data_log.blockSignals(True)
+
 
         # thed_list = ['NOTES'] + self.headers
         thed_list = self.headers
@@ -891,6 +912,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setDragDropMode(
             QtWidgets.QAbstractItemView.InternalMove)
         self.table_data_log.show()
+        self.table_data_log.blockSignals(False)
 
         # Should add this as a checkbox option to always scroll to bottom
         #   whenever a new file comes in...
@@ -921,8 +943,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # director.ini config file
         config = ConfigObj('director.ini')
         config = config['search'][self.instrument]
-        print(config)
-        print(type(config))
         self.new_files = []
         # Get the current list of FITS files in the location
         if config['method']=='glob':
@@ -989,6 +1009,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setDragEnabled(False)
         self.table_data_log.horizontalHeader().setDragDropMode(
             QtWidgets.QAbstractItemView.NoDragDrop)
+        self.table_data_log.blockSignals(True)
 
         # Add the data to the table
         # init_row_count = self.table_data_log.rowCount()
@@ -1018,6 +1039,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setDragDropMode(
             QtWidgets.QAbstractItemView.InternalMove)
         self.table_data_log.show()
+        self.table_data_log.blockSignals(False)
 
         self.table_data_log.scrollToBottom()
 
