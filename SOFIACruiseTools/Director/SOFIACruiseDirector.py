@@ -952,7 +952,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         elif config['method']=='walk':
             pattern = '*.{0:s}'.format(config['extension'])
-            currrent_data = []
+            current_data = []
             for root, dir_name, filenames in walk(str(self.data_log_dir)):
                 for filename in fnmatch.filter(filenames,pattern):
                     current_data.append(join(root,filename))
@@ -1635,25 +1635,21 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.datalogButton.clicked.connect(self.select_data_log)
         self.fitkwButton.clicked.connect(self.select_kw)
         self.fitkwButton.setText('Change')
-#        self.startButton.clicked.connect(self.start)
         self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
-
-        self.instrument = str(self.instSelect.currentText())
-        if 'HAWC' in self.instrument:
-            self.instrument = 'HAWC'
+        print(self.instrument)
+        if 'flight' in self.instrument.lower():
+            self.instrument = 'HAWCFLIGHT'
+        elif 'ground' in self.instrument.lower():
+            self.instrument = 'HAWCGROUND'
         self.select_kw(default=1)
         self.dirlog_name = ''
         self.data_dir = ''
         self.datalog_name = ''
         self.fname = ''
 
-        print('In startupApp',self.instrument)
-
         # Grab stuff from parent
-        #self.utc_now = datetime.datetime.utcnow()
         self.utc_now = self.parent().utc_now
-#        self.headers = self.parentWidget().headers
         self.fits_hdu = self.parentWidget().fits_hdu
 
     def start(self):
@@ -1661,7 +1657,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Closes this window and passes results to main program
         """
 
-        print('Checking close')
         # Read the instrument selection
         self.instrument = str(self.instSelect.currentText())
         if 'HAWC' in self.instrument:
@@ -1703,8 +1698,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Selects the instrument
         """
         self.instrument = str(self.instSelect.currentText())
-        if 'HAWC' in self.instrument:
-            self.instrument = 'HAWC'
+        if 'Flight' in self.instrument:
+            self.instrument = 'HAWCFLIGHT'
+        elif 'Ground' in self.instrument:
+            self.instrument = 'HAWCGROUND'
 
     def select_log_file(self):
         """
@@ -1745,7 +1742,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Selects what FITS keywords to use
         """
-        print('Selecting FITS keywords')
 
         # Read the default keywords for each instrument
         fname = 'director.ini'
