@@ -1637,7 +1637,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.fitkwButton.setText('Change')
         self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
-        print(self.instrument)
+
+        self.instrument = str(self.instSelect.currentText())
         if 'flight' in self.instrument.lower():
             self.instrument = 'HAWCFLIGHT'
         elif 'ground' in self.instrument.lower():
