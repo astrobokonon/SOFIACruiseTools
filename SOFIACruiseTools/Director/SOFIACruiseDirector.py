@@ -53,6 +53,9 @@ from . import directorStartupDialog as ds
 
 
 class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
+    """
+    Main class for the Cruise Director
+    """
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
@@ -151,7 +154,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.end_button.clicked.connect(self.end_run)
 
         # Open the file chooser for the flight plan input
-        self.flight_plan_openfile.clicked.connect(self.select_input_file)
+        #self.flight_plan_openfile.clicked.connect(self.select_input_file)
         # Flight plan progression
         self.leg_previous.clicked.connect(self.prev_leg)
         self.leg_next.clicked.connect(self.next_leg)
@@ -170,7 +173,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                  self.count_direction('elapse'))
         # Text log stuff
         self.log_input_line.returnPressed.connect(self.post_log_line)
-        self.log_save.clicked.connect(self.select_output_file)
+        #self.log_save.clicked.connect(self.select_output_file)
 
         self.log_fault_mccs.clicked.connect(lambda: self.mark_message('mccs'))
         self.log_fault_si.clicked.connect(lambda: self.mark_message('si'))
@@ -181,8 +184,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.log_turning.clicked.connect(lambda: self.mark_message('turn'))
         self.log_post.clicked.connect(lambda: self.mark_message('post'))
 
-        self.data_log_open_dir.clicked.connect(self.select_dir)
-        self.data_log_save_file.clicked.connect(self.select_log_output_file)
+        #self.data_log_open_dir.clicked.connect(self.select_dir)
+        #self.data_log_save_file.clicked.connect(self.select_log_output_file)
 
         self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
             self.log_out_name,
@@ -200,10 +203,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #  in table_datalog!
 
         # Hide buttons that aren't needed anymore due to setup prompt
-        self.flight_plan_openfile.hide()
-        self.data_log_open_dir.hide()
-        self.data_log_save_file.hide()
-        self.log_save.hide()
+        #self.flight_plan_openfile.hide()
+        #self.data_log_open_dir.hide()
+        #self.data_log_save_file.hide()
+        #self.log_save.hide()
+
+        # Run the setup prompt
+        self.update_times()
+        self.setup()
 
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
@@ -236,33 +243,42 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Parse the results of the dialog.
         if not window.fname:
-            self.err_msg = 'ERROR: Failure Parsing File!'
+            #self.err_msg = 'ERROR: Failure Parsing File!'
             self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
-            self.flight_plan_filename.setText(self.err_msg)
-            return
+            #self.flight_plan_filename.setText(self.err_msg)
 
         # Flight information
         self.select_input_file(window.fname)
 
         # Instrument
         self.instrument = window.instrument
+        self.instrument_text.setText(self.instrument)
 
         # Cruise Director Log filename
         if window.dirlog_name:
             self.output_name = window.dirlog_name
-            self.txt_log_output_name.setText('Writing to: {0:s}'.format(
+            #self.txt_log_output_name.setText('Writing to: {0:s}'.format(
+            #    basename(str(self.output_name))))
+            self.txt_log_output_name.setText('{0:s}'.format(
                 basename(str(self.output_name))))
+        else:
+            self.txt_log_output_name.setStyleSheet('QLabel { color : red; }')
+            return
 
         # Location of data
         if window.data_dir:
             self.data_log_dir = window.data_dir
-            self.txt_data_log_dir.setText('Data Location: {0:s}'.format(
+            #self.txt_data_log_dir.setText('Data Location: {0:s}'.format(
+            #    self.data_log_dir))
+            self.txt_data_log_dir.setText('{0:s}'.format(
                 self.data_log_dir))
 
         # Data Log filename
         if window.datalog_name:
             self.log_out_name = window.datalog_name
-            self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
+            #self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
+            #    basename(str(self.log_out_name))))
+            self.txt_data_log_save_file.setText('{0:s}'.format(
                 basename(str(self.log_out_name))))
 
         # Data headers
@@ -278,7 +294,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Flips the flags so the code starts looking for FITS files
         and starts the flight timers
         """
-        if self.fname:
+        if self.output_name:
             # Start collecting data
             self.start_data_log = True
             # Start MET and TTL timers
@@ -446,23 +462,23 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # self.table_data_log.setHorizontalHeaderLabels(['NOTES'] + self.headers)
         self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
-    def select_dir(self):
-        """
-        Sets the location where data is stored.
-
-        Opens a window to allow the user to select the directory
-        where data is being stored. Called when the 'Set Data Directory'
-        button on the Data Log tab is pressed.
-        Sets:
-            txt_datalogdir
-            startdatalog
-        """
-        dtxt = 'Select Data Directory'
-        self.data_log_dir = QtWidgets.QFileDialog.getExistingDirectory(self,
-                                                                       dtxt)
-        if self.data_log_dir != '':
-            self.txt_data_log_dir.setText(self.data_log_dir)
-            self.start_data_log = True
+#    def select_dir(self):
+#        """
+#        Sets the location where data is stored.
+#
+#        Opens a window to allow the user to select the directory
+#        where data is being stored. Called when the 'Set Data Directory'
+#        button on the Data Log tab is pressed.
+#        Sets:
+#            txt_datalogdir
+#            startdatalog
+#        """
+#        dtxt = 'Select Data Directory'
+#        self.data_log_dir = QtWidgets.QFileDialog.getExistingDirectory(self,
+#                                                                       dtxt)
+#        if self.data_log_dir != '':
+#            self.txt_data_log_dir.setText(self.data_log_dir)
+#            self.start_data_log = True
 
     def line_stamper(self, line):
         """
@@ -509,41 +525,41 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             return
 
-    def select_output_file(self):
-        """
-        Sets the filename of the Cruise Director log.
+#    def select_output_file(self):
+#        """
+#        Sets the filename of the Cruise Director log.
+#
+#        Spawn the file chooser dialog box and return the result,
+#        attempting to both open and write to the file.
+#        Called when the 'Choose Output Filename' button on the
+#        Cruise Director Log tab is pressed.
+#        """
+#        default_name = 'SILog_{0:s}'.format(
+#            self.utc_now.strftime('%Y%m%d.txt'))
+#        self.output_name = QtWidgets.QFileDialog.getSaveFileName(self,
+#                                                                 'Save File',
+#                                                                 default_name)[0]
+#        if self.output_name != '':
+#            self.txt_log_output_name.setText('Writing to: {0:s}'.format(
+#                basename(str(self.output_name))))
 
-        Spawn the file chooser dialog box and return the result,
-        attempting to both open and write to the file.
-        Called when the 'Choose Output Filename' button on the
-        Cruise Director Log tab is pressed.
-        """
-        default_name = 'SILog_{0:s}'.format(
-            self.utc_now.strftime('%Y%m%d.txt'))
-        self.output_name = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                                 'Save File',
-                                                                 default_name)[0]
-        if self.output_name != '':
-            self.txt_log_output_name.setText('Writing to: {0:s}'.format(
-                basename(str(self.output_name))))
-
-    def select_log_output_file(self):
-        """
-        Sets the filename for the data log.
-
-        Spawn the file chooser dialog box and return the result,
-        attempting to both open and write to the file.
-        Called when the 'Set Log Output File' button on the Data
-        Log tab is pressed.
-        """
-        default_name = 'DataLog_{0:s}'.format(
-            self.utc_now.strftime('%Y%m%d.csv'))
-        self.log_out_name = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                                  'Save File',
-                                                                  default_name)[0]
-        if self.log_out_name != '':
-            self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
-                basename(str(self.log_out_name))))
+#    def select_log_output_file(self):
+#        """
+#        Sets the filename for the data log.
+#
+#        Spawn the file chooser dialog box and return the result,
+#        attempting to both open and write to the file.
+#        Called when the 'Set Log Output File' button on the Data
+#        Log tab is pressed.
+#        """
+#        default_name = 'DataLog_{0:s}'.format(
+#            self.utc_now.strftime('%Y%m%d.csv'))
+#        self.log_out_name = QtWidgets.QFileDialog.getSaveFileName(self,
+#                                                                  'Save File',
+#                                                                  default_name)[0]
+#        if self.log_out_name != '':
+#            self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
+#                basename(str(self.log_out_name))))
 
     def post_log_line(self):
         """
@@ -948,7 +964,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         elif config['method'] == 'walk':
             pattern = '*.{0:s}'.format(config['extension'])
             current_data = []
-            for root, dir_name, filenames in walk(str(self.data_log_dir)):
+            #for root, dir_name, filenames in walk(str(self.data_log_dir)):
+            for root, _, filenames in walk(str(self.data_log_dir)):
                 for filename in fnmatch.filter(filenames, pattern):
                     current_data.append(join(root, filename))
             self.data_current = current_data
@@ -988,7 +1005,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # If new files exist, update the table widget and
         # write the new data to file
-        if len(new_files) > 0:
+        #if len(new_files) > 0:
+        if new_files:
             self.update_table()
             if self.log_out_name != '':
                 self.data.write_to_file(self.log_out_name, self.headers)
@@ -1344,8 +1362,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         # If from_gui is None, prompt the user to select a filename
         if not from_gui:
-            self.fname = QtWidgets.QFileDialog.getOpenFileName(
-                caption='Select Flight Plan')[0]
+            self.fname = ''
+            #self.fname = QtWidgets.QFileDialog.getOpenFileName(
+            #    caption='Select Flight Plan')[0]
         else:
             self.fname = from_gui
         # Make sure the label text is black every time we start, and
@@ -1408,6 +1427,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         self.fitskw_dialogbutts.accepted.connect(self.accept)
         self.fitskw_dialogbutts.rejected.connect(self.reject)
         self.utc_now = self.parent().utc_now
+        self.kwname = ''
 
         # Grab a few things from the parent widget to use here
         self.headers = self.parentWidget().headers
@@ -1416,10 +1436,12 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
         self.update_head_list()
 
     def reordered_head_list(self):
+        """ Updates the header list if the keywords are reordered """
         self.update_head_list()
         self.txt_fitskw_status.setText('Unsaved Changes!')
 
     def kw_save_list(self):
+        """ Saves the current keyword list as a csv """
         self.select_kw_file(kind='save')
         if self.kwname != '':
             try:
@@ -1436,11 +1458,12 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                 # statusline = "File Written: %s" % str(self.kwname)
                 statusline = 'File Written: {0:s}'.format(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
-            except Exception as why:
+            except IOError as why:
                 print(str(why))
                 self.txt_fitskw_status.setText('ERROR WRITING TO FILE!')
 
     def kw_load_list(self):
+        """ Loads a list of keywords from a previously saved file """
         self.select_kw_file(kind='load')
         if self.kwname != '':
             try:
@@ -1451,7 +1474,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                     self.headers.append(row)
                 statusline = 'File Loaded: {0:s}'.format(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
-            except Exception as why:
+            except IOError as why:
                 print(str(why))
                 self.txt_fitskw_status.setText('ERROR READING THE FILE!')
             finally:
@@ -1461,11 +1484,13 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                 self.reorder_kw_widget()
 
     def reorder_kw_widget(self):
+        """ Reorders the keywords in the widget """
         self.fitskw_listing.clear()
         for key in self.headers:
             self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(key))
 
     def get_keyword_from_user(self):
+        """ Adds a keyword from user to the dicitonary and widget """
         text, ok = QtWidgets.QInputDialog.getText(self, 'Add Keyword',
                                                   'New Keyword:',
                                                   QtWidgets.QLineEdit.Normal,
@@ -1481,6 +1506,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
             self.txt_fitskw_status.setText('Unsaved Changes!')
 
     def remove_keyword_from_list(self):
+        """ Removes a selected keyword from the dictionary and widget """
         for it in self.fitskw_listing.selectedItems():
             self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
         self.txt_fitskw_status.setText('Unsaved Changes!')
@@ -1489,9 +1515,10 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
 
     def select_kw_file(self, kind='save'):
         """
+        Handles saving/loading of keyword files.
+
         Spawn the file chooser diaglog box and return the result, attempting
         to both open and write to the file.
-
         """
         defaultname = 'KWList_{0:s}{1:s}'.format(
             self.parentWidget().instrument,
@@ -1507,6 +1534,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                                                                 defaultname)[0]
 
     def update_head_list(self):
+        """ Updates the dictionary with the widget """
         self.headers = []
         for j in range(self.fitskw_listing.count()):
             ched = self.fitskw_listing.item(j).text()
@@ -1582,14 +1610,14 @@ class FITSHeader:
             # fields = 'FILENAME NOTES'.split()+self.headers
             fields = ['FILENAME'] + hkeys
             with open(outname, 'wb') as f:
-                w = csv.DictWriter(f, fields)
-                w.writeheader()
+                writer = csv.DictWriter(f, fields)
+                writer.writeheader()
                 # Loop over filenames
                 for k in self.header_vals:
                     row = {field: self.header_vals[k].get(field)
                            for field in fields}
                     row['FILENAME'] = k
-                    w.writerow(row)
+                    writer.writerow(row)
 
     def check_user_updates(self, table, filenames, hkeys):
         """
@@ -1600,11 +1628,11 @@ class FITSHeader:
         # Cycle through the table
         # Compare table contents with the contents of header_vals
         # Update the header_vals to the contents of table
-        rowCount = table.rowCount()
-        colCount = table.columnCount()
-        for i in range(rowCount):
+        row_count = table.rowCount()
+        col_count = table.columnCount()
+        for i in range(row_count):
             fname = filenames[i]
-            for j in range(colCount):
+            for j in range(col_count):
                 hkey = hkeys[j]
                 table_val = table.item(i, j).text()
                 data_val = self.header_vals[fname][hkey]
@@ -1613,6 +1641,10 @@ class FITSHeader:
 
 
 class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
+    """
+    GUI to configure run of Cruise Director
+    """
+
     def __init__(self, parent=None):
 
         # super(self.__class__,self).__init__()
@@ -1643,7 +1675,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.err_msg = ''
         self.flight_info = None
         self.success_parse = False
-        self.headers = None
+        #self.headers = None
 
         # Grab stuff from parent
         self.utc_now = self.parent().utc_now
@@ -1729,7 +1761,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Selects where to store the data log
         """
-        default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
+        default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.csv'))
         self.datalog_name = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                   'Save File',
                                                                   default)[0]

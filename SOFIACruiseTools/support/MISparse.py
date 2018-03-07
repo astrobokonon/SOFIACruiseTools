@@ -16,6 +16,7 @@ import numpy as np
 import scipy.interpolate as spi
 from datetime import datetime, timedelta
 
+import glob
 
 def sortByDate(inlist):
     """
@@ -985,14 +986,21 @@ def computeHash(infile):
     f = open(infile, 'rb')
     buffer = f.read()
     f.close()
+
     return hashlib.sha1(buffer).hexdigest()
 
 
 if __name__ == "__main__":
     infile = '../../inputs/07_201705_HA_EZRA_WX12.mis'
-    flight = parseMIS(infile, summarize=True)
-    # In the given flight, go leg by leg and collect the stuff
+    infile = '../../inputs/201710_FP_LINUS_MOPS.mis'
+    files = glob.glob('../../inputs/*mis')
+    for f in files:
+        infile = f.strip()
+        print('\n',infile.split('/')[-1])
+        flight = parseMIS(infile, summarize=True)
+        print(flight.instrument)
+        # In the given flight, go leg by leg and collect the stuff
 
-    seReview = seriesreview()
-    seReview.flights.update({flight.hash: flight})
-    seReview.summarize()
+        seReview = seriesreview()
+        seReview.flights.update({flight.hash: flight})
+        seReview.summarize()
