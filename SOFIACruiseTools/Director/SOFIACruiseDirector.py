@@ -312,6 +312,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                 QtWidgets.QMessageBox.Yes |
                                                 QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
+            # Write the data log and director log one last time
+            self.data.write_to_file(self.log_out_name, self.headers)
+            self.write_director_log()
+            # Close the app
             self.close()
 
     def spawn_kw_window(self):
@@ -356,7 +360,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # self.table_data_log.insertColumn(0)
 
         # Add the number of columns we'll need for the header keys given
-        for hkey in self.headers:
+        for _ in self.headers:
             col_position = self.table_data_log.columnCount()
             self.table_data_log.insertColumn(col_position)
         self.table_data_log.setHorizontalHeaderLabels(self.headers)
@@ -379,8 +383,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # log_display is a QtWidgets.QTextEdit object
         self.cruise_log.append(stamped_line + '\n')
         self.log_display.append(stamped_line)
+        self.write_director_log()
 
-        if self.output_name != '':
+    def write_director_log(self):
+        """
+        Writes the cruise_log to file
+        :return:
+        """
+        if self.output_name:
             try:
                 with open(self.output_name, 'w') as f:
                     f.writelines(self.cruise_log)
@@ -633,11 +643,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Called when the 'Add Blank Row' button in the Data Log tab is pressed.
         Alters table_datalog
         """
+
+        # Add the blank row to the data structure
+        self.data.add_blank_row(self.headers)
+
         self.table_data_log.blockSignals(True)
 
         row_position = self.table_data_log.rowCount()
         self.table_data_log.insertRow(row_position)
-        self.data_filenames.append('--> ')
+        # self.data_filenames.append('--> ')
+        self.data_filenames.append('blank_{0:d}'.format(self.data.blank_count))
         # Actually set the labels for rows
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
         self.data.write_to_file(self.log_out_name, self.headers)
@@ -930,10 +945,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     self.leg_info.range_rofrt[0],
                     self.leg_info.range_rofrt[1])
                 self.leg_rof_rof_rate.setText(rof_label)
-            #                try:
-            #                    self.leg_obs_block.setText(self.leginfo.obs_plan)
-            #                except:
-            #                    pass
+                try:
+                    self.leg_obs_block.setText(self.leg_info.obs_plan)
+                except:
+                    pass
             else:
                 # If it's a dead leg, update the leg number and we'll move on
                 # Clear values since they're probably crap
@@ -1200,6 +1215,7 @@ class FITSHeader(object):
 
         # self.header_vals = {}
         self.header_vals = OrderedDict()
+        self.blank_count = 0
 
     def add_image(self, infile, hkeys, hdu=0):
         """
@@ -1224,6 +1240,15 @@ class FITSHeader(object):
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
 
+    def add_blank_row(self, hkeys):
+        """
+        Adds blank row to the data log
+        """
+        blank_header = OrderedDict({key: '' for key in hkeys})
+        self.blank_count += 1
+        key = 'blank_{0:d}'.format(self.blank_count)
+        self.header_vals[key] = blank_header
+
     def remove_image(self, infile):
         """
         Removes an observation form the data set
@@ -1241,7 +1266,7 @@ class FITSHeader(object):
         if table:
             self.check_user_updates(table, filenames, hkeys)
 
-        if outname != '':
+        if outname:
             fields = ['FILENAME'] + hkeys
             with open(outname, 'w') as f:
                 writer = csv.DictWriter(f, fields)
@@ -1424,6 +1449,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                 if 'NOTES' not in self.headers:
                     self.headers.insert(0, 'NOTES')
                 self.fitskwText.setText('Custom')
+
 
 def total_sec_to_hms_str(obj):
     """ Formats a datetime object into a time string """
