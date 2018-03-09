@@ -1373,9 +1373,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                                                   QtCore.Qt.MatchFixedString)
             if inst_index > 0:
                 self.instSelect.setCurrentIndex(inst_index)
-        except IOError:
+        except (IOError, IndexError):
             self.flight_info = ''
-            self.err_msg = 'ERROR: Failure Parsing File!'
+            self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
+                            basename(self.fname))
             self.flightText.setStyleSheet('QLabel { color : red; }')
             self.flightText.setText(self.err_msg)
             self.success_parse = False

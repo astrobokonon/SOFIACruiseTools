@@ -7,24 +7,216 @@
     <x>0</x>
     <y>0</y>
     <width>1179</width>
-    <height>861</height>
+    <height>845</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>800</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>SOFIA Science Cruise Director</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <layout class="QGridLayout" name="gridLayout">
     <property name="sizeConstraint">
      <enum>QLayout::SetNoConstraint</enum>
     </property>
-    <item row="1" column="7">
-     <widget class="QGroupBox" name="groupBox">
+    <item row="1" column="1" colspan="6">
+     <widget class="QGroupBox" name="setup_info">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>240</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Setup Information</string>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>20</y>
+         <width>381</width>
+         <height>211</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Flight Plan:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="flight_plan_filename">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <italic>false</italic>
+            <bold>false</bold>
+            <kerning>true</kerning>
+           </font>
+          </property>
+          <property name="text">
+           <string>No Flight Plan Loaded!</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Director Log:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="txt_log_output_name">
+          <property name="font">
+           <font>
+            <italic>false</italic>
+           </font>
+          </property>
+          <property name="text">
+           <string>No Output Filename!</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Data Log:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="txt_data_log_save_file">
+          <property name="font">
+           <font>
+            <italic>false</italic>
+           </font>
+          </property>
+          <property name="text">
+           <string>No Output Filename!</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_3">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Data Location:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="txt_data_log_dir">
+          <property name="font">
+           <font>
+            <italic>false</italic>
+           </font>
+          </property>
+          <property name="text">
+           <string>No Directory Chosen to Scan!</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="instrument_label">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Instrument: </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="instrument_text">
+          <property name="font">
+           <font>
+            <italic>false</italic>
+           </font>
+          </property>
+          <property name="text">
+           <string>No Instrument Set!</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="1" column="7">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>240</height>
+       </size>
       </property>
       <property name="title">
        <string>Current Flight Progress</string>
@@ -59,6 +251,22 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="0" colspan="3">
+        <widget class="QLabel" name="txt_met">
+         <property name="font">
+          <font>
+           <family>Digital-7</family>
+           <pointsize>50</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>MET</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="1">
         <widget class="QPushButton" name="set_landing_time">
          <property name="sizePolicy">
@@ -88,22 +296,6 @@
          </property>
          <property name="text">
           <string>Start Both</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="3">
-        <widget class="QLabel" name="txt_met">
-         <property name="font">
-          <font>
-           <family>Digital-7</family>
-           <pointsize>50</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>MET</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -175,6 +367,12 @@
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>400</height>
+       </size>
       </property>
       <property name="title">
        <string>Logging</string>
@@ -390,10 +588,16 @@ p, li { white-space: pre-wrap; }
     <item row="1" column="8" rowspan="2">
      <widget class="QGroupBox" name="LegTimers">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>420</height>
+       </size>
       </property>
       <property name="title">
        <string>Leg Timers</string>
@@ -528,175 +732,102 @@ p, li { white-space: pre-wrap; }
       </layout>
      </widget>
     </item>
-    <item row="1" column="1" colspan="6">
-     <widget class="QGroupBox" name="setup_info">
-      <property name="title">
-       <string>Setup Information</string>
+    <item row="2" column="7">
+     <widget class="QGroupBox" name="TimesWorld">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>1</x>
-         <y>20</y>
-         <width>381</width>
-         <height>211</height>
-        </rect>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Flight Plan:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="flight_plan_filename">
-          <property name="font">
-           <font>
-            <weight>50</weight>
-            <italic>false</italic>
-            <bold>false</bold>
-            <kerning>true</kerning>
-           </font>
-          </property>
-          <property name="text">
-           <string>No Flight Plan Loaded!</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Director Log:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="txt_log_output_name">
-          <property name="font">
-           <font>
-            <italic>false</italic>
-           </font>
-          </property>
-          <property name="text">
-           <string>No Output Filename!</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-          <property name="textInteractionFlags">
-           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_4">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Data Log:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="txt_data_log_save_file">
-          <property name="font">
-           <font>
-            <italic>false</italic>
-           </font>
-          </property>
-          <property name="text">
-           <string>No Output Filename!</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Data Location:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="txt_data_log_dir">
-          <property name="font">
-           <font>
-            <italic>false</italic>
-           </font>
-          </property>
-          <property name="text">
-           <string>No Directory Chosen to Scan!</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="instrument_label">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Instrument: </string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="instrument_text">
-          <property name="font">
-           <font>
-            <italic>false</italic>
-           </font>
-          </property>
-          <property name="text">
-           <string>No Instrument Set!</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>175</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>World Times </string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="2" column="0">
+        <widget class="QLabel" name="txt_local_time">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Digital-7</family>
+           <pointsize>50</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>LOCAL</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="txt_utc">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Digital-7</family>
+           <pointsize>50</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>UTC</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item row="2" column="0" colspan="7">
      <widget class="QGroupBox" name="LegInformation">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>175</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>175</height>
+       </size>
       </property>
       <property name="title">
        <string>Flight Plan Information</string>
@@ -714,7 +845,7 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>60</y>
+            <y>52</y>
             <width>158</width>
             <height>20</height>
            </rect>
@@ -730,7 +861,7 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>8</y>
+            <y>0</y>
             <width>155</width>
             <height>21</height>
            </rect>
@@ -748,21 +879,11 @@ p, li { white-space: pre-wrap; }
             <x>190</x>
             <y>0</y>
             <width>311</width>
-            <height>161</height>
+            <height>131</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
            <item row="4" column="1">
-            <widget class="QLabel" name="leg_rof_rof_rate">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="textInteractionFlags">
-              <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
             <widget class="QLabel" name="leg_obs_block">
              <property name="text">
               <string/>
@@ -772,7 +893,17 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
+           <item row="3" column="1">
+            <widget class="QLabel" name="leg_rof_rof_rate">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
             <widget class="QLabel" name="txt_elevation">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -794,7 +925,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
+           <item row="1" column="1">
             <widget class="QLabel" name="leg_target">
              <property name="text">
               <string/>
@@ -804,7 +935,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
+           <item row="0" column="1">
             <widget class="QLabel" name="leg_number">
              <property name="text">
               <string/>
@@ -814,7 +945,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
+           <item row="3" column="0">
             <widget class="QLabel" name="txt_rof">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -836,7 +967,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="4" column="0">
             <widget class="QLabel" name="txt_obs_plan">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -858,7 +989,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
+           <item row="2" column="1">
             <widget class="QLabel" name="leg_elevation">
              <property name="text">
               <string/>
@@ -868,7 +999,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item row="1" column="0">
             <widget class="QLabel" name="txt_target">
              <property name="enabled">
               <bool>true</bool>
@@ -896,7 +1027,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
+           <item row="0" column="0">
             <widget class="QLabel" name="txt_leg">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -924,7 +1055,7 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>30</y>
+            <y>22</y>
             <width>159</width>
             <height>24</height>
            </rect>
@@ -946,7 +1077,7 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>80</y>
+            <y>72</y>
             <width>159</width>
             <height>21</height>
            </rect>
@@ -962,7 +1093,7 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>130</y>
+            <y>100</y>
             <width>85</width>
             <height>23</height>
            </rect>
@@ -984,7 +1115,7 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>90</x>
-            <y>130</y>
+            <y>100</y>
             <width>80</width>
             <height>23</height>
            </rect>
@@ -1009,53 +1140,6 @@ p, li { white-space: pre-wrap; }
          <zorder>landing_time</zorder>
          <zorder>leg_next</zorder>
          <zorder>leg_previous</zorder>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="2" column="7">
-     <widget class="QGroupBox" name="TimesWorld">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="title">
-       <string>World Times </string>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="2" column="0">
-        <widget class="QLabel" name="txt_local_time">
-         <property name="font">
-          <font>
-           <family>Digital-7</family>
-           <pointsize>50</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>LOCAL</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="txt_utc">
-         <property name="font">
-          <font>
-           <family>Digital-7</family>
-           <pointsize>50</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>UTC</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
         </widget>
        </item>
       </layout>
