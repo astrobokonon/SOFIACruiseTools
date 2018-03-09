@@ -270,6 +270,7 @@ class Ui_MainWindow(object):
         self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.widget_6 = QtWidgets.QWidget(self.dataLogTab)
+        self.widget_6.setMaximumSize(QtCore.QSize(16777215, 100))
         self.widget_6.setObjectName("widget_6")
         self.gridLayout_14 = QtWidgets.QGridLayout(self.widget_6)
         self.gridLayout_14.setContentsMargins(0, 0, 0, 0)
@@ -291,11 +292,12 @@ class Ui_MainWindow(object):
         self.gridLayout_14.addWidget(self.data_log_force_update, 0, 0, 1, 1)
         self.gridLayout_3.addWidget(self.widget_6, 10, 0, 1, 4)
         self.table_data_log = QtWidgets.QTableWidget(self.dataLogTab)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.table_data_log.sizePolicy().hasHeightForWidth())
         self.table_data_log.setSizePolicy(sizePolicy)
+        self.table_data_log.setMinimumSize(QtCore.QSize(0, 250))
         self.table_data_log.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.table_data_log.setAlternatingRowColors(True)
         self.table_data_log.setObjectName("table_data_log")
@@ -602,7 +604,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

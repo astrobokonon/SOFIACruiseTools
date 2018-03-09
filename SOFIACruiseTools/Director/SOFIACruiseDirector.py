@@ -1373,7 +1373,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                                                   QtCore.Qt.MatchFixedString)
             if inst_index > 0:
                 self.instSelect.setCurrentIndex(inst_index)
-        except (IOError, IndexError):
+        except (IOError, IndexError, AttributeError):
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
                             basename(self.fname))
