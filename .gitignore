@@ -3,3 +3,6 @@
 *.pyc
 *.swp
 *.fits
+DataLog_*
+SILog_*
+KWList_*

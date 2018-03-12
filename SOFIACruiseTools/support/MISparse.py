@@ -5,18 +5,17 @@ Created on Mon Jun 20 16:21:44 2016
 @author: rhamilton
 """
 
-# Trying to ensure Python 2/3 coexistance ...
+# Trying to ensure Python 2/3 coexistence ...
 from __future__ import division, print_function
 
 import re
-import copy
 import hashlib
 import itertools
-import numpy as np
-import scipy.interpolate as spi
-from datetime import datetime, timedelta
-
 import glob
+from datetime import datetime, timedelta
+import numpy as np
+# import copy
+# import scipy.interpolate as spi
 
 
 def sort_by_date(inlist):
@@ -30,7 +29,7 @@ def sort_by_date(inlist):
     for i, each in enumerate(inlist):
         # Lightly parse each flight (just reads the preamble)
         #   Putting the last 3 returns of MISlightly into the _ junk var
-        flight_header, _, _, _ = parseMISlightly(each)
+        flight_header, _, _, _ = parse_mis_lightly(each)
         seq.append(flight_header.takeoff)
 
     # Sort by takeoff time (flight.takeoff is a datetime obj!)
@@ -222,100 +221,186 @@ class LegProfile(object):
     """
 
     def __init__(self):
-        self.legno = 0
+        self.leg_num = 0
         self.leg_type = ''
-        self.target = ''
-        self.nonsiderial = False
         self.start = ''
         self.duration = timedelta()
-        self.obsdur = timedelta()
-        self.altitude = ''
-        self.ra = ''
-        self.dec = ''
-        self.epoch = ''
-        self.range_elev = []
-        self.range_rof = []
-        self.range_rofrt = []
-        self.range_rofrtu = ''
-        self.range_thdg = []
-        self.range_thdgrt = []
-        self.range_thdgrtu = ''
-        self.moonangle = 0
-        self.moonillum = ''
-        self.utc = []
-        self.utcdt = []
-        self.elapsedtime = []
-        self.mhdg = []
-        self.thdg = []
-        self.lat = []
-        self.long = []
-        self.wind_dir = []
-        self.wind_speed = []
-        self.temp = []
-        self.lst = []
-        self.elev = []
-        self.relative_time = []
-        self.rof = []
-        self.rofrt = []
-        self.loswv = []
-        self.sunelev = []
+        self.obs_dur = timedelta()
         self.comments = []
-        self.obsplan = ''
-        self.obsblk = ''
-        self.nonsid = False
-        self.naifid = -1
+        self.obs_plan = ''
+        self.obs_blk = ''
+
+        self.astro = AstroProfile()
+        self.plane = PlaneProfile()
+        self.step = StepParameters()
+
+#        # Astronomy values
+#        self.target = ''
+#        self.nonsiderial = False
+#        self.ra = ''
+#        self.dec = ''
+#        self.epoch = ''
+#        self.moonangle = 0
+#        self.moonillum = ''
+#        self.nonsid = False
+#        self.naifid = -1
+#
+#        # Plane values
+#        self.altitude = ''
+#        self.range_elev = []
+#        self.range_rof = []
+#        self.range_rofrt = []
+#        self.range_rofrtu = ''
+#        self.range_thdg = []
+#        self.range_thdgrt = []
+#        self.range_thdgrtu = ''
+#
+#        # Step values
+#        self.utc = []
+#        self.utcdt = []
+#        self.elapsedtime = []
+#        self.mhdg = []
+#        self.thdg = []
+#        self.lat = []
+#        self.long = []
+#        self.wind_dir = []
+#        self.wind_speed = []
+#        self.temp = []
+#        self.lst = []
+#        self.elev = []
+#        self.relative_time = []
+#        self.rof = []
+#        self.rofrt = []
+#        self.loswv = []
+#        self.sunelev = []
 
     def summarize(self):
         """
         Returns a nice summary string about the current leg
         """
-        txtSumm = ''
 
-        if self.leg_type == 'Takeoff':
-            txtSumm = "%02d -- %s" %\
-                         (self.legno, self.leg_type)
-        elif self.leg_type == 'Landing':
-            txtSumm = "%02d -- %s" %\
-                         (self.legno, self.leg_type)
-        elif self.leg_type == 'Other':
-            txtSumm = "%02d -- %s" %\
-                         (self.legno, self.leg_type)
-        elif self.leg_type == 'Observing':
-            txtSumm = "%02d -- %s, RA: %s, Dec: %s, LegDur: %s, ObsDur: %s" %\
-                       (self.legno, self.target, self.ra, self.dec,
-                        str(self.duration),
-                        str(self.obsdur))
-            txtSumm += "\n"
-            if self.nonsid is True:
-                txtSumm += "NONSIDERIAL TARGET -- NAIFID: %d" % (self.naifid)
-                txtSumm += "\n"
-                txtSumm += "(The SOFIA project sincerely hopes you enjoy "
-                txtSumm += "your observing breaks due to XFORMS crashes)"
-                txtSumm += "\n"
-            txtSumm += "ObsPlan: %s, ObsBlk: %s" % (self.obsplan, self.obsblk)
-            txtSumm += "\n\n"
-            txtSumm += "Elevation Range: %.1f, %.1f" % (self.range_elev[0],
-                                                        self.range_elev[1])
-            txtSumm += "\n\n"
-            txtSumm += "ROF Range: %.1f, %.1f" % (self.range_rof[0],
-                                                  self.range_rof[1])
-            txtSumm += "\n"
-            txtSumm += "ROF Rate Range: %.1f, %.1f %s" % (self.range_rofrt[0],
-                                                          self.range_rofrt[1],
-                                                          self.range_rofrtu)
-            txtSumm += "\n\n"
-            txtSumm += "True Heading Range: %.1f, %.1f" % (self.range_thdg[0],
-                                                           self.range_thdg[1])
-            txtSumm += "\n"
-            txtSumm += "True Heading Rate Range: %.1f, %.1f %s" %\
-                (self.range_thdgrt[0],
-                 self.range_thdgrt[1],
-                 self.range_thdgrtu)
-            txtSumm += "\n"
-            txtSumm += "Moon Angle: %.1f, Moon Illumination: %s" %\
-                (self.moonangle, self.moonillum)
+        if self.leg_type == 'Observing':
+            full_str = ('{0:02d} -- {1:s}, RA: {2:s}, Dec: {3:s}, '
+                 'LegDur: {4:s}, ObsDur: {5:s}\n'.format(self.leg_num,
+                                                         self.astro.target,
+                                                         self.astro.ra,
+                                                         self.astro.dec,
+                                                         self.duration,
+                                                         self.obs_dur))
+            full_str += "\n"
+            if self.astro.non_sid:
+                sub_str = ('NONSIDERIAL TARGET -- NAIFID: '
+                           '{0:d}\n'.format(self.astro.naif_id))
+                sub_str += ('(The SOFIA project sincerely hopes you enjoy '
+                            'your observing breaks due to XFORMS crashes)\n')
+                full_str += sub_str
+            full_str += 'ObsPlan: {0:s}, ObsBlk: {1:s}\n\n'.format(self.obs_plan,
+                                                                   self.obs_blk)
+            full_str += 'Elevation Range: {0:.1f}, {1:.1f}\n'.format(
+                        self.plane.elevation_range[0],
+                        self.plane.elevation_range[1])
+            full_str += 'ROF Range: {0:.1f}, {1:.1f}\n'.format(
+                        self.plane.rof_range[0],
+                        self.plane.rof_range[1])
+            full_str += 'ROF Rate Range: {0:.1f}, {1:.1f}\n'.format(
+                        self.plane.rof_rate_range[0],
+                        self.plane.rof_rate_range[1])
+            full_str += 'True Heading Range: {0:.1f}, {1:.1f}\n'.format(
+                        self.plane.true_heading_range[0],
+                        self.plane.true_heading_range[1])
+            full_str += 'True Heading Rate Range: {0:.1f}, {1:.1f}\n'.format(
+                        self.plane.true_heading_rate_range[0],
+                        self.plane.true_heading_rate_range[1])
+            full_str += 'Moon Angle: {0:.1f}, Moon Illumination: {1:s}'.format(
+                        self.astro.moon_angle, self.astro.moon_illum)
 
-        return txtSumm
+#            s = "%02d -- %s, RA: %s, Dec: %s, LegDur: %s, ObsDur: %s" %\
+#                       (self.legno, self.target, self.ra, self.dec,
+#                        str(self.duration),
+#                        str(self.obsdur))
+#            s += "ObsPlan: %s, ObsBlk: %s" % (self.obsplan, self.obsblk)
+#            s += "\n\n"
+#            s += "Elevation Range: %.1f, %.1f" % (self.range_elev[0],
+#                                                        self.range_elev[1])
+#            s += "\n\n"
+#            s += "ROF Range: %.1f, %.1f" % (self.range_rof[0],
+#                                                  self.range_rof[1])
+#            s += "\n"
+#            s += "ROF Rate Range: %.1f, %.1f %s" % (self.range_rofrt[0],
+#                                                          self.range_rofrt[1],
+#                                                          self.range_rofrtu)
+#            s += "\n\n"
+#            s += "True Heading Range: %.1f, %.1f" % (self.range_thdg[0],
+#                                                           self.range_thdg[1])
+#            s += "\n"
+#            s += "True Heading Rate Range: %.1f, %.1f %s" %\
+#                (self.range_thdgrt[0],
+#                 self.range_thdgrt[1],
+#                 self.range_thdgrtu)
+#            s += "\n"
+#            s += "Moon Angle: %.1f, Moon Illumination: %s" %\
+#                (self.moonangle, self.moonillum)
+
+        else:
+            # Leg is takeoff, landing, or other
+            full_str = '{0:02d} -- {1:s}'.format(self.leg_num, self.leg_type)
+
+        return full_str
+
+
+class AstroProfile(object):
+    """
+    Class to describe astronomy related parameters
+    """
+    def __init__(self):
+        self.target = ''
+        self.nonsiderial = False
+        self.ra = ''
+        self.dec  = ''
+        self.epoch = ''
+        self.moon_angle = 0
+        self.moon_illum = ''
+        self.non_sid = False
+        self.naif_id = 0
+
+
+class PlaneProfile(object):
+    """
+    Class to describe plane related parameters
+    """
+    def __init__(self):
+        self.altitude = ''
+        self.elevation_range = []
+        self.rof_range = []
+        self.rof_rate_range = []
+        self.rof_rate_unit = ''
+        self.true_heading_range = []
+        self.true_heading_rate_range = []
+        self.true_heading_rate_unit = ''
+
+
+class StepParameters(object):
+    """
+    Class to describe parameters outlined in 5-minute steps
+    """
+    def __init__(self):
+        self.utc = []
+        self.utc_dt = []
+        self.elapsed_time = []
+        self.magnetic_heading = []
+        self.true_heading = []
+        self.latitude = []
+        self.longitude = []
+        self.wind_direction = []
+        self.wind_speed = []
+        self.temperature = []
+        self.local_time = []
+        self.elevation = []
+        self.relative_time = []
+        self.rof = []
+        self.rof_rate = []
+        self.los_wv = []
+        self.sun_elevation = []
 
 
 # def interp_flight(oflight, npts, timestep=55):
@@ -821,7 +906,7 @@ def parse_leg_metadata(i, words, ltype=None):
         return newleg
 
 
-def parseMISPreamble(lines, flight, summarize=False):
+def parse_mis_preamble(lines, flight, summarize=False):
     """
     Returns valuable parameters from the preamble section, such as flight
     duration, locations, etc. directly to the flight class and returns it.
@@ -835,18 +920,18 @@ def parseMISPreamble(lines, flight, summarize=False):
     #   grabbing the fancy name, which didn't always exist
     try:
         #flightid = regExper(lines, 'Flight Plan ID', howmany=1,
-        flightid = reg_exper(lines, 'Filename', how_many=1,
+        flight_id = reg_exper(lines, 'Filename', how_many=1,
                             key_type='key:val')
         #fid = keyValuePair(flightid.group(), "Flight Plan ID", dtype=str)
-        fid = key_value_pair(flightid.group(), "Filename", dtype=str)
+        fid = key_value_pair(flight_id.group(), "Filename", dtype=str)
         fid = fid.strip().split("_")
         if fid[1] != '':
             try:
                 flight.instrument = flight.instdict[fid[1].strip()]
-            except:
+            except IndexError:
                 flight.instrument = ''
         if fid[2] != '':
-            flight.fancyname = fid[2]
+            flight.fancy_name = fid[2]
     except:
         fid = ['', '', '']
 
@@ -860,12 +945,13 @@ def parseMISPreamble(lines, flight, summarize=False):
 
     # Search for two airports; first is takeoff, second is landing
     airports = reg_exper(lines, 'Airport', how_many=2, key_type='key:val')
-    if airports is not None and len(airports) == 2:
+    if airports and len(airports) == 2:
         flight.origin = key_value_pair(airports[0].group(),
                                      "Airport", dtype=str)
         flight.destination = key_value_pair(airports[1].group(),
                                           "Airport", dtype=str)
-    elif len(airports) != 2 or airports is None:
+    #elif len(airports) != 2 or not airports:
+    else:
         print("WARNING: Couldn't find departure/arrival information!")
         flight.origin = "Unknown"
         flight.destination = "Unknown"
@@ -874,7 +960,7 @@ def parseMISPreamble(lines, flight, summarize=False):
     flight.drunway = key_value_pair(runway.group(), "Runway", dtype=str)
 
     legs = reg_exper(lines, 'Legs', how_many=1, key_type='key:val')
-    flight.nlegs = key_value_pair(legs.group(), "Legs", dtype=int)
+    flight.num_legs = key_value_pair(legs.group(), "Legs", dtype=int)
 
     mach = reg_exper(lines, 'Mach', how_many=1, key_type='key:val')
     flight.mach = key_value_pair(mach.group(), "Mach", dtype=float)
@@ -883,10 +969,10 @@ def parseMISPreamble(lines, flight, summarize=False):
     flight.takeoff = key_value_pair_DT(takeoff.group(), "Takeoff")
 
     obstime = reg_exper(lines, 'Obs Time', how_many=1, key_type='key:val')
-    flight.obstime = key_value_pair_TD(obstime.group(), "Obs Time")
+    flight.obs_time = key_value_pair_TD(obstime.group(), "Obs Time")
 
     flttime = reg_exper(lines, 'Flt Time', how_many=1, key_type='key:val')
-    flight.flighttime = key_value_pair_TD(flttime.group(), "Flt Time")
+    flight.flight_time = key_value_pair_TD(flttime.group(), "Flt Time")
 
     landing = reg_exper(lines, 'Landing', how_many=1, key_type='key:dtime')
     flight.landing = key_value_pair_DT(landing.group(), "Landing")
@@ -904,13 +990,13 @@ def parseMISPreamble(lines, flight, summarize=False):
     except:
         flight.sunrise = "NONE"
 
-    if summarize is True:
+    if summarize:
         print(flight.summarize())
 
     return flight
 
 
-def parseMISlightly(in_file, summarize=False):
+def parse_mis_lightly(in_file, summarize=False):
     """
     Given a SOFIA .MIS file, just parse the header block and return it
     """
@@ -918,9 +1004,8 @@ def parseMISlightly(in_file, summarize=False):
     flight = FlightProfile()
 
     # Read the file into memory so we can quickly parse stuff
-    f = open(in_file, 'r')
-    cont = f.readlines()
-    f.close()
+    with open(in_file,'r') as f:
+        cont = f.readlines()
 
     flight.hash = compute_hash(in_file)
 
@@ -928,15 +1013,15 @@ def parseMISlightly(in_file, summarize=False):
     #  Use a regular expression to make the searching less awful
     #  Note: regexp searches can be awful no matter what
     head1 = "Leg \d* \(.*\)"
-    lhed = find_leg_headers(cont, re.compile(head1))
+    leg_headers = find_leg_headers(cont, re.compile(head1))
 
     # Guarantee that the loop matches the number of legs found
-    flight.nlegs = len(lhed)
+    flight.num_legs = len(leg_headers)
 
     head2 = "UTC\s*MHdg"
-    ldat = find_leg_headers(cont, re.compile(head2))
+    leg_data = find_leg_headers(cont, re.compile(head2))
 
-    if len(lhed) != len(ldat):
+    if len(leg_headers) != len(leg_data):
         print("FATAL ERROR: Couldn't find the same amount of legs and data!")
         print("Check the formatting of the file?  Or the regular expressions")
         print("need updating because they changed the file format?")
@@ -945,32 +1030,35 @@ def parseMISlightly(in_file, summarize=False):
 
     # Since we know where the first leg line is, we can define the preamble.
     #   Takes the flight class as an argument and returns it all filled up.
-    flight = parseMISPreamble(cont[0:lhed[0]], flight, summarize=summarize)
+    flight = parse_mis_preamble(cont[0:leg_headers[0]], flight,
+                                summarize=summarize)
 
-    return flight, lhed, ldat, cont
+    return flight, leg_headers, leg_data, cont
 
 
 def parseMIS(in_file, summarize=False):
     """
     Read a SOFIA .MIS file, parse it, and return a nice thing we can work with
     """
-    flight, lhed, ldat, cont = parseMISlightly(in_file, summarize)
+    flight, leg_headers, leg_data, cont = parse_mis_lightly(in_file, summarize)
 
-    for i, datastart in enumerate(lhed):
+    for i, datastart in enumerate(leg_headers):
         if i == 0:
             # First leg is always takeoff
-            leg = parse_leg_metadata(i, cont[lhed[i]:ldat[i]], ltype='Takeoff')
+            leg = parse_leg_metadata(i, cont[leg_headers[i]:leg_data[i]],
+                                     ltype='Takeoff')
         elif i == (flight.nlegs - 1):
             # Last is always landing
-            leg = parse_leg_metadata(i, cont[lhed[i]:ldat[i]], ltype='Landing')
+            leg = parse_leg_metadata(i, cont[leg_headers[i]:leg_data[i]],
+                                     ltype='Landing')
         else:
             # Middle legs can be almost anything
-            leg = parse_leg_metadata(i, cont[lhed[i]:ldat[i]])
+            leg = parse_leg_metadata(i, cont[leg_headers[i]:leg_data[i]])
 #        print leg.summarize()
-        if i < len(lhed) - 1:
-            leg = parse_leg_data(i, cont[ldat[i]:lhed[i+1]], leg, flight)
+        if i < len(leg_headers) - 1:
+            leg = parse_leg_data(i, cont[leg_data[i]:leg_headers[i+1]], leg, flight)
         else:
-            leg = parse_leg_data(i, cont[ldat[i]:], leg, flight)
+            leg = parse_leg_data(i, cont[leg_data[i]:], leg, flight)
 
         flight.legs.append(leg)
 
@@ -985,8 +1073,8 @@ def compute_hash(in_file):
     Using sha1() for now because it's trivial.  Anything in hashlib will do!
     """
     with open(in_file,'rb') as f:
-        buffer = f.read()
-    return hashlib.sha1(buffer).hexdigest()
+        contents = f.read()
+    return hashlib.sha1(contents).hexdigest()
 
 
 if __name__ == "__main__":
