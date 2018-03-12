@@ -835,7 +835,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # If new files exist, update the table widget and
         # write the new data to file
-        #if len(new_files) > 0:
         if new_files:
             self.update_table()
             if self.log_out_name != '':
@@ -1306,7 +1305,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
     def __init__(self, parent=None):
 
-        # super(self.__class__,self).__init__()
         super(StartupApp, self).__init__(parent)
 
         self.setupUi(self)
