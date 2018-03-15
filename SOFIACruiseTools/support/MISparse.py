@@ -97,19 +97,24 @@ class SeriesReview(object):
                 if eachleg.leg_type == "Observing":
                     # Group in an obsplan by target name to catch obs
                     #   that are split across multiple flights
-                    bundle = {eachleg.target: [[str(flight.takeoff.date()),
-                                               str(eachleg.obsdur)]]}
+                    try:
+                        bundle = {eachleg.astro.target: [[str(flight.takeoff.date()),
+                                                   str(eachleg.obs_dur)]]}
+                    except:
+                        attrs = vars(eachleg)
+                        print('\n'.join("%s: %s" % item for item in attrs.items()))
+
                     # Check to see if the obsplan already has targets in
                     #   the series; if so, append to that so we don't lose any
                     
-                    if eachleg.obsplan in self.progs.keys():
-#                        print("obsplan %s already here" % (eachleg.obsplan))
+                    if eachleg.obs_plan in self.progs.keys():
+                        # print("obsplan %s already here" % (eachleg.obsplan))
                         # Check to see if this target has any other obs
-                        targsinprog = self.progs[eachleg.obsplan].keys()
-#                        print(targsinprog)
+                        targsinprog = self.progs[eachleg.obs_plan].keys()
+                        # print(targsinprog)
 
                         # Still need to catch case differences ?
-                        if eachleg.target in targsinprog:
+                        if eachleg.astro.target in targsinprog:
 #                            print("")
 #                            print("another obs of target %s" % eachleg.target)
                             # Need to use atarg here because that was the 
@@ -117,13 +122,13 @@ class SeriesReview(object):
                             #   case!
                             sht = self.progs[eachleg.obsplan][eachleg.target]
                             sht.append(bundle[eachleg.target][0])
-#                            print("")
+                            # print("")
                         else:
-#                            print("target %s isn't here yet" % (eachleg.target))
-                            self.progs[eachleg.obsplan].update(bundle)
+                            # print("target %s isn't here yet" % (eachleg.target))
+                            self.progs[eachleg.obs_plan].update(bundle)
                     else:
-                        self.progs.update({eachleg.obsplan: bundle})                    
-#        print(self.progs)
+                        self.progs.update({eachleg.obs_plan: bundle})
+        # print(self.progs)
 
 
 class NonSiderial(object):
@@ -205,11 +210,11 @@ class FlightProfile(object):
         Returns a nice summary string about the current flight
         """
         txtStr = "%s to %s, %d flight legs." %\
-                 (self.origin, self.destination, self.nlegs)
+                 (self.origin, self.destination, self.num_legs)
         txtStr += "\nTakeoff at %s\nLanding at %s\n" %\
                   (self.takeoff, self.landing)
         txtStr += "Flight duration of %s including %s observing time" %\
-                  (str(self.flighttime), self.obstime)
+                  (str(self.flight_time), self.obs_time)
 
         return txtStr
 
@@ -280,13 +285,13 @@ class LegProfile(object):
         """
 
         if self.leg_type == 'Observing':
-            full_str = ('{0:02d} -- {1:s}, RA: {2:s}, Dec: {3:s}, '
-                 'LegDur: {4:s}, ObsDur: {5:s}\n'.format(self.leg_num,
-                                                         self.astro.target,
-                                                         self.astro.ra,
-                                                         self.astro.dec,
-                                                         self.duration,
-                                                         self.obs_dur))
+            full_str = ('\n\n{0:02d} -- {1:s}, RA: {2:s}, Dec: {3:s}, '
+                        'LegDur: {4:s}, ObsDur: {5:s}\n'.format(self.leg_num,
+                                                                self.astro.target,
+                                                                self.astro.ra,
+                                                                self.astro.dec,
+                                                                self.duration,
+                                                                self.obs_dur))
             full_str += "\n"
             if self.astro.non_sid:
                 sub_str = ('NONSIDERIAL TARGET -- NAIFID: '
@@ -296,21 +301,37 @@ class LegProfile(object):
                 full_str += sub_str
             full_str += 'ObsPlan: {0:s}, ObsBlk: {1:s}\n\n'.format(self.obs_plan,
                                                                    self.obs_blk)
-            full_str += 'Elevation Range: {0:.1f}, {1:.1f}\n'.format(
-                        self.plane.elevation_range[0],
-                        self.plane.elevation_range[1])
-            full_str += 'ROF Range: {0:.1f}, {1:.1f}\n'.format(
-                        self.plane.rof_range[0],
-                        self.plane.rof_range[1])
-            full_str += 'ROF Rate Range: {0:.1f}, {1:.1f}\n'.format(
-                        self.plane.rof_rate_range[0],
-                        self.plane.rof_rate_range[1])
-            full_str += 'True Heading Range: {0:.1f}, {1:.1f}\n'.format(
-                        self.plane.true_heading_range[0],
-                        self.plane.true_heading_range[1])
-            full_str += 'True Heading Rate Range: {0:.1f}, {1:.1f}\n'.format(
-                        self.plane.true_heading_rate_range[0],
-                        self.plane.true_heading_rate_range[1])
+            print(self.plane.elevation_range)
+            try:
+                full_str += 'Elevation Range: {0:.1f}, {1:.1f}\n'.format(
+                            self.plane.elevation_range[0],
+                            self.plane.elevation_range[1])
+            except IndexError:
+                full_str += 'Elevation Range: None\n'
+            try:
+                full_str += 'ROF Range: {0:.1f}, {1:.1f}\n'.format(
+                            self.plane.rof_range[0],
+                            self.plane.rof_range[1])
+            except IndexError:
+                full_str += 'ROF Range: None\n'
+            try:
+                full_str += 'ROF Rate Range: {0:.1f}, {1:.1f}\n'.format(
+                            self.plane.rof_rate_range[0],
+                            self.plane.rof_rate_range[1])
+            except (IndexError, ValueError):
+                full_str += 'ROF Rate Range: None\n'
+            try:
+                full_str += 'True Heading Range: {0:.1f}, {1:.1f}\n'.format(
+                            self.plane.true_heading_range[0],
+                            self.plane.true_heading_range[1])
+            except IndexError:
+                full_str += 'True Heading Range: None\n'
+            try:
+                full_str += 'True Heading Rate Range: {0:.1f}, {1:.1f}\n'.format(
+                            self.plane.true_heading_rate_range[0],
+                            self.plane.true_heading_rate_range[1])
+            except (IndexError, ValueError):
+                full_str += 'True Heading Rate Range: None\n'
             full_str += 'Moon Angle: {0:.1f}, Moon Illumination: {1:s}'.format(
                         self.astro.moon_angle, self.astro.moon_illum)
 
@@ -695,7 +716,7 @@ def parse_leg_data(i, contents, leg, flight):
                                                second=tobj.second)
                 if k == 0:
                     start_dtobj = utcdt
-                    leg.elapsedtime.append(0)
+                    leg.step.elapsed_time.append(0)
                 else:
                     # When reconstructing an ISO timestamp, check for a
                     #  change of day that we'll have to set manually
@@ -703,45 +724,45 @@ def parse_leg_data(i, contents, leg, flight):
                         utcdt.replace(day=flight.takeoff.day + 1)
                         print("Bastard day change")
                     # Start tracking the relative time from start too
-                    leg.elapsedtime.append((utcdt-start_dtobj).seconds)
-                leg.utcdt.append(utcdt)
-                leg.relative_time.append((utcdt -
+                    leg.step.elapsed_time.append((utcdt-start_dtobj).seconds)
+                leg.step.utc_dt.append(utcdt)
+                leg.step.relative_time.append((utcdt -
                                           flight.takeoff).seconds)
-                leg.utc.append(utcdt.isoformat())
+                leg.step.utc.append(utcdt.isoformat())
 
-                leg.mhdg.append(np.float(line[1]))
-                leg.thdg.append(np.float(line[2]))
+                leg.step.magnetic_heading.append(np.float(line[1]))
+                leg.step.true_heading.append(np.float(line[2]))
 #                    leg.lat.append(line[3:5])
-                leg.lat.append(np.float(line[3][1:]) +
+                leg.step.latitude.append(np.float(line[3][1:]) +
                                np.float(line[4])/60.)
                 if line[3][0] == 'S':
-                    leg.lat[-1] *= -1
-                leg.long.append(np.float(line[5][1:]) +
+                    leg.step.latitude[-1] *= -1
+                leg.step.longitude.append(np.float(line[5][1:]) +
                                 np.float(line[6])/60.)
                 if line[5][0] == 'W':
-                    leg.long[-1] *= -1
+                    leg.step.longitude[-1] *= -1
 
-                leg.wind_dir.append(np.float(line[7].split('/')[0]))
-                leg.wind_speed.append(np.float(line[7].split('/')[1]))
-                leg.temp.append(np.float(line[8]))
-                leg.lst.append(line[9])
+                leg.step.wind_direction.append(np.float(line[7].split('/')[0]))
+                leg.step.wind_speed.append(np.float(line[7].split('/')[1]))
+                leg.step.temperature.append(np.float(line[8]))
+                leg.step.local_time.append(line[9])
                 if line[10] == "N/A":
-                    leg.elev.append(np.NaN)
+                    leg.step.elevation.append(np.NaN)
                 else:
-                    leg.elev.append(np.float(line[10]))
+                    leg.step.elevation.append(np.float(line[10]))
                 if line[11] == 'N/A':
-                    leg.rof.append(np.NaN)
+                    leg.step.rof.append(np.NaN)
                 else:
-                    leg.rof.append(np.float(line[11]))
+                    leg.step.rof.append(np.float(line[11]))
                 if line[12] == 'N/A':
-                    leg.rofrt.append(np.NaN)
+                    leg.step.rof_rate.append(np.NaN)
                 else:
-                    leg.rofrt.append(np.float(line[12]))
+                    leg.step.rof_rate.append(np.float(line[12]))
                 if line[13] == 'N/A':
-                    leg.loswv.append(np.NaN)
+                    leg.step.los_wv.append(np.NaN)
                 else:
-                    leg.loswv.append(np.float(line[13]))
-                leg.sunelev.append(np.float(line[14]))
+                    leg.step.los_wv.append(np.float(line[13]))
+                leg.step.sun_elevation.append(np.float(line[14]))
                 if len(line) == 16:
                     leg.comments.append(line[15])
                 else:
@@ -761,41 +782,41 @@ def parse_leg_metadata(i, words, ltype=None):
     that's important and useful and return the leg class for further use.
     """
 #    print "\nParsing leg %d" % (i + 1)
-    newleg = LegProfile()
-    newleg.legno = i + 1
+    new_leg = LegProfile()
+    new_leg.leg_num = i + 1
 
     # Use the regexp setup used in parseMISPreamble to make this not awful
     legtarg = reg_exper(words, 'Leg', how_many=1, key_type='legtarg')
     # NOTE: need pos=2 here because it's splitting on the spaces, and the
     #   format is "Leg N (stuff)" and [1:-1] excludes the parentheses
-    newleg.target = key_value_pair(legtarg.group(),
+    new_leg.astro.target = key_value_pair(legtarg.group(),
                                    "Leg", delim=' ', pos=2, dtype=str)[1:-1]
 
     start = reg_exper(words, 'Start', how_many=1, key_type='key:val')
-    newleg.start = key_value_pair_TD(start.group(), "Start")
+    new_leg.start = key_value_pair_TD(start.group(), "Start")
 
     dur = reg_exper(words, 'Leg Dur', how_many=1, key_type='key:val')
-    newleg.duration = key_value_pair_TD(dur.group(), "Leg Dur")
+    new_leg.duration = key_value_pair_TD(dur.group(), "Leg Dur")
 
     alt = reg_exper(words, 'Req. Alt', how_many=1, key_type='key:val')
     if alt is None:
         # And it begins; needed for Cycle 5 MIS files due to a name change
-        alt = reg_exper(words, 'Alt.', howmany=1, keytype='key:val')
-        newleg.altitude = key_value_pair(alt.group(), "Alt", dtype=float)
+        alt = reg_exper(words, 'Alt.', how_many=1, key_type='key:val')
+        new_leg.plane.altitude = key_value_pair(alt.group(), "Alt", dtype=float)
     else:
-        newleg.altitude = key_value_pair(alt.group(), "Req. Alt", dtype=float)
+        new_leg.plane.altitude = key_value_pair(alt.group(), "Req. Alt", dtype=float)
 
     # Now we begin the iterative approach to parsing (with some help)
     if ltype == 'Takeoff':
-        newleg.target = 'Takeoff'
-        newleg.leg_type = 'Takeoff'
-        newleg.obs_blk = 'None'
-        return newleg
+        new_leg.astro.target = 'Takeoff'
+        new_leg.leg_type = 'Takeoff'
+        new_leg.obs_blk = 'None'
+        return new_leg
     elif ltype == 'Landing':
-        newleg.target = 'Landing'
-        newleg.leg_type = 'Landing'
-        newleg.obs_blk = 'None'
-        return newleg
+        new_leg.astro.target = 'Landing'
+        new_leg.leg_type = 'Landing'
+        new_leg.obs_blk = 'None'
+        return new_leg
     else:
         # This generally means it's an observing leg
         # If the target keyword is there, it's an observing leg
@@ -803,7 +824,8 @@ def parse_leg_metadata(i, words, ltype=None):
                            key_type='key+nextkey')
         if target is None:
             target = 'Undefined'
-            newleg.leg_type = 'Other'
+            new_leg.astro.target = target
+            new_leg.leg_type = 'Other'
         else:
             target = is_it_blank_or_not(target.groups()[1])
 #            target = target.groups()[1].split(':')[1].strip()
@@ -811,20 +833,20 @@ def parse_leg_metadata(i, words, ltype=None):
                 target = 'Undefined'
 #            newleg.target = target
             # Added this to help with exporting to confluence down the line
-            newleg.target = target.replace('[', '').replace(']', '')
-            newleg.leg_type = 'Observing'
+            new_leg.astro.target = target.replace('[', '').replace(']', '')
+            new_leg.leg_type = 'Observing'
 
             odur = reg_exper(words, 'Obs Dur', how_many=1, key_type='key:val')
-            newleg.obsdur = key_value_pair_TD(odur.group(), "Obs Dur")
+            new_leg.obsdur = key_value_pair_TD(odur.group(), "Obs Dur")
 
             ra = reg_exper(words, 'RA', how_many=1, key_type='key:val')
-            newleg.ra = key_value_pair(ra.group(), "RA", dtype=str)
+            new_leg.ra = key_value_pair(ra.group(), "RA", dtype=str)
 
             epoch = reg_exper(words, 'Equinox', how_many=1, key_type='key:val')
-            newleg.epoch = key_value_pair(epoch.group(), "Equinox", dtype=str)
+            new_leg.epoch = key_value_pair(epoch.group(), "Equinox", dtype=str)
 
             dec = reg_exper(words, 'Dec', how_many=1, key_type='key:val')
-            newleg.dec = key_value_pair(dec.group(), "Dec", dtype=str)
+            new_leg.dec = key_value_pair(dec.group(), "Dec", dtype=str)
 
             # First shot at parsing blank values. Was a bit hokey.
 #            opidline = regExper(words, ['ObspID', 'Blk', 'Priority'],
@@ -832,33 +854,33 @@ def parse_leg_metadata(i, words, ltype=None):
 
             opid = reg_exper(words, 'ObspID', how_many=1, next_key='Blk',
                             key_type='key+nextkey')
-            obsblk = reg_exper(words, 'Blk', how_many=1, next_key='Priority',
+            obs_blk = reg_exper(words, 'Blk', how_many=1, next_key='Priority',
                               key_type='key+nextkey')
 
             # Note: these are for the original (threeline) parsing method
 #            newleg.obsplan = isItBlankOrNot(opidline[0][1])
 #            newleg.obsblk = isItBlankOrNot(opidline[0][2])
 
-            newleg.obsplan = is_it_blank_or_not(opid.groups()[1])
-            newleg.obsblk = is_it_blank_or_not(obsblk.groups()[1])
+            new_leg.obs_plan = is_it_blank_or_not(opid.groups()[1])
+            new_leg.obs_blk = is_it_blank_or_not(obs_blk.groups()[1])
 
             naif = reg_exper(words, 'NAIF ID', how_many=1, key_type='key:val')
             if naif is None:
-                newleg.nonsid = False
-                newleg.naifid = -1
+                new_leg.non_sid = False
+                new_leg.naif_id = -1
             else:
-                newleg.nonsid = True
-                newleg.naifid = key_value_pair(naif.group(), 'NAIF ID',
+                new_leg.non_sid = True
+                new_leg.naif_id = key_value_pair(naif.group(), 'NAIF ID',
                                              dtype=int)
 
             # Big of manual magic to deal with the stupid brackets
             rnge_e = reg_exper(words, 'Elev', how_many=1, key_type='bracketvals')
             rnge_e = rnge_e.groups()[1][1:-1].split(',')
-            newleg.range_elev = [np.float(each) for each in rnge_e]
+            new_leg.range_elev = [np.float(each) for each in rnge_e]
 
             rnge_rof = reg_exper(words, 'ROF', how_many=1, key_type='bracketvals')
             rnge_rof = rnge_rof.groups()[1][1:-1].split(',')
-            newleg.range_rof = [np.float(each) for each in rnge_rof]
+            new_leg.range_rof = [np.float(each) for each in rnge_rof]
 
             # Yet another madman decision - using the same keyword twice!
             #   This will return both the rate for the ROF [0] and the
@@ -866,44 +888,51 @@ def parse_leg_metadata(i, words, ltype=None):
             # NOTE: Flight plans didn't always have THdg in the metadata,
             #   so if we can't find two, try to just use the one (ROF)
             try:
-                rnge_rates = reg_exper(words, 'rate', how_many=2,
+                range_rates = reg_exper(words, 'rate', how_many=2,
                                       key_type='bracketvalsunits')
-                if type(rnge_rates) is not list:
+                print('Range_rates = ', [i.group() for i in range_rates])
+                #if type(rnge_rates) is not list:
+                if isinstance(range_rates, list):
                     # If there's only ROF, it'll find three things and be
                     #   a match re type, not a list of match re types
-                    rnge_rofrt = rnge_rates.groups()[1][1:-1].split(',')
-                    newleg.range_rofrt = [np.float(ech) for ech in rnge_rofrt]
-                    newleg.range_rofrtu = rnge_rates.group()[2]
+                    range_rofrt = range_rates.groups()[1][1:-1].split(',')
+                    new_leg.plane.rof_rate_range = [np.float(ech) for ech in
+                                                    range_rofrt]
+                    new_leg.plane.rof_rate_unit = range_rates.group()[2]
                 else:
-                    rnge_rofrt = rnge_rates[0].groups()[1][1:-1].split(',')
-                    newleg.range_rofrt = [np.float(ech) for ech in rnge_rofrt]
-                    newleg.range_rofrtu = rnge_rates[0].groups()[2]
+                    range_rofrt = range_rates[0].groups()[1][1:-1].split(',')
+                    new_leg.plane.rof_rate_range = [np.float(ech) for ech in
+                                                    range_rofrt]
+                    new_leg.plane.rof_rate_unit = range_rates[0].groups()[2]
 
-                    rnge_thdg = reg_exper(words, 'THdg', how_many=1,
-                                         key_type='bracketvals')
-                    rnge_thdg = rnge_thdg.groups()[1][1:-1].split(',')
-                    newleg.range_thdg = [np.float(each) for each in rnge_thdg]
+                    range_thdg = reg_exper(words, 'THdg', how_many=1,
+                                           key_type='bracketvals')
+                    range_thdg = range_thdg.groups()[1][1:-1].split(',')
+                    new_leg.plane.true_heading_range = [np.float(each) for each
+                                                        in range_thdg]
 
-                    rnge_thdgrt = rnge_rates[1].groups()[1][1:-1].split(',')
-                    newleg.range_thdgrt = [np.float(eh) for eh in rnge_thdgrt]
-                    newleg.range_thdgrtu = rnge_rates[1].groups()[2]
+                    range_thdgrt = range_rates[1].groups()[1][1:-1].split(',')
+                    new_leg.plane.true_heading_rate_range = [np.float(eh)
+                                                             for eh in range_thdgrt]
+                    new_leg.plane.true_heading_rate_unit = range_rates[1].groups()[2]
             except:
-                newleg.range_rofrt = "Undefined"
-                newleg.range_rofrtu = "Undefined"
-                newleg.range_thdgrt = "Undefined"
-                newleg.range_thdgrtu = "Undefined"
+                new_leg.plane.rof_rate_range = 'Undefined'
+                new_leg.plane.rof_rate_unit = 'Undefined'
+                new_leg.plane.true_heading_rate_range = 'Undefined'
+                new_leg.plane.true_heading_rate_unit = 'Undefined'
 
             moon = reg_exper(words, 'Moon Angle', how_many=1, key_type='key:val')
-            newleg.moonangle = key_value_pair(moon.group(), "Moon", dtype=float)
+            new_leg.astro.moon_angle = key_value_pair(moon.group(), "Moon",
+                                                      dtype=float)
 
             # Moon illumination isn't always there
-            moonillum = reg_exper(words, 'Moon Illum',
+            moon_illum = reg_exper(words, 'Moon Illum',
                                  how_many=1, key_type='key:val')
-            if moonillum is not None:
-                newleg.moonillum = key_value_pair(moonillum.group(),
-                                                "Moon Illum", dtype=str)
+            if moon_illum is not None:
+                new_leg.astro.moon_illum = key_value_pair(moon_illum.group(),
+                                                          "Moon Illum", dtype=str)
 
-        return newleg
+        return new_leg
 
 
 def parse_mis_preamble(lines, flight, summarize=False):
@@ -1036,25 +1065,25 @@ def parse_mis_lightly(in_file, summarize=False):
     return flight, leg_headers, leg_data, cont
 
 
-def parseMIS(in_file, summarize=False):
+def parse_mis(in_file, summarize=False):
     """
     Read a SOFIA .MIS file, parse it, and return a nice thing we can work with
     """
     flight, leg_headers, leg_data, cont = parse_mis_lightly(in_file, summarize)
 
-    for i, datastart in enumerate(leg_headers):
+    for i, data_start in enumerate(leg_headers):
         if i == 0:
             # First leg is always takeoff
             leg = parse_leg_metadata(i, cont[leg_headers[i]:leg_data[i]],
                                      ltype='Takeoff')
-        elif i == (flight.nlegs - 1):
+        elif i == (flight.num_legs - 1):
             # Last is always landing
             leg = parse_leg_metadata(i, cont[leg_headers[i]:leg_data[i]],
                                      ltype='Landing')
         else:
             # Middle legs can be almost anything
             leg = parse_leg_metadata(i, cont[leg_headers[i]:leg_data[i]])
-#        print leg.summarize()
+        print(leg.summarize())
         if i < len(leg_headers) - 1:
             leg = parse_leg_data(i, cont[leg_data[i]:leg_headers[i+1]], leg, flight)
         else:
@@ -1080,14 +1109,12 @@ def compute_hash(in_file):
 if __name__ == "__main__":
     infile = '../../inputs/07_201705_HA_EZRA_WX12.mis'
     infile = '../../inputs/201710_FP_LINUS_MOPS.mis'
-    files = glob.glob('../../inputs/*mis')
-    for f in files:
-        infile = f.strip()
-        print('\n', infile.split('/')[-1])
-        flight = parseMIS(infile, summarize=True)
-        print(flight.instrument)
-        # In the given flight, go leg by leg and collect the stuff
+    infile = '../../inputs/201803_FI_DIANA_SCI.mis'
+    print('\n', infile.split('/')[-1])
+    flight = parse_mis(infile, summarize=True)
+    print(flight.instrument)
+    # In the given flight, go leg by leg and collect the stuff
 
-        seReview = SeriesReview()
-        seReview.flights.update({flight.hash: flight})
-        seReview.summarize()
+    seReview = SeriesReview()
+    seReview.flights.update({flight.hash: flight})
+    seReview.summarize()
