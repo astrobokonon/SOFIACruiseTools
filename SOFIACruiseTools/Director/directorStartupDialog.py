@@ -124,7 +124,7 @@ class Ui_Dialog(object):
         self.fitskwText.setText(_translate("Dialog", "Default"))
         self.flightLabelText.setText(_translate("Dialog", "Flight Plan"))
         self.InstLabelText.setText(_translate("Dialog", "Instrument"))
-        self.logOutLabelText.setText(_translate("Dialog", "Log Output"))
+        self.logOutLabelText.setText(_translate("Dialog", "<html><head/><body><p>Log Output (<span style=\" color:#ff0000;\">*</span>)</p></body></html>"))
         self.datalogLabelText.setText(_translate("Dialog", "Data Log Output "))
         self.datalocLableText.setText(_translate("Dialog", "Data Location"))
         self.fitskwLabelText.setText(_translate("Dialog", "FITS Keywords"))

@@ -816,22 +816,36 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 config['method'], self.instrument))
             return
 
-        bncur = [basename(x) for x in self.data_current]
 
         # Correct the file listing to be ordered by modification time
         self.data_current.sort(key=getmtime)
 
+#        bncur = [basename(x) for x in self.data_current]
+#        if self.instrument == 'HAWCFlight':
+#            bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
+#        else:
+#            bnpre = [basename(x) for x in self.data_filenames]
+
+#        new_files = set(bncur) - set(bnpre)
+
+        bncur = [basename(x) for x in self.data_current]
         if self.instrument == 'HAWCFlight':
             bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
         else:
             bnpre = [basename(x) for x in self.data_filenames]
 
         new_files = set(bncur) - set(bnpre)
+        new_files = [join(self.data_log_dir,i) for i in new_files]
+        new_files.sort(key=getmtime)
         for fname in new_files:
-            filename = join(self.data_log_dir, fname)
-            self.data.add_image(filename, self.headers, hdu=self.fits_hdu)
-            self.data_filenames.append(fname)
-            self.new_files.append(fname)
+            #filename = join(self.data_log_dir, fname)
+            #self.data.add_image(filename, self.headers, hdu=self.fits_hdu)
+            self.data.add_image(fname, self.headers, hdu=self.fits_hdu)
+            #self.data_filenames.append(fname)
+            #self.new_files.append(fname)
+            bname = basename(fname)
+            self.data_filenames.append(bname)
+            self.new_files.append(bname)
 
         # If new files exist, update the table widget and
         # write the new data to file
