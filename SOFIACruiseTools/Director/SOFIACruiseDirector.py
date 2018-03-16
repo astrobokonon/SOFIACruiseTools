@@ -194,6 +194,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # self.table_data_log,
         # self.data_filenames))
         # self.data_log_force_update.clicked.connect(self.update_data_log)
+        self.data_log_force_update.clicked.connect(self.fill_blanks)
         self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
         self.data_log_delete_row.clicked.connect(self.del_data_log_row)
@@ -220,6 +221,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.show_lcd()
 
+    def fill_blanks(self):
+        """
+        Fills blanks in data table
+        """
+        for fname in self.data.header_vals:
+            filename = join(self.data_log_dir,fname)
+            self.data.fill_data_blank_cells(filename, self.headers, self.fits_hdu)
+        self.repopulate_data_log()
+            
+    
     def table_update(self, item):
         """
         Updates the data structure when the table is changed by the user
@@ -635,6 +646,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # self.update_data_log()
                 self.update_data()
                 # print self.datatable
+
 
     def add_data_log_row(self):
         """
@@ -1253,6 +1265,50 @@ class FITSHeader(object):
                 header[key] = head[key] if key in head else ''
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
+
+    def fill_data_blank_cells(self, infile, hkeys, table, hdu=0):
+        '''
+        Fills any blank cell in table
+
+        If a header keyword is added after data collection has begun
+        then the cells for that keyword for existing data will be 
+        empty. 
+        
+        :param infile: The full filename of the FITS file
+        :param hkeys: List of header keys
+        :param hdu: Header unit of FITS to use
+        :returns: None
+        :raises IOError: Can't open file
+        :raises KeyError: Infile not found in header_vals
+        '''
+        # Read in file
+        try:
+            header = pyf.getheader(infile, ext=hdu)
+        except IOError:
+            # Can't open the file
+            # Should never happen since the file was previously opened
+            # Print to screen, but don't kill the program
+            return
+        row = self.header_vals[basename(infile)]
+        for i, key in enumerate(hkeys):
+            try:
+                val = row[key]
+            except KeyError:
+                # Key not in this row, fill from header
+                try:
+                    row[key] = header[key]
+                except KeyError:
+                    # Key not in header either, fill with empty string
+                    row[key] = ''
+            else:
+                # Key in this row, check if empty
+                if not val:
+                    # Cell is empty, try to fill from header
+                    try:
+                        row[key] = header[key]
+                    except KeyError:
+                        # Key not in header, fill with empty string
+                        row[key] = ''
 
     def add_blank_row(self, hkeys):
         """
