@@ -79,7 +79,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.do_leg_count_remaining = True
         self.do_leg_count_elapsed = False
         self.output_name = ''
-        self.localtz = pytz.timezone('US/Pacific')
+        self.local_timezone = 'US/Pacific'
+        self.localtz = pytz.timezone(self.local_timezone)
         self.set_date_time_edit_boxes()
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
@@ -300,6 +301,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.table_data_log.resizeColumnsToContents()
             self.table_data_log.resizeRowsToContents()
 
+            # Local timezone
+            self.local_timezone = window.local_timezone
+            self.localtz = pytz.timezone(self.local_timezone)
+            print('Local tz: ',self.local_timezone,self.localtz)
+
     def start_run(self):
         """
         Starts the inner workings of the program.
@@ -350,7 +356,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
             # Update the column data itself if we're actually logging
             if self.start_data_log is True:
-                self.repopulate_data_log(rescan=False)
+                self.repopulate_data_log(rescan=True)
 
     def update_table_cols(self):
         """
@@ -684,6 +690,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if bad != -1:
             self.table_data_log.blockSignals(True)
             # Clear the data we don't need anymore
+            self.data.remove_image(self.data_filenames[bad])
             del self.data_filenames[bad]
             self.table_data_log.removeRow(self.table_data_log.currentRow())
             # Redraw
@@ -715,25 +722,26 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         for n in range(0, self.table_data_log.rowCount()):
             row_data = {}
             for m, hkey in enumerate(thed_list):
-                if rescan is True:
-                    # Need to somehow remap the basename'd row label to the
-                    #   original listing of files (with path) to go rescan
-                    fname = ''
-                    row_data = header_dict(fname, self.headers,
-                                           hdu=self.fitshdu)
+#                if rescan is True:
+#                    # Need to somehow remap the basename'd row label to the
+#                    #   original listing of files (with path) to go rescan
+#                    fname = ''
+#                    row_data = header_dict(fname, self.headers,
+#                                           hdu=self.fitshdu)
+#                else:
+                rdat = self.table_data_log.item(n, m)
+                if rdat is not None:
+                    row_data[hkey] = rdat.text()
                 else:
-                    rdat = self.table_data_log.item(n, m)
-                    if rdat is not None:
-                        row_data[hkey] = rdat.text()
-                    else:
-                        row_data[hkey] = ''
+                    row_data[hkey] = ''
             tab_list.append(row_data)
 
         # Clear out the old data, since we could have rearranged columns
         self.table_data_log.clear()
 
         # Actually assign the new headers
-        self.headers = self.new_headers
+        if rescan:
+            self.headers = self.new_headers
 
         # Update with the new number of columns
         self.table_data_log.setColumnCount(len(self.headers))
@@ -1390,7 +1398,9 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.fitkwButton.setText('Change')
         self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
+        self.timezoneSelect.activated.connect(self.select_local_timezone)
 
+        self.local_timezone = str(self.timezoneSelect.currentText())
         self.instrument = str(self.instSelect.currentText())
         if 'flight' in self.instrument.lower():
             self.instrument = 'HAWCFLIGHT'
@@ -1413,6 +1423,9 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Closes this window and passes results to main program
         """
+
+        # Read the timezone
+        self.local_timezone = str(self.timezoneSelect.currentText())
 
         # Read the instrument selection
         self.instrument = str(self.instSelect.currentText())
@@ -1460,6 +1473,12 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
             self.instrument = 'HAWCFLIGHT'
         elif 'Ground' in self.instrument:
             self.instrument = 'HAWCGROUND'
+
+    def select_local_timezone(self):
+        """
+        Sets the local timezone
+        """
+        self.local_timezone = str(self.timezoneSelect.currentText())
 
     def select_log_file(self):
         """
