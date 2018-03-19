@@ -304,7 +304,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Local timezone
             self.local_timezone = window.local_timezone
             self.localtz = pytz.timezone(self.local_timezone)
-            print('Local tz: ',self.local_timezone,self.localtz)
 
     def start_run(self):
         """
