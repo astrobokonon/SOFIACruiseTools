@@ -165,6 +165,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_landing_time.clicked.connect(lambda: self.flight_timer('ttl'))
         self.set_takeoff_landing.clicked.connect(lambda:
                                                  self.flight_timer('both'))
+        
         # Leg timer control
         self.leg_timer_start.clicked.connect(lambda: self.leg_timer('start'))
         self.leg_timer_stop.clicked.connect(lambda: self.leg_timer('stop'))
@@ -210,6 +211,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #self.data_log_open_dir.hide()
         #self.data_log_save_file.hide()
         #self.log_save.hide()
+        self.set_takeoff_time.hide()
+        self.set_landing_time.hide()
+        self.set_takeoff_landing.hide()
+
 
         # Run the setup prompt
         self.update_times()
