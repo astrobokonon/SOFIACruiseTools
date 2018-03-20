@@ -275,6 +275,11 @@
       </item>
       <item>
        <property name="text">
+        <string>US/Hawaii</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
         <string>US/Alaska</string>
        </property>
       </item>
