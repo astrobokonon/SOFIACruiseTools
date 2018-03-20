@@ -105,6 +105,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # The addition of the NOTES column happens in here
         self.update_table_cols()
 
+        # Read config file
+        self.config = ConfigObj('director.ini')
+
         # Variables previously defined in function
         self.data_log_dir = ''
         self.timer_start_time = None
@@ -603,13 +606,17 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.txt_ttl.setText(self.ttl_str)
 
             # Visual indicators setup; times are in seconds
-            if self.ttl.total_seconds() >= 7200:
+            timer_warnings = self.config['ttl_timer_hour_warnings']
+            first_warning = float(timer_warnings['first'])*3600.
+            second_warning = float(timer_warnings['second'])*3600.
+            
+            if self.ttl.total_seconds() >= first_warning:
                 self.txt_ttl.setStyleSheet('QLabel { color : black; }')
 
-            elif 7200 > self.ttl.total_seconds() >= 5400:
+            elif self.ttl.total_seconds() >= second_warning:
                 self.txt_ttl.setStyleSheet('QLabel { color : darkyellow; }')
 
-            elif self.ttl.total_seconds() < 5400:
+            else: 
                 self.txt_ttl.setStyleSheet('QLabel { color : red; }')
 
         if self.leg_counting is True:
@@ -631,13 +638,18 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.leg_remain_str = total_sec_to_hms_str(self.leg_remain)
                 self.txt_leg_timer.setText(self.leg_remain_str)
 
+                timer_warnings = self.config['leg_timer_minute_warnings']
+                first_warning = float(timer_warnings['first'])*60
+                second_warning = float(timer_warnings['second'])*60
+
                 # Visual indicators setup
-                if self.leg_remain.total_seconds() >= 3600:
+                if self.leg_remain.total_seconds() >= first_warning:
                     self.txt_leg_timer.setStyleSheet('QLabel { color : black; }')
-                elif 3600 > self.leg_remain.total_seconds() >= 2400:
+                elif self.leg_remain.total_seconds() >= second_warning:
                     self.txt_leg_timer.setStyleSheet(
-                        'QLabel { color : darkyellow; }')
-                elif self.leg_remain.total_seconds() < 2400:
+                        'QLabel { color : orange; }')
+                        #'QLabel { color : darkyellow; }')
+                else:
                     self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
 
             if self.do_leg_count_elapsed is True:
@@ -817,8 +829,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Each instrument can store their data in a different way.
         # Read in the correct method to use from the
         # director.ini config file
-        config = ConfigObj('director.ini')
-        config = config['search'][self.instrument]
+        config = self.config['search'][self.instrument]
         self.new_files = []
         # Get the current list of FITS files in the location
         if config['method'] == 'glob':
@@ -992,7 +1003,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # Clear values since they're probably crap
                 self.toggle_leg_param_values_off()
                 # Quick and dirty way to show the leg type
-                # leg_txt = "%i\t%s" % (self.leg_pos + 1, self.leg_info.leg_type)
                 leg_txt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
                                                 self.leg_info.leg_type)
                 self.leg_number.setText(leg_txt)
@@ -1002,6 +1012,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             time_parts = [np.int(x) for x in time_parts]
             dur_time = QtCore.QTime(time_parts[0], time_parts[1], time_parts[2])
             self.leg_duration.setTime(dur_time)
+
+            # Set the timing parameters display
+            self.leg_dur_from_mis.setText(str(self.leg_info.duration))
+            self.leg_start_from_mis.setText(str(self.leg_info.start))
 
     def prev_leg(self):
         """
@@ -1393,6 +1407,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         self.setupUi(self)
 
+        self.config = self.parentWidget().config
+
         self.flightButton.clicked.connect(self.load_flight)
         self.instSelect.activated.connect(self.select_instr)
         self.logOutButton.clicked.connect(self.select_log_file)
@@ -1528,9 +1544,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
 
         # Read the default keywords for each instrument
-        fname = 'director.ini'
-        config = ConfigObj(fname)
-        self.headers = config['keywords'][self.instrument.lower()]
+        self.headers = self.config['keywords'][self.instrument.lower()]
         if 'NOTES' not in self.headers:
             self.headers.insert(0, 'NOTES')
 
