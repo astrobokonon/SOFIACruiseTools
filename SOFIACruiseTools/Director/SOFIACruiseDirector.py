@@ -189,13 +189,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.log_takeoff.clicked.connect(lambda: self.mark_message('takeoff'))
         self.log_turning.clicked.connect(lambda: self.mark_message('turn'))
         self.log_post.clicked.connect(lambda: self.mark_message('post'))
+        self.log_ignore.clicked.connect(lambda: self.mark_message('ignore'))
 
         #self.data_log_open_dir.clicked.connect(self.select_dir)
         #self.data_log_save_file.clicked.connect(self.select_log_output_file)
 
-        self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
-            self.log_out_name,
-            self.headers))
+#        self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
+#                                                    self.log_out_name,
+#                                                    self.headers))
+        self.data_log_flag_file.clicked.connect(self.flag_file)
         # self.table_data_log,
         # self.data_filenames))
         # self.data_log_force_update.clicked.connect(self.update_data_log)
@@ -230,6 +232,36 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.start(500)
         self.show_lcd()
 
+    def flag_file(self):
+        """
+        Updates "BADCAL" flag for the selected row
+        """
+        row = self.table_data_log.currentRow()
+        fname = self.data_filenames[row]
+        flag_text = 'FLAG'
+        flag_col = 'BADCAL'
+        print(self.data.header_vals[fname][flag_col])
+        print(self.data.header_vals[fname][flag_col] is True)
+        if self.data.header_vals[fname][flag_col]:
+            print('\tAlready populated')
+            flag_text = '{0:s}, {1:s}'.format(self.data.header_vals[fname][flag_col],
+                                         flag_text)
+            print(flag_text)
+            self.data.header_vals[fname][flag_col] = flag_text
+        else:
+            print('\tEmpty')
+            self.data.header_vals[fname][flag_col] = flag_text
+
+        print(self.data.header_vals[fname][flag_col])
+        # Change the qTable
+        for colNum in range(self.table_data_log.columnCount()):
+            header_text = self.table_data_log.horizontalHeaderItem(colNum).text()
+            if header_text=='BADCAL':
+                self.table_data_log.setItem(row, colNum,
+                                            QtWidgets.QTableWidgetItem(flag_text))
+
+        self.repopulate_data_log(force=True)
+            
     def fill_blanks(self):
         """
         Fills blanks in data table
@@ -238,8 +270,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             filename = join(self.data_log_dir,fname)
             self.data.fill_data_blank_cells(filename, self.headers, self.fits_hdu)
         self.repopulate_data_log()
-            
-    
+
     def table_update(self, item):
         """
         Updates the data structure when the table is changed by the user
@@ -360,6 +391,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.new_headers = window.headers
             if 'NOTES' not in self.new_headers:
                 self.new_headers.insert(0, 'NOTES')
+            if 'BADCAL' not in self.headers:
+                self.headers.insert(1, 'BADCAL')
 
             # Update the column data itself if we're actually logging
             if self.start_data_log is True:
@@ -430,7 +463,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     'head': 'On heading, TOs setting up',
                     'target': 'On target, SI taking over',
                     'takeoff': 'Beginning of flight, getting set up',
-                    'turn': 'Turning off target'}
+                    'turn': 'Turning off target',
+                    'ignore': 'Ignore the previous message'}
         if key in messages.keys():
             self.line_stamper(messages[key])
         elif key == 'post':
@@ -669,7 +703,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.update_data()
                 # print self.datatable
 
-
     def add_data_log_row(self):
         """
         Adds a blank row to the Data Log
@@ -702,19 +735,22 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Alters table_data_log
         """
         bad = self.table_data_log.currentRow()
+        print('\nCurrent Row = ',bad)
+        print('Type = ',type(bad))
         # -1 means we didn't select anything
         if bad != -1:
             self.table_data_log.blockSignals(True)
             # Clear the data we don't need anymore
             self.data.remove_image(self.data_filenames[bad])
             del self.data_filenames[bad]
-            self.table_data_log.removeRow(self.table_data_log.currentRow())
+            self.table_data_log.removeRow(bad)
+            #self.table_data_log.removeRow(self.table_data_log.currentRow())
             # Redraw
             self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
             self.data.write_to_file(self.log_out_name, self.headers)
             self.table_data_log.blockSignals(False)
 
-    def repopulate_data_log(self, rescan=False):
+    def repopulate_data_log(self, rescan=False, force=False):
         """
         Recreates the data log table after keyword changes.
 
@@ -892,7 +928,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
     def update_table(self):
         """
-        Updates the table widget
+        Updates the table widget to display newly found files
         """
 
         # Disable table features during alteration
@@ -1547,6 +1583,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.headers = self.config['keywords'][self.instrument.lower()]
         if 'NOTES' not in self.headers:
             self.headers.insert(0, 'NOTES')
+        if 'BADCAL' not in self.headers:
+            self.headers.insert(1, 'BADCAL')
 
         if not default:
             window = FITSKeyWordDialog(self)
@@ -1556,6 +1594,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                 self.headers = window.headers
                 if 'NOTES' not in self.headers:
                     self.headers.insert(0, 'NOTES')
+                if 'BADCAL' not in self.headers:
+                    self.headers.insert(1, 'BADCAL')
                 self.fitskwText.setText('Custom')
 
 
@@ -1577,7 +1617,6 @@ def total_sec_to_hms_str(obj):
     else:
         done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
     return done_str
-
 
 
 def header_dict(infile, header_keys, hdu=0):

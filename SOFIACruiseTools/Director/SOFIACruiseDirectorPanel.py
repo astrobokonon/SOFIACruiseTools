@@ -241,9 +241,9 @@ class Ui_MainWindow(object):
         self.data_log_edit_keywords = QtWidgets.QPushButton(self.widget_6)
         self.data_log_edit_keywords.setObjectName("data_log_edit_keywords")
         self.gridLayout_14.addWidget(self.data_log_edit_keywords, 0, 4, 1, 1)
-        self.data_log_force_write = QtWidgets.QPushButton(self.widget_6)
-        self.data_log_force_write.setObjectName("data_log_force_write")
-        self.gridLayout_14.addWidget(self.data_log_force_write, 0, 1, 1, 1)
+        self.data_log_flag_file = QtWidgets.QPushButton(self.widget_6)
+        self.data_log_flag_file.setObjectName("data_log_flag_file")
+        self.gridLayout_14.addWidget(self.data_log_flag_file, 0, 1, 1, 1)
         self.data_log_add_row = QtWidgets.QPushButton(self.widget_6)
         self.data_log_add_row.setObjectName("data_log_add_row")
         self.gridLayout_14.addWidget(self.data_log_add_row, 0, 2, 1, 1)
@@ -644,7 +644,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -678,7 +678,7 @@ class Ui_MainWindow(object):
         self.data_log_update_interval.setSuffix(_translate("MainWindow", " seconds"))
         self.data_log_autoupdate.setText(_translate("MainWindow", "Autoupdate every:"))
         self.data_log_edit_keywords.setText(_translate("MainWindow", "Edit Keywords ..."))
-        self.data_log_force_write.setText(_translate("MainWindow", "Force Write"))
+        self.data_log_flag_file.setText(_translate("MainWindow", "Flag File"))
         self.data_log_add_row.setText(_translate("MainWindow", "Add a Blank Row"))
         self.data_log_delete_row.setText(_translate("MainWindow", "Remove Highlighted Row"))
         self.data_log_force_update.setText(_translate("MainWindow", "Force Update"))

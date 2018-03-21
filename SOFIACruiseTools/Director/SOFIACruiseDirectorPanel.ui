@@ -246,7 +246,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <property name="elideMode">
         <enum>Qt::ElideRight</enum>
@@ -435,9 +435,9 @@ p, li { white-space: pre-wrap; }
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QPushButton" name="data_log_force_write">
+             <widget class="QPushButton" name="data_log_flag_file">
               <property name="text">
-               <string>Force Write</string>
+               <string>Flag File</string>
               </property>
              </widget>
             </item>
