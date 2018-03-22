@@ -50,6 +50,7 @@ from .. import support as fpmis
 from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
+from . import timer as ti
 
 
 class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
@@ -74,10 +75,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # self.leg_param_labels('off')
         self.met_counting = False
         self.ttl_counting = False
-        self.leg_counting = False
-        self.leg_counting_stopped = False
-        self.do_leg_count_remaining = True
-        self.do_leg_count_elapsed = False
+#        self.leg_counting = False
+#        self.leg_counting_stopped = False
+        self.leg_count_remaining = True
+        # self.do_leg_count_elapsed = False
         self.output_name = ''
         self.local_timezone = 'US/Pacific'
         self.localtz = pytz.timezone(self.local_timezone)
@@ -85,6 +86,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
         self.data = FITSHeader()
+
+        self.leg_timer = leg_timer_obj()
+        self.leg_timer.init_duration = None
 
         # Is a list really the best way of handling this? Don't know yet.
         self.cruise_log = []
@@ -110,8 +114,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Variables previously defined in function
         self.data_log_dir = ''
-        self.timer_start_time = None
-        self.timer_end_time = None
+#        self.timer_start_time = None
+#        self.timer_end_time = None
         self.takeoff = None
         self.landing = None
         self.utc_now = None
@@ -125,10 +129,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.ttl = None
         self.ttl_str = None
         self.instrument = ''
-        self.leg_remain = None
-        self.leg_remain_str = None
-        self.leg_elapsed = None
-        self.leg_elapsed_str = None
+#        self.leg_remain = None
+#        self.leg_remain_str = None
+#        self.leg_elapsed = None
+#        self.leg_elapsed_str = None
         self.new_files = None
         self.data_new = None
         self.last_data_row = None
@@ -170,13 +174,26 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                  self.flight_timer('both'))
         
         # Leg timer control
-        self.leg_timer_start.clicked.connect(lambda: self.leg_timer('start'))
-        self.leg_timer_stop.clicked.connect(lambda: self.leg_timer('stop'))
-        self.leg_timer_reset.clicked.connect(lambda: self.leg_timer('reset'))
+        # self.leg_timer_start.clicked.connect(lambda: self.leg_timer_control('start'))
+        # self.leg_timer_stop.clicked.connect(lambda: self.leg_timer_control('stop'))
+        # self.leg_timer_reset.clicked.connect(lambda: self.leg_timer_control('reset'))
         self.time_select_remaining.clicked.connect(lambda:
                                                    self.count_direction('remain'))
         self.time_select_elapsed.clicked.connect(lambda:
                                                  self.count_direction('elapse'))
+
+        self.leg_timer_start.clicked.connect(lambda:
+                                             self.leg_timer.control_timer('start'))
+        self.leg_timer_stop.clicked.connect(lambda:
+                                             self.leg_timer.control_timer('stop'))
+        self.leg_timer_reset.clicked.connect(lambda:
+                                             self.leg_timer.control_timer('reset'))
+        self.add_minute.clicked.connect(lambda:
+                                        self.leg_timer.minute_adjust('add'))
+        self.sub_minute.clicked.connect(lambda:
+                                        self.leg_timer.minute_adjust('sub'))
+
+
         # Text log stuff
         self.log_input_line.returnPressed.connect(self.post_log_line)
         #self.log_save.clicked.connect(self.select_output_file)
@@ -492,48 +509,48 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Sets the direction the leg timer counts
         """
         if key == 'remain':
-            self.do_leg_count_elapsed = False
-            self.do_leg_count_remaining = True
+            # self.do_leg_count_elapsed = False
+            self.leg_count_remaining = True
         elif key == 'elapse':
-            self.do_leg_count_elapsed = True
-            self.do_leg_count_remaining = False
+            # self.do_leg_count_elapsed = True
+            self.leg_count_remaining = False
         else:
             # print('Invalid key in count_direction: {0:s}'.format(key))
             return
 
-    def leg_timer(self, key):
-        """
-        Controls the timer for the leg
-        """
-        if key in 'start reset'.split():
-            self.leg_counting = True
-            time_stamp = datetime.datetime.now()
-            self.timer_start_time = time_stamp.replace(microsecond=0)
-
-            hms = self.leg_duration.time().toPyTime()
-            # Calculate the time until the leg ends
-            # If a fresh start or restart, pull from
-            # info about leg. If  the timer is paused
-            # (indicated by leg_counting_stopped==True),
-            # get the new duration from the remaining time
-            # on the display
-            if key == 'start' and self.leg_counting_stopped is True:
-                dhour, dmin, dsec = [np.int(t) for t in
-                                     self.txt_leg_timer.text().split(':')]
-            else:
-                dhour, dmin, dsec = hms.hour, hms.minute, hms.second
-
-            duration = datetime.timedelta(hours=dhour,
-                                          minutes=dmin,
-                                          seconds=dsec)
-            self.timer_end_time = self.timer_start_time + duration
-            self.leg_counting_stopped = False
-        elif key == 'stop':
-            self.leg_counting = False
-            self.leg_counting_stopped = True
-        else:
-            # print('Invalid key in leg_timer: {0:s}'.format(key))
-            return
+#    def leg_timer_control(self, key):
+#        """
+#        Controls the timer for the leg
+#        """
+#        if key in 'start reset'.split():
+#            self.leg_counting = True
+#            time_stamp = datetime.datetime.now()
+#            self.timer_start_time = time_stamp.replace(microsecond=0)
+#
+#            hms = self.leg_duration.time().toPyTime()
+#            # Calculate the time until the leg ends
+#            # If a fresh start or restart, pull from
+#            # info about leg. If  the timer is paused
+#            # (indicated by leg_counting_stopped==True),
+#            # get the new duration from the remaining time
+#            # on the display
+#            if key == 'start' and self.leg_counting_stopped is True:
+#                dhour, dmin, dsec = [np.int(t) for t in
+#                                     self.txt_leg_timer.text().split(':')]
+#            else:
+#                dhour, dmin, dsec = hms.hour, hms.minute, hms.second
+#
+#            duration = datetime.timedelta(hours=dhour,
+#                                          minutes=dmin,
+#                                          seconds=dsec)
+#            self.timer_end_time = self.timer_start_time + duration
+#            self.leg_counting_stopped = False
+#        elif key == 'stop':
+#            self.leg_counting = False
+#            self.leg_counting_stopped = True
+#        else:
+#            # print('Invalid key in leg_timer: {0:s}'.format(key))
+#            return
 
     def set_date_time_edit_boxes(self):
         """
@@ -653,44 +670,40 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             else: 
                 self.txt_ttl.setStyleSheet('QLabel { color : red; }')
 
-        if self.leg_counting is True:
+        # if self.leg_counting is True:
+        if self.leg_timer.status == 'running':
             # Addresses the timer in the "Leg Timer" panel.
             # Only runs if the "Start" button in the "Leg Timer"
             # panel is pressed
-            local2 = self.local_now.replace(tzinfo=None)
-            leg_end = self.timer_end_time.replace(tzinfo=None)
-            leg_start = self.timer_start_time.replace(tzinfo=None)
 
-            if self.do_leg_count_remaining is True:
-                # Formats to Leg Timer to show how much time is remaining
-                # until the leg ends
-                # The timer is color-coded based on how long this time is:
-                #     Time left > 2 hours = black
-                #     1.5 < Time left < 2 hours = dark yellow
-                #     Time left < 1.5 hours = red
-                self.leg_remain = leg_end - local2
-                self.leg_remain_str = total_sec_to_hms_str(self.leg_remain)
-                self.txt_leg_timer.setText(self.leg_remain_str)
+            # local2 = self.local_now.replace(tzinfo=None)
+            # leg_end = self.timer_end_time.replace(tzinfo=None)
+            # leg_start = self.timer_start_time.replace(tzinfo=None)
 
-                timer_warnings = self.config['leg_timer_minute_warnings']
-                first_warning = float(timer_warnings['first'])*60
-                second_warning = float(timer_warnings['second'])*60
+            if self.leg_count_remaining:
+                time_string = self.leg_timer.timer_string('remaining')
+                self.leg_timer_color(self.leg_timer.remaining.total_seconds())
+            else:
+                time_string = self.leg_timer.timer_string('elapsed')
+            self.txt_leg_timer.setText(time_string)
 
-                # Visual indicators setup
-                if self.leg_remain.total_seconds() >= first_warning:
-                    self.txt_leg_timer.setStyleSheet('QLabel { color : black; }')
-                elif self.leg_remain.total_seconds() >= second_warning:
-                    self.txt_leg_timer.setStyleSheet(
-                        'QLabel { color : orange; }')
-                        #'QLabel { color : darkyellow; }')
-                else:
-                    self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
 
-            if self.do_leg_count_elapsed is True:
-                # Formats the Leg Timer to show how much time has elapsed
-                self.leg_elapsed = local2 - leg_start
-                self.leg_elapsed_str = total_sec_to_hms_str(self.leg_elapsed)
-                self.txt_leg_timer.setText(self.leg_elapsed_str)
+#            if self.do_leg_count_remaining is True:
+#                # Formats to Leg Timer to show how much time is remaining
+#                # until the leg ends
+#                # The timer is color-coded based on how long this time is:
+#                #     Time left > 2 hours = black
+#                #     1.5 < Time left < 2 hours = dark yellow
+#                #     Time left < 1.5 hours = red
+#                self.leg_remain = leg_end - local2
+#                self.leg_remain_str = total_sec_to_hms_str(self.leg_remain)
+#                self.txt_leg_timer.setText(self.leg_remain_str)
+#
+#            if self.do_leg_count_elapsed is True:
+#                # Formats the Leg Timer to show how much time has elapsed
+#                self.leg_elapsed = local2 - leg_start
+#                self.leg_elapsed_str = total_sec_to_hms_str(self.leg_elapsed)
+#                self.txt_leg_timer.setText(self.leg_elapsed_str)
 
         # Update the UTC and Local Clocks in the 'World Times' panel
         self.txt_utc.setText(self.utc_now_str)
@@ -702,6 +715,28 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # self.update_data_log()
                 self.update_data()
                 # print self.datatable
+
+    def leg_timer_color(self, remaining_seconds):
+        """
+        Sets the color of the leg timer
+
+        Limits of when different colors are applied come from 
+        the config file.
+        """
+
+        timer_warnings = self.config['leg_timer_minute_warnings']
+        first_warning = float(timer_warnings['first'])*60
+        second_warning = float(timer_warnings['second'])*60
+
+        # Visual indicators setup
+        if remaining_seconds >= first_warning:
+            self.txt_leg_timer.setStyleSheet('QLabel { color : black; }')
+        elif remaining_seconds >= second_warning:
+            self.txt_leg_timer.setStyleSheet(
+                'QLabel { color : orange; }')
+                #'QLabel { color : darkyellow; }')
+        else:
+            self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
 
     def add_data_log_row(self):
         """
@@ -1043,11 +1078,19 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                 self.leg_info.leg_type)
                 self.leg_number.setText(leg_txt)
 
+            # Update leg_timer
             # Now take the duration and autoset our timer duration
             time_parts = str(self.leg_info.duration).split(':')
             time_parts = [np.int(x) for x in time_parts]
-            dur_time = QtCore.QTime(time_parts[0], time_parts[1], time_parts[2])
+            dur_time = datetime.time(hour=time_parts[0], minute=time_parts[1],
+                                     second=time_parts[2])
+#            dur_time = QtCore.QTime(time_parts[0], time_parts[1], time_parts[2])
             self.leg_duration.setTime(dur_time)
+            dur_time = datetime.timedelta(hours=dur_time.hour,
+                                          minutes=dur_time.minute,
+                                          seconds=dur_time.second)
+            self.leg_timer.duration = dur_time
+            self.leg_timer.init_duration = dur_time
 
             # Set the timing parameters display
             self.leg_dur_from_mis.setText(str(self.leg_info.duration))
@@ -1065,6 +1108,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.leg_pos = 0
             self.leg_info = self.flight_info.legs[self.leg_pos]
         self.update_leg_info_window()
+        self.leg_timer.status = 'stopped'
+        #self.leg_timer.control_timer('reset')
 
     def next_leg(self):
         """
@@ -1080,6 +1125,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             pass
         self.update_leg_info_window()
+        self.leg_timer.status = 'stopped'
+        #self.leg_timer.control_timer('reset')
 
     def update_flight_time(self, key):
         """
@@ -1597,6 +1644,128 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                 if 'BADCAL' not in self.headers:
                     self.headers.insert(1, 'BADCAL')
                 self.fitskwText.setText('Custom')
+
+#class timerApp(QtWidgets.QMainWindow, ti.Ui_MainWindow):
+class leg_timer_obj(object):
+
+    def __init__(self):
+        """
+        Initializes the leg timer
+        """
+        # super(self.__class__,self).__init__()
+    
+        # self.setupUi(self)
+
+        self.status = 'stopped'
+        self.duration = None
+        self.init_duration = None
+        self.remaining = datetime.timedelta()
+        self.elapsed = datetime.timedelta()
+
+        # self.start_button.clicked.connect(self.push_start)
+        # self.stop_button.clicked.connect(self.push_stop)
+        # self.reset_button.clicked.connect(self.push_reset)
+
+        # self.add_one_button.clicked.connect(lambda: self.minute_adjust('add'))
+        # self.sub_one_button.clicked.connect(lambda: self.minute_adjust('sub'))
+
+        # self.status_text.setText(self.status)
+        # init_duration = datetime.time(hour=1)
+        # self.duration_input.setTime(init_duration)
+    
+        # timer = QtCore.QTimer(self)
+        # timer.timeout.connect(self.timer_loop)
+        # timer.start(100)
+        # self.timer_loop()
+
+    def minute_adjust(self,key):
+        """ Adds or subracts one minute from timer """
+        adjustment = datetime.timedelta(minutes=1)
+        if key=='add':
+            self.duration += adjustment
+        elif key=='sub':
+            self.duration -= adjustment
+
+    def print_state(self):
+        print('\nTimer Stats:')
+        print('\tStatus = ',self.status)
+        print('\tDuration = ',self.duration,' (',type(self.duration),')')
+        print('\tRemaining = ',self.remaining,' (',type(self.remaining),')')
+        print('\tElapsed = ',self.elapsed,' (',type(self.elapsed),')')
+
+    def control_timer(self, key):
+        """
+        Starts, stops, or resets the leg control
+        """
+        if key=='start':
+            # Start button is pushed 
+            if self.status == 'running':
+                return
+            elif self.status == 'stopped':
+                self.status = 'running'
+                self.timer_start = datetime.datetime.utcnow().replace(microsecond=0)
+                print(type(self.duration))
+                self.duration = self.init_duration
+                # h,m,s = [int(i) for i in self.duration.text().split(':')]
+                # self.duration = datetime.timedelta(hours=h,minutes=m,seconds=s)
+            else:
+                # Paused
+                self.status = 'running'
+                self.timer_start = (datetime.datetime.utcnow().replace(microsecond=0) - 
+                                    self.elapsed)
+        elif key=='stop':
+            # Stop button pushed 
+            if self.status == 'running':
+                self.status = 'paused'
+        elif key=='reset':
+            """ Reset button pushed """
+            self.status = 'running'
+            self.timer_start = datetime.datetime.utcnow().replace(microsecond=0)
+            self.duration = self.init_duration
+            # h,m,s = [int(i) for i in self.duration_input.text().split(':')]
+            # self.duration = datetime.timedelta(hours=h,minutes=m,seconds=s)
+        else:
+            # Invalid key
+            print('Invalid key for leg control = {0:s}'.format(key))
+            return
+
+    def timer_string(self, mode):
+        """
+        Calculates elapsed and remaining time.
+
+        Returns the desired time format, specified by mode 
+        (either 'remaining' or 'elapsed') in a nicely formatted
+        string.
+        """
+        now = datetime.datetime.utcnow().replace(microsecond=0)
+        try:
+            self.elapsed = now - self.timer_start
+            self.remaining = self.duration - self.elapsed
+        except TypeError:
+            print('\n\nTypeError in timer_string:')
+            print(type(self.elapsed),type(now),type(self.timer_start))
+            print(type(self.remaining),type(self.duration),type(self.elapsed))
+            self.print_state()
+            sys.exit()
+
+        if mode=='remaining':
+            if self.remaining < datetime.timedelta(0):
+                return '-'+self.clock_string(-self.remaining)
+            else:
+                return self.clock_string(self.remaining)
+        else:
+            return self.clock_string(self.elapsed)
+        #self.remaining_string = self.clock_string(self.remaining)
+        #self.elapsed_string = self.clock_string(self.elapsed)
+
+    def clock_string(self,clock):
+        hours = clock.seconds//3600
+        minutes = (clock.seconds//60)%60
+        seconds = clock.seconds%60
+        s = '{0:02d}:{1:02d}:{2:02d}'.format(hours,minutes,seconds)
+        return s
+
+
 
 
 def total_sec_to_hms_str(obj):
