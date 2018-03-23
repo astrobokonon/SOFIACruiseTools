@@ -35,7 +35,7 @@ import itertools
 from os import listdir, walk
 from os.path import join, basename, getmtime
 from collections import OrderedDict
-from configobj import ConfigObj
+import configobj as co
 import pytz
 
 import numpy as np
@@ -52,6 +52,9 @@ from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
 from . import timer as ti
+
+class ConfigError(Exception):
+    pass
 
 
 class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
@@ -111,7 +114,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.update_table_cols()
 
         # Read config file
-        self.config = ConfigObj('director.ini')
+        try:
+            self.config = co.ConfigObj('director.ini')
+        except co.ConfigObjError:
+            print('Cannot parse config file director.ini')
+            print('Verify it is in the correct location '
+                  'and formatted correctly.')
+            sys.exit()
+        self.verify_config()
 
         # Variables previously defined in function
         self.data_log_dir = ''
@@ -248,6 +258,65 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.timeout.connect(self.show_lcd)
         timer.start(500)
         self.show_lcd()
+
+    def verify_config(self):
+        """
+        Checks the config file director.ini
+        Raises Config Error if there are inconsistencies
+        """
+        # Verify config is not empty
+        if not self.config:
+            raise ConfigError('Config empty. Verify director.ini'
+                              ' is present and correctly formatted.')
+        # Verify that all sections are present
+        required_sections = ['keywords', 'search', 'sort',
+                             'ttl_timer_hour_warnings',
+                             'leg_timer_minute_warnings']
+        if len(required_sections) != len(self.config.keys()):
+            raise ConfigError('Config missing keys')
+        if set(required_sections)!=set(self.config.keys()):
+            raise ConfigError('Config missing keys')
+        
+        
+        # Verify search methods are valid (either glob or walk)
+        valid_methods = 'glob walk'.split()
+        for instrument in self.config['search'].keys():
+            method = self.config['search'][instrument]['method']
+            if method not in valid_methods:
+                raise ConfigError('Invalid search method for'
+                                  ' {0:s}'.format(instrument))
+        
+        # Verify sort methods are valid (either name or time)
+        valid_methods = 'name time'.split()        
+        for instrument in self.config['sort'].keys():
+            method = self.config['sort'][instrument]
+            if method not in valid_methods:
+                raise ConfigError('Invalid sort method for'
+                                  ' {0:s}'.format(instrument))
+ 
+        # Verify first timer warning is longer than the second
+        # timer warning for both TTL and leg timers
+        try:
+            first = float(self.config['ttl_timer_hour_warnings']['first'])
+            second = float(self.config['ttl_timer_hour_warnings']['second'])
+        except ValueError:
+            raise ConfigError('Config TTL warnings must be numbers')
+        else:
+            if first<second:
+                raise ConfigError('Config TTL timer warnings error: '
+                                  'Second longer than first')
+        try:
+            first = float(self.config['leg_timer_minute_warnings']['first'])
+            second = float(self.config['leg_timer_minute_warnings']['second'])
+        except ValueError:
+            raise ConfigError('Config leg warnings must be numbers')
+        else:
+            if first<second:
+                raise ConfigError('Config leg timer warnings error: '
+                                  'Second longer than first')
+
+
+        
 
     def popout_director_log(self):
         """
