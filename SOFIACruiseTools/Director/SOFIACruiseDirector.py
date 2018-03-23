@@ -175,9 +175,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                  self.flight_timer('both'))
         
         # Leg timer control
-        # self.leg_timer_start.clicked.connect(lambda: self.leg_timer_control('start'))
-        # self.leg_timer_stop.clicked.connect(lambda: self.leg_timer_control('stop'))
-        # self.leg_timer_reset.clicked.connect(lambda: self.leg_timer_control('reset'))
         self.time_select_remaining.clicked.connect(lambda:
                                                    self.count_direction('remain'))
         self.time_select_elapsed.clicked.connect(lambda:
@@ -258,7 +255,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         :return:
         """
         dld = DirectorLogDialog(self)
-        #self.log_display.append(self.cruise_log)
 
 
     def flag_file(self):
@@ -1078,6 +1074,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Set the timing parameters display
             self.leg_dur_from_mis.setText(str(self.leg_info.duration))
             self.leg_start_from_mis.setText(str(self.leg_info.start))
+            self.leg_timer.flight_parsed = True
 
     def prev_leg(self):
         """
@@ -1710,7 +1707,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                     self.headers.insert(1, 'BADCAL')
                 self.fitskwText.setText('Custom')
 
-#class timerApp(QtWidgets.QMainWindow, ti.Ui_MainWindow):
 class leg_timer_obj(object):
 
     def __init__(self):
@@ -1719,29 +1715,12 @@ class leg_timer_obj(object):
         """
         # super(self.__class__,self).__init__()
     
-        # self.setupUi(self)
-
         self.status = 'stopped'
         self.duration = None
         self.init_duration = None
         self.remaining = datetime.timedelta()
         self.elapsed = datetime.timedelta()
-
-        # self.start_button.clicked.connect(self.push_start)
-        # self.stop_button.clicked.connect(self.push_stop)
-        # self.reset_button.clicked.connect(self.push_reset)
-
-        # self.add_one_button.clicked.connect(lambda: self.minute_adjust('add'))
-        # self.sub_one_button.clicked.connect(lambda: self.minute_adjust('sub'))
-
-        # self.status_text.setText(self.status)
-        # init_duration = datetime.time(hour=1)
-        # self.duration_input.setTime(init_duration)
-    
-        # timer = QtCore.QTimer(self)
-        # timer.timeout.connect(self.timer_loop)
-        # timer.start(100)
-        # self.timer_loop()
+        self.flight_parsed = False
 
     def minute_adjust(self,key):
         """ Adds or subracts one minute from timer """
@@ -1762,6 +1741,14 @@ class leg_timer_obj(object):
         """
         Starts, stops, or resets the leg control
         """
+        # Check if a flight plan has been successfully loaded
+        if not self.flight_parsed:
+            # Leg_dur_from_mis is only set if a flight plan
+            # is successfully parsed. If it is still an empty string,
+            # don't do anything
+            print('No flight plan loaded, cannot start leg timer')
+            return
+
         if key=='start':
             # Start button is pushed 
             if self.status == 'running':
@@ -1769,7 +1756,6 @@ class leg_timer_obj(object):
             elif self.status == 'stopped':
                 self.status = 'running'
                 self.timer_start = datetime.datetime.utcnow().replace(microsecond=0)
-                print(type(self.duration))
                 self.duration = self.init_duration
                 # h,m,s = [int(i) for i in self.duration.text().split(':')]
                 # self.duration = datetime.timedelta(hours=h,minutes=m,seconds=s)
