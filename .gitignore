@@ -3,3 +3,6 @@
 *.pyc
 *.swp
 *.fits
+DataLog_*csv
+SILog_*txt
+KWList_*txt

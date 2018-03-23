@@ -50,6 +50,7 @@ from .. import support as fpmis
 from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
+from . import directorLogDialog as dl
 from . import timer as ti
 
 
@@ -196,6 +197,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Text log stuff
         self.log_input_line.returnPressed.connect(self.post_log_line)
+        #self.log_line_director.returnPressed.connect(self.post_log_line)
+        self.open_director_log.clicked.connect(self.popout_director_log)
         #self.log_save.clicked.connect(self.select_output_file)
 
         self.log_fault_mccs.clicked.connect(lambda: self.mark_message('mccs'))
@@ -248,6 +251,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.timeout.connect(self.show_lcd)
         timer.start(500)
         self.show_lcd()
+
+    def popout_director_log(self):
+        """
+        Pops open the director log
+        :return:
+        """
+        dld = DirectorLogDialog(self)
+        #self.log_display.append(self.cruise_log)
+
 
     def flag_file(self):
         """
@@ -500,6 +512,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Button is pressed.
         """
         line = self.log_input_line.text()
+        # If this line is empty, try to pull from the text field
+        # on the Data Log tab
+        if not line:
+            line = self.log_line_director.text()
         self.line_stamper(line)
         # Clear the line
         self.log_input_line.setText('')
@@ -517,40 +533,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             # print('Invalid key in count_direction: {0:s}'.format(key))
             return
-
-#    def leg_timer_control(self, key):
-#        """
-#        Controls the timer for the leg
-#        """
-#        if key in 'start reset'.split():
-#            self.leg_counting = True
-#            time_stamp = datetime.datetime.now()
-#            self.timer_start_time = time_stamp.replace(microsecond=0)
-#
-#            hms = self.leg_duration.time().toPyTime()
-#            # Calculate the time until the leg ends
-#            # If a fresh start or restart, pull from
-#            # info about leg. If  the timer is paused
-#            # (indicated by leg_counting_stopped==True),
-#            # get the new duration from the remaining time
-#            # on the display
-#            if key == 'start' and self.leg_counting_stopped is True:
-#                dhour, dmin, dsec = [np.int(t) for t in
-#                                     self.txt_leg_timer.text().split(':')]
-#            else:
-#                dhour, dmin, dsec = hms.hour, hms.minute, hms.second
-#
-#            duration = datetime.timedelta(hours=dhour,
-#                                          minutes=dmin,
-#                                          seconds=dsec)
-#            self.timer_end_time = self.timer_start_time + duration
-#            self.leg_counting_stopped = False
-#        elif key == 'stop':
-#            self.leg_counting = False
-#            self.leg_counting_stopped = True
-#        else:
-#            # print('Invalid key in leg_timer: {0:s}'.format(key))
-#            return
 
     def set_date_time_edit_boxes(self):
         """
@@ -630,6 +612,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Update the current local/utc times before computing timedeltas
         self.update_times()
+
         # We set the takeoff time to be in local time, and we know the
         #   current time is in local as well. So ditch the tzinfo because
         #   timezones suck and it's a big pain in the ass otherwise.
@@ -1205,6 +1188,88 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.listWidget.addItem(file_name)
 
 
+class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
+    """
+    Window to hold the director log in pop-out mode
+    """
+    def __init__(self, parent):
+        QtWidgets.QDialog.__init__(self, parent)
+
+#         super(self.__class__, self).__init__()
+        self.setupUi(self)
+        self.setModal(0)
+
+        # Text log stuff
+        # self.local_input_line.returnPressed.connect(self.post_log_line)
+        self.local_input_line.returnPressed.connect(lambda:
+                                                    self.message('post'))
+
+        self.local_fault_mccs.clicked.connect(lambda: self.message('mccs'))
+        self.local_fault_si.clicked.connect(  lambda: self.message('si'))
+        self.local_landing.clicked.connect(   lambda: self.message('land'))
+        self.local_on_heading.clicked.connect(lambda: self.message('head'))
+        self.local_on_target.clicked.connect( lambda: self.message('target'))
+        self.local_takeoff.clicked.connect(   lambda: self.message('takeoff'))
+        self.local_turning.clicked.connect(   lambda: self.message('turn'))
+        self.local_ignore.clicked.connect(    lambda: self.message('ignore'))
+        # self.local_post.clicked.connect(lambda: self.message('post'))
+
+        self.cruise_log = self.parentWidget().cruise_log
+        self.output_name = self.parentWidget().output_name
+
+        self.show()
+
+    def message(self, key):
+        """ Write a message to the director's log """
+
+        messages = {'mccs': 'MCCS fault encountered',
+                    'si': 'SI fault encountered',
+                    'land': 'End of flight, packing up and sitting down',
+                    'head': 'On heading, TOs setting up',
+                    'target': 'On target, SI taking over',
+                    'takeoff': 'Beginning of flight, getting set up',
+                    'turn': 'Turning off target',
+                    'ignore': 'Ignore the previous message'}
+        if key in messages.keys():
+            self.line_stamper(messages[key])
+        elif key == 'post':
+            self.line_stamper(self.local_input_line.text())
+            # Clear the line
+            self.local_input_line.setText('')
+        else:
+            return
+
+    def line_stamper(self, line):
+        """
+        Updates the Cruise Director Log
+        """
+        # Format log line
+        time_stamp = datetime.datetime.utcnow()
+        time_stamp = time_stamp.replace(microsecond=0)
+        stamped_line = '{0:s}> {1:s}'.format(time_stamp.isoformat(), line)
+        # Write the log line to the cruise_log and log_display
+        # cruise_log is a list
+        # log_display is a QtWidgets.QTextEdit object
+        self.cruise_log.append(stamped_line + '\n')
+        self.local_display.append(stamped_line)
+        self.write_director_log()
+
+    def write_director_log(self):
+        """
+        Writes the cruise_log to file
+        :return:
+        """
+        if self.output_name:
+            try:
+                with open(self.output_name, 'w') as f:
+                    f.writelines(self.cruise_log)
+            except IOError:
+                self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
+
+    def closeEvent(self,evnt):
+        for line in self.cruise_log:
+            self.parentWidget().log_display.append(line.strip())
+
 class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     """
     Dialog box to allow for interactive selection of FITS keywords
@@ -1764,8 +1829,6 @@ class leg_timer_obj(object):
         seconds = clock.seconds%60
         s = '{0:02d}:{1:02d}:{2:02d}'.format(hours,minutes,seconds)
         return s
-
-
 
 
 def total_sec_to_hms_str(obj):
