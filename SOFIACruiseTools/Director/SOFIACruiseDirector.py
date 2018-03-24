@@ -51,7 +51,7 @@ from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
-from . import timer as ti
+
 
 class ConfigError(Exception):
     pass
@@ -91,7 +91,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_ttl.setText('+00:00:00 TTL')
         self.data = FITSHeader()
 
-        self.leg_timer = leg_timer_obj()
+        self.leg_timer = LegTimerObj()
         self.leg_timer.init_duration = None
 
         # Is a list really the best way of handling this? Don't know yet.
@@ -174,7 +174,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.end_button.clicked.connect(self.end_run)
 
         # Open the file chooser for the flight plan input
-        #self.flight_plan_openfile.clicked.connect(self.select_input_file)
         # Flight plan progression
         self.leg_previous.clicked.connect(self.prev_leg)
         self.leg_next.clicked.connect(self.next_leg)
@@ -193,7 +192,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_timer_start.clicked.connect(lambda:
                                              self.leg_timer.control_timer('start'))
         self.leg_timer_stop.clicked.connect(lambda:
-                                             self.leg_timer.control_timer('stop'))
+                                            self.leg_timer.control_timer('stop'))
         self.leg_timer_reset.clicked.connect(lambda:
                                              self.leg_timer.control_timer('reset'))
         self.add_minute.clicked.connect(lambda:
@@ -201,12 +200,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.sub_minute.clicked.connect(lambda:
                                         self.leg_timer.minute_adjust('sub'))
 
-
         # Text log stuff
         self.log_input_line.returnPressed.connect(self.post_log_line)
-        #self.log_line_director.returnPressed.connect(self.post_log_line)
         self.open_director_log.clicked.connect(self.popout_director_log)
-        #self.log_save.clicked.connect(self.select_output_file)
 
         self.log_fault_mccs.clicked.connect(lambda: self.mark_message('mccs'))
         self.log_fault_si.clicked.connect(lambda: self.mark_message('si'))
@@ -218,16 +214,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.log_post.clicked.connect(lambda: self.mark_message('post'))
         self.log_ignore.clicked.connect(lambda: self.mark_message('ignore'))
 
-        #self.data_log_open_dir.clicked.connect(self.select_dir)
-        #self.data_log_save_file.clicked.connect(self.select_log_output_file)
-
-#        self.data_log_force_write.clicked.connect(lambda: self.data.write_to_file(
-#                                                    self.log_out_name,
-#                                                    self.headers))
         self.data_log_flag_file.clicked.connect(self.flag_file)
-        # self.table_data_log,
-        # self.data_filenames))
-        # self.data_log_force_update.clicked.connect(self.update_data_log)
         self.data_log_force_update.clicked.connect(self.fill_blanks)
         self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
@@ -239,14 +226,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #  in table_datalog!
 
         # Hide buttons that aren't needed anymore due to setup prompt
-        #self.flight_plan_openfile.hide()
-        #self.data_log_open_dir.hide()
-        #self.data_log_save_file.hide()
-        #self.log_save.hide()
         self.set_takeoff_time.hide()
         self.set_landing_time.hide()
         self.set_takeoff_landing.hide()
-
 
         # Run the setup prompt
         self.update_times()
@@ -274,9 +256,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                              'leg_timer_minute_warnings']
         if len(required_sections) != len(self.config.keys()):
             raise ConfigError('Config missing keys')
-        if set(required_sections)!=set(self.config.keys()):
+        if set(required_sections) != set(self.config.keys()):
             raise ConfigError('Config missing keys')
-        
         
         # Verify search methods are valid (either glob or walk)
         valid_methods = 'glob walk'.split()
@@ -302,7 +283,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         except ValueError:
             raise ConfigError('Config TTL warnings must be numbers')
         else:
-            if first<second:
+            if first < second:
                 raise ConfigError('Config TTL timer warnings error: '
                                   'Second longer than first')
         try:
@@ -311,20 +292,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         except ValueError:
             raise ConfigError('Config leg warnings must be numbers')
         else:
-            if first<second:
+            if first < second:
                 raise ConfigError('Config leg timer warnings error: '
                                   'Second longer than first')
-
-
-        
 
     def popout_director_log(self):
         """
         Pops open the director log
         :return:
         """
-        dld = DirectorLogDialog(self)
-
+        DirectorLogDialog(self)
 
     def flag_file(self):
         """
@@ -339,7 +316,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if self.data.header_vals[fname][flag_col]:
             print('\tAlready populated')
             flag_text = '{0:s}, {1:s}'.format(self.data.header_vals[fname][flag_col],
-                                         flag_text)
+                                              flag_text)
             print(flag_text)
             self.data.header_vals[fname][flag_col] = flag_text
         else:
@@ -350,7 +327,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Change the qTable
         for colNum in range(self.table_data_log.columnCount()):
             header_text = self.table_data_log.horizontalHeaderItem(colNum).text()
-            if header_text=='BADCAL':
+            if header_text == 'BADCAL':
                 self.table_data_log.setItem(row, colNum,
                                             QtWidgets.QTableWidgetItem(flag_text))
 
@@ -361,7 +338,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Fills blanks in data table
         """
         for fname in self.data.header_vals:
-            filename = join(self.data_log_dir,fname)
+            filename = join(self.data_log_dir, fname)
             self.data.fill_data_blank_cells(filename, self.headers, self.fits_hdu)
         self.repopulate_data_log()
 
@@ -390,9 +367,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if result:
             # Parse the results of the dialog.
             if not window.fname:
-                #self.err_msg = 'ERROR: Failure Parsing File!'
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
-                #self.flight_plan_filename.setText(self.err_msg)
 
             # Flight information
             self.select_input_file(window.fname)
@@ -404,8 +379,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Cruise Director Log filename
             if window.dirlog_name:
                 self.output_name = window.dirlog_name
-                #self.txt_log_output_name.setText('Writing to: {0:s}'.format(
-                #    basename(str(self.output_name))))
                 self.txt_log_output_name.setText('{0:s}'.format(
                     basename(str(self.output_name))))
             else:
@@ -415,16 +388,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Location of data
             if window.data_dir:
                 self.data_log_dir = window.data_dir
-                #self.txt_data_log_dir.setText('Data Location: {0:s}'.format(
-                #    self.data_log_dir))
                 self.txt_data_log_dir.setText('{0:s}'.format(
                     self.data_log_dir))
 
             # Data Log filename
             if window.datalog_name:
                 self.log_out_name = window.datalog_name
-                #self.txt_data_log_save_file.setText('Writing to: {0:s}'.format(
-                #    basename(str(self.log_out_name))))
                 self.txt_data_log_save_file.setText('{0:s}'.format(
                     basename(str(self.log_out_name))))
 
@@ -688,7 +657,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
-            #self.met_str = '{0:s} MET'.format(self.total_sec_to_hms_str(self.met))
             self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
             self.txt_met.setText(self.met_str)
         if self.ttl_counting is True:
@@ -782,7 +750,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         elif remaining_seconds >= second_warning:
             self.txt_leg_timer.setStyleSheet(
                 'QLabel { color : orange; }')
-                #'QLabel { color : darkyellow; }')
         else:
             self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
 
@@ -801,7 +768,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         row_position = self.table_data_log.rowCount()
         self.table_data_log.insertRow(row_position)
-        # self.data_filenames.append('--> ')
         self.data_filenames.append('blank_{0:d}'.format(self.data.blank_count))
         # Actually set the labels for rows
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
@@ -818,8 +784,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Alters table_data_log
         """
         bad = self.table_data_log.currentRow()
-        print('\nCurrent Row = ',bad)
-        print('Type = ',type(bad))
+        print('\nCurrent Row = ', bad)
+        print('Type = ', type(bad))
         # -1 means we didn't select anything
         if bad != -1:
             self.table_data_log.blockSignals(True)
@@ -827,7 +793,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.data.remove_image(self.data_filenames[bad])
             del self.data_filenames[bad]
             self.table_data_log.removeRow(bad)
-            #self.table_data_log.removeRow(self.table_data_log.currentRow())
             # Redraw
             self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
             self.data.write_to_file(self.log_out_name, self.headers)
@@ -849,7 +814,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             QtWidgets.QAbstractItemView.NoDragDrop)
         self.table_data_log.blockSignals(True)
 
-        # thed_list = ['NOTES'] + self.headers
         thed_list = self.headers
 
         # First, grab the current table's contents
@@ -857,13 +821,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         for n in range(0, self.table_data_log.rowCount()):
             row_data = {}
             for m, hkey in enumerate(thed_list):
-#                if rescan is True:
-#                    # Need to somehow remap the basename'd row label to the
-#                    #   original listing of files (with path) to go rescan
-#                    fname = ''
-#                    row_data = header_dict(fname, self.headers,
-#                                           hdu=self.fitshdu)
-#                else:
                 rdat = self.table_data_log.item(n, m)
                 if rdat is not None:
                     row_data[hkey] = rdat.text()
@@ -970,17 +927,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 config['method'], self.instrument))
             return
 
-
         # Correct the file listing to be ordered by modification time
-        self.data_current.sort(key=getmtime)
-
-#        bncur = [basename(x) for x in self.data_current]
-#        if self.instrument == 'HAWCFlight':
-#            bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
-#        else:
-#            bnpre = [basename(x) for x in self.data_filenames]
-
-#        new_files = set(bncur) - set(bnpre)
+        self.data_current = self.sort_files(self.data_current)
 
         bncur = [basename(x) for x in self.data_current]
         if self.instrument == 'HAWCFlight':
@@ -989,25 +937,40 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             bnpre = [basename(x) for x in self.data_filenames]
 
         new_files = set(bncur) - set(bnpre)
-        new_files = [join(self.data_log_dir,i) for i in new_files]
-        new_files.sort(key=getmtime)
+        new_files = [join(self.data_log_dir, i) for i in new_files]
+        new_files = self.sort_files(new_files)
         for fname in new_files:
-            #filename = join(self.data_log_dir, fname)
-            #self.data.add_image(filename, self.headers, hdu=self.fits_hdu)
             self.data.add_image(fname, self.headers, hdu=self.fits_hdu)
-            #self.data_filenames.append(fname)
-            #self.new_files.append(fname)
             bname = basename(fname)
             self.data_filenames.append(bname)
             self.new_files.append(bname)
 
         # If new files exist, update the table widget and
         # write the new data to file
-        #if len(new_files) > 0:
         if new_files:
             self.update_table()
             if self.log_out_name != '':
                 self.data.write_to_file(self.log_out_name, self.headers)
+
+    def sort_files(self, files):
+        """
+        Sort files based on method in config
+        :param files: files to be sorted
+        :return: None
+        """
+        if self.config['sort'][self.instrument] == 'time':
+            return sorted(files,key=getmtime)
+        elif self.config['sort'][self.instrument] == 'name':
+            if self.instrument.lower() == 'forcast':
+                return sorted(files, key=lambda x:
+                              int(x.split('_')[1].split('.')[0]))
+            else:
+                print('Unknown file formatting for {0:s}'.format(self.instrument))
+                print('Cannot sort')
+                sys.exit()
+        else:
+            print('Unknown file sorting method. Check config file, director.ini')
+            sys.exit()
 
     def update_table(self):
         """
@@ -1030,13 +993,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         for file_key in self.new_files:
             row_count = self.table_data_log.rowCount()
             self.table_data_log.insertRow(row_count)
-            # for m,(key,val) in enumerate(row.items()):
             for m, key in enumerate(self.headers):
                 val = self.data.header_vals[file_key][key]
                 item = QtWidgets.QTableWidgetItem(str(val))
                 self.table_data_log.setItem(row_count,
                                             m, item)
-                # m + 1, item)
 
         # Set the row labels
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
@@ -1044,7 +1005,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
 
-        # Reenable features
+        # Re-enable features
         self.table_data_log.horizontalHeader().setSectionsMovable(True)
         self.table_data_log.horizontalHeader().setDragEnabled(True)
         self.table_data_log.horizontalHeader().setDragDropMode(
@@ -1076,7 +1037,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Clears the leg parameter values.
 
-        Usefule for dead/departure/arrival legs
+        Useful for dead/departure/arrival legs
         """
         self.leg_elevation.setText('')
         self.leg_obs_block.setText('')
@@ -1088,7 +1049,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Displays details of flight plan parsed from .msi file.
 
         If the flight plan was successfully parsed, show the values
-        for the leg occuring at self.legpos.
+        for the leg occurring at self.legpos.
         """
         # Only worth doing if we read in a flight plan file
         if self.success_parse is True:
@@ -1115,7 +1076,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.leg_rof_rof_rate.setText(rof_label)
                 try:
                     self.leg_obs_block.setText(self.leg_info.obs_plan)
-                except:
+                except AttributeError:
                     pass
             else:
                 # If it's a dead leg, update the leg number and we'll move on
@@ -1132,7 +1093,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             time_parts = [np.int(x) for x in time_parts]
             dur_time = datetime.time(hour=time_parts[0], minute=time_parts[1],
                                      second=time_parts[2])
-#            dur_time = QtCore.QTime(time_parts[0], time_parts[1], time_parts[2])
             self.leg_duration.setTime(dur_time)
             dur_time = datetime.timedelta(hours=dur_time.hour,
                                           minutes=dur_time.minute,
@@ -1158,7 +1118,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.leg_info = self.flight_info.legs[self.leg_pos]
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
-        #self.leg_timer.control_timer('reset')
 
     def next_leg(self):
         """
@@ -1175,7 +1134,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             pass
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
-        #self.leg_timer.control_timer('reset')
 
     def update_flight_time(self, key):
         """
@@ -1261,24 +1219,21 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
 
-#         super(self.__class__, self).__init__()
         self.setupUi(self)
         self.setModal(0)
 
         # Text log stuff
-        # self.local_input_line.returnPressed.connect(self.post_log_line)
         self.local_input_line.returnPressed.connect(lambda:
                                                     self.message('post'))
 
         self.local_fault_mccs.clicked.connect(lambda: self.message('mccs'))
-        self.local_fault_si.clicked.connect(  lambda: self.message('si'))
-        self.local_landing.clicked.connect(   lambda: self.message('land'))
+        self.local_fault_si.clicked.connect(lambda: self.message('si'))
+        self.local_landing.clicked.connect(lambda: self.message('land'))
         self.local_on_heading.clicked.connect(lambda: self.message('head'))
-        self.local_on_target.clicked.connect( lambda: self.message('target'))
-        self.local_takeoff.clicked.connect(   lambda: self.message('takeoff'))
-        self.local_turning.clicked.connect(   lambda: self.message('turn'))
-        self.local_ignore.clicked.connect(    lambda: self.message('ignore'))
-        # self.local_post.clicked.connect(lambda: self.message('post'))
+        self.local_on_target.clicked.connect(lambda: self.message('target'))
+        self.local_takeoff.clicked.connect(lambda: self.message('takeoff'))
+        self.local_turning.clicked.connect(lambda: self.message('turn'))
+        self.local_ignore.clicked.connect(lambda: self.message('ignore'))
 
         self.cruise_log = self.parentWidget().cruise_log
         self.output_name = self.parentWidget().output_name
@@ -1300,7 +1255,6 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
             self.line_stamper(messages[key])
         elif key == 'post':
             self.line_stamper(self.local_input_line.text())
-            # Clear the line
             self.local_input_line.setText('')
         else:
             return
@@ -1313,6 +1267,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         time_stamp = datetime.datetime.utcnow()
         time_stamp = time_stamp.replace(microsecond=0)
         stamped_line = '{0:s}> {1:s}'.format(time_stamp.isoformat(), line)
+
         # Write the log line to the cruise_log and log_display
         # cruise_log is a list
         # log_display is a QtWidgets.QTextEdit object
@@ -1323,7 +1278,6 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
     def write_director_log(self):
         """
         Writes the cruise_log to file
-        :return:
         """
         if self.output_name:
             try:
@@ -1332,9 +1286,10 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
             except IOError:
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
-    def closeEvent(self,evnt):
+    def closeEvent(self, evnt):
         for line in self.cruise_log:
             self.parentWidget().log_display.append(line.strip())
+
 
 class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     """
@@ -1402,8 +1357,8 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                 reader = csv.reader(f)
                 for row in reader:
                     self.headers.append(row)
-                statusline = 'File Loaded: {0:s}'.format(self.kwname)
-                self.txt_fitskw_status.setText(statusline)
+                status_line = 'File Loaded: {0:s}'.format(self.kwname)
+                self.txt_fitskw_status.setText(status_line)
             except IOError as why:
                 print(str(why))
                 self.txt_fitskw_status.setText('ERROR READING THE FILE!')
@@ -1420,7 +1375,7 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
             self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(key))
 
     def get_keyword_from_user(self):
-        """ Adds a keyword from user to the dicitonary and widget """
+        """ Adds a keyword from user to the dictionary and widget """
         text, result = QtWidgets.QInputDialog.getText(self, 'Add Keyword',
                                                       'New Keyword:',
                                                       QtWidgets.QLineEdit.Normal,
@@ -1506,21 +1461,21 @@ class FITSHeader(object):
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
 
-    def fill_data_blank_cells(self, infile, hkeys, table, hdu=0):
-        '''
+    def fill_data_blank_cells(self, infile, hkeys, hdu=0):
+        """
         Fills any blank cell in table
 
         If a header keyword is added after data collection has begun
-        then the cells for that keyword for existing data will be 
-        empty. 
-        
+        then the cells for that keyword for existing data will be
+        empty.
+
         :param infile: The full filename of the FITS file
         :param hkeys: List of header keys
         :param hdu: Header unit of FITS to use
         :returns: None
         :raises IOError: Can't open file
         :raises KeyError: Infile not found in header_vals
-        '''
+        """
         # Read in file
         try:
             header = pyf.getheader(infile, ext=hdu)
@@ -1648,6 +1603,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.err_msg = ''
         self.flight_info = None
         self.success_parse = False
+        self.headers = self.config['keywords'][self.instrument]
 
         # Grab stuff from parent
         self.utc_now = self.parent().utc_now
@@ -1758,7 +1714,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
 
         # Read the default keywords for each instrument
-        self.headers = self.config['keywords'][self.instrument.lower()]
+        self.headers = self.config['keywords'][self.instrument]
         if 'NOTES' not in self.headers:
             self.headers.insert(0, 'NOTES')
         if 'BADCAL' not in self.headers:
@@ -1776,7 +1732,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                     self.headers.insert(1, 'BADCAL')
                 self.fitskwText.setText('Custom')
 
-class leg_timer_obj(object):
+
+class LegTimerObj(object):
 
     def __init__(self):
         """
@@ -1789,22 +1746,23 @@ class leg_timer_obj(object):
         self.init_duration = None
         self.remaining = datetime.timedelta()
         self.elapsed = datetime.timedelta()
+        self.timer_start = None
         self.flight_parsed = False
 
-    def minute_adjust(self,key):
-        """ Adds or subracts one minute from timer """
+    def minute_adjust(self, key):
+        """ Adds or subtracts one minute from timer """
         adjustment = datetime.timedelta(minutes=1)
-        if key=='add':
+        if key == 'add':
             self.duration += adjustment
-        elif key=='sub':
+        elif key == 'sub':
             self.duration -= adjustment
 
     def print_state(self):
         print('\nTimer Stats:')
-        print('\tStatus = ',self.status)
-        print('\tDuration = ',self.duration,' (',type(self.duration),')')
-        print('\tRemaining = ',self.remaining,' (',type(self.remaining),')')
-        print('\tElapsed = ',self.elapsed,' (',type(self.elapsed),')')
+        print('\tStatus = ', self.status)
+        print('\tDuration = ', self.duration, ' (', type(self.duration), ')')
+        print('\tRemaining = ', self.remaining, ' (', type(self.remaining), ')')
+        print('\tElapsed = ', self.elapsed, ' (', type(self.elapsed), ')')
 
     def control_timer(self, key):
         """
@@ -1818,7 +1776,7 @@ class leg_timer_obj(object):
             print('No flight plan loaded, cannot start leg timer')
             return
 
-        if key=='start':
+        if key == 'start':
             # Start button is pushed 
             if self.status == 'running':
                 return
@@ -1831,19 +1789,17 @@ class leg_timer_obj(object):
             else:
                 # Paused
                 self.status = 'running'
-                self.timer_start = (datetime.datetime.utcnow().replace(microsecond=0) - 
-                                    self.elapsed)
-        elif key=='stop':
+                self.timer_start = (datetime.datetime.utcnow().replace(
+                                    microsecond=0) - self.elapsed)
+        elif key == 'stop':
             # Stop button pushed 
             if self.status == 'running':
                 self.status = 'paused'
-        elif key=='reset':
+        elif key == 'reset':
             """ Reset button pushed """
             self.status = 'running'
             self.timer_start = datetime.datetime.utcnow().replace(microsecond=0)
             self.duration = self.init_duration
-            # h,m,s = [int(i) for i in self.duration_input.text().split(':')]
-            # self.duration = datetime.timedelta(hours=h,minutes=m,seconds=s)
         else:
             # Invalid key
             print('Invalid key for leg control = {0:s}'.format(key))
@@ -1863,27 +1819,26 @@ class leg_timer_obj(object):
             self.remaining = self.duration - self.elapsed
         except TypeError:
             print('\n\nTypeError in timer_string:')
-            print(type(self.elapsed),type(now),type(self.timer_start))
-            print(type(self.remaining),type(self.duration),type(self.elapsed))
+            print(type(self.elapsed), type(now), type(self.timer_start))
+            print(type(self.remaining), type(self.duration), type(self.elapsed))
             self.print_state()
             sys.exit()
 
-        if mode=='remaining':
+        if mode == 'remaining':
             if self.remaining < datetime.timedelta(0):
-                return '-'+self.clock_string(-self.remaining)
+                return '-'+clock_string(-self.remaining)
             else:
-                return self.clock_string(self.remaining)
+                return clock_string(self.remaining)
         else:
-            return self.clock_string(self.elapsed)
-        #self.remaining_string = self.clock_string(self.remaining)
-        #self.elapsed_string = self.clock_string(self.elapsed)
+            return clock_string(self.elapsed)
 
-    def clock_string(self,clock):
-        hours = clock.seconds//3600
-        minutes = (clock.seconds//60)%60
-        seconds = clock.seconds%60
-        s = '{0:02d}:{1:02d}:{2:02d}'.format(hours,minutes,seconds)
-        return s
+
+def clock_string(clock):
+    hours = clock.seconds//3600
+    minutes = clock.seconds//60 % 60
+    seconds = clock.seconds % 60
+    s = '{0:02d}:{1:02d}:{2:02d}'.format(hours, minutes, seconds)
+    return s
 
 
 def total_sec_to_hms_str(obj):
