@@ -54,6 +54,7 @@ from . import directorLogDialog as dl
 
 
 class ConfigError(Exception):
+    """ Exception for errors in the config file """
     pass
 
 
@@ -182,7 +183,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_landing_time.clicked.connect(lambda: self.flight_timer('ttl'))
         self.set_takeoff_landing.clicked.connect(lambda:
                                                  self.flight_timer('both'))
-        
+
         # Leg timer control
         self.time_select_remaining.clicked.connect(lambda:
                                                    self.count_direction('remain'))
@@ -258,7 +259,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             raise ConfigError('Config missing keys')
         if set(required_sections) != set(self.config.keys()):
             raise ConfigError('Config missing keys')
-        
+
         # Verify search methods are valid (either glob or walk)
         valid_methods = 'glob walk'.split()
         for instrument in self.config['search'].keys():
@@ -266,15 +267,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if method not in valid_methods:
                 raise ConfigError('Invalid search method for'
                                   ' {0:s}'.format(instrument))
-        
+
         # Verify sort methods are valid (either name or time)
-        valid_methods = 'name time'.split()        
+        valid_methods = 'name time'.split()
         for instrument in self.config['sort'].keys():
             method = self.config['sort'][instrument]
             if method not in valid_methods:
                 raise ConfigError('Invalid sort method for'
                                   ' {0:s}'.format(instrument))
- 
+
         # Verify first timer warning is longer than the second
         # timer warning for both TTL and leg timers
         try:
@@ -325,14 +326,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         print(self.data.header_vals[fname][flag_col])
         # Change the qTable
-        for colNum in range(self.table_data_log.columnCount()):
-            header_text = self.table_data_log.horizontalHeaderItem(colNum).text()
+        for column in range(self.table_data_log.columnCount()):
+            header_text = self.table_data_log.horizontalHeaderItem(column).text()
             if header_text == 'BADCAL':
-                self.table_data_log.setItem(row, colNum,
+                self.table_data_log.setItem(row, column,
                                             QtWidgets.QTableWidgetItem(flag_text))
 
-        self.repopulate_data_log(force=True)
-            
+        self.repopulate_data_log()
+
     def fill_blanks(self):
         """
         Fills blanks in data table
@@ -676,14 +677,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             timer_warnings = self.config['ttl_timer_hour_warnings']
             first_warning = float(timer_warnings['first'])*3600.
             second_warning = float(timer_warnings['second'])*3600.
-            
+
             if self.ttl.total_seconds() >= first_warning:
                 self.txt_ttl.setStyleSheet('QLabel { color : black; }')
 
             elif self.ttl.total_seconds() >= second_warning:
                 self.txt_ttl.setStyleSheet('QLabel { color : darkyellow; }')
 
-            else: 
+            else:
                 self.txt_ttl.setStyleSheet('QLabel { color : red; }')
 
         # if self.leg_counting is True:
@@ -736,7 +737,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Sets the color of the leg timer
 
-        Limits of when different colors are applied come from 
+        Limits of when different colors are applied come from
         the config file.
         """
 
@@ -798,7 +799,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.data.write_to_file(self.log_out_name, self.headers)
             self.table_data_log.blockSignals(False)
 
-    def repopulate_data_log(self, rescan=False, force=False):
+    def repopulate_data_log(self, rescan=False):
         """
         Recreates the data log table after keyword changes.
 
@@ -959,7 +960,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         :return: None
         """
         if self.config['sort'][self.instrument] == 'time':
-            return sorted(files,key=getmtime)
+            return sorted(files, key=getmtime)
         elif self.config['sort'][self.instrument] == 'name':
             if self.instrument.lower() == 'forcast':
                 return sorted(files, key=lambda x:
@@ -1287,6 +1288,9 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
     def closeEvent(self, evnt):
+        """ 
+        When window is closed, write the contents to the host director log
+        """
         for line in self.cruise_log:
             self.parentWidget().log_display.append(line.strip())
 
@@ -1485,7 +1489,7 @@ class FITSHeader(object):
             # Print to screen, but don't kill the program
             return
         row = self.header_vals[basename(infile)]
-        for i, key in enumerate(hkeys):
+        for key in hkeys:
             try:
                 val = row[key]
             except KeyError:
@@ -1734,13 +1738,19 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
 
 class LegTimerObj(object):
+    """
+    Class to hold the leg timer
+
+    Calculates elapsed time, remaining time for the leg, 
+    as well as handles response to start, stop, and reset buttons
+    """
 
     def __init__(self):
         """
         Initializes the leg timer
         """
         # super(self.__class__,self).__init__()
-    
+
         self.status = 'stopped'
         self.duration = None
         self.init_duration = None
@@ -1758,6 +1768,7 @@ class LegTimerObj(object):
             self.duration -= adjustment
 
     def print_state(self):
+        """ Prints status of class variables to screen """
         print('\nTimer Stats:')
         print('\tStatus = ', self.status)
         print('\tDuration = ', self.duration, ' (', type(self.duration), ')')
@@ -1777,7 +1788,7 @@ class LegTimerObj(object):
             return
 
         if key == 'start':
-            # Start button is pushed 
+            # Start button is pushed
             if self.status == 'running':
                 return
             elif self.status == 'stopped':
@@ -1792,7 +1803,7 @@ class LegTimerObj(object):
                 self.timer_start = (datetime.datetime.utcnow().replace(
                                     microsecond=0) - self.elapsed)
         elif key == 'stop':
-            # Stop button pushed 
+            # Stop button pushed
             if self.status == 'running':
                 self.status = 'paused'
         elif key == 'reset':
@@ -1809,7 +1820,7 @@ class LegTimerObj(object):
         """
         Calculates elapsed and remaining time.
 
-        Returns the desired time format, specified by mode 
+        Returns the desired time format, specified by mode
         (either 'remaining' or 'elapsed') in a nicely formatted
         string.
         """
@@ -1834,11 +1845,11 @@ class LegTimerObj(object):
 
 
 def clock_string(clock):
+    """ Formats timedelta into HH:MM:SS """
     hours = clock.seconds//3600
     minutes = clock.seconds//60 % 60
     seconds = clock.seconds % 60
-    s = '{0:02d}:{1:02d}:{2:02d}'.format(hours, minutes, seconds)
-    return s
+    return '{0:02d}:{1:02d}:{2:02d}'.format(hours, minutes, seconds)
 
 
 def total_sec_to_hms_str(obj):
