@@ -77,13 +77,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_pos = 0
         self.success_parse = False
         self.toggle_leg_param_values_off()
-        # self.leg_param_labels('off')
         self.met_counting = False
         self.ttl_counting = False
-#        self.leg_counting = False
-#        self.leg_counting_stopped = False
         self.leg_count_remaining = True
-        # self.do_leg_count_elapsed = False
         self.output_name = ''
         self.local_timezone = 'US/Pacific'
         self.localtz = pytz.timezone(self.local_timezone)
@@ -108,7 +104,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Set the default instrument and FITS headers
         self.last_instrument_index = -1
-        # self.select_instr(0)
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
         # The addition of the NOTES column happens in here
@@ -126,8 +121,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Variables previously defined in function
         self.data_log_dir = ''
-#        self.timer_start_time = None
-#        self.timer_end_time = None
         self.takeoff = None
         self.landing = None
         self.utc_now = None
@@ -141,10 +134,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.ttl = None
         self.ttl_str = None
         self.instrument = ''
-#        self.leg_remain = None
-#        self.leg_remain_str = None
-#        self.leg_elapsed = None
-#        self.leg_elapsed_str = None
         self.new_files = None
         self.data_new = None
         self.last_data_row = None
@@ -158,6 +147,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
+        # Resize the Notes column, which should be 
+        # first column
+        self.table_data_log.setColumnWidth(1,10)
 
         # Actually show the table
         self.table_data_log.show()
@@ -509,7 +501,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def write_director_log(self):
         """
         Writes the cruise_log to file
-        :return:
         """
         if self.output_name:
             try:
@@ -616,9 +607,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         delay between triggers/button presses.
         Called during initialization of the app and at the beginning
         of every showlcd loop.
-        Sets:
-            utc_now, utc_now_str, utc_now_datetime_str
-            local_now, local_now_str, local_now_datetime_str
         """
         self.utc_now = datetime.datetime.utcnow()
         self.utc_now = self.utc_now.replace(microsecond=0)
@@ -653,7 +641,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   timezones suck and it's a big pain in the ass otherwise.
         #   The logic follows the same for each counter/timer.
         if self.met_counting is True:
-            # Only runs if "Start MET" or "Start Both" button is pressed
             # Set the MET to show the time between now and takeoff
             local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
@@ -663,10 +650,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if self.ttl_counting is True:
             # Only runs if "Start TTL" or "Start Both" button is pressed
             # Sets the TTL to show the teim between landing and now
-            # The timer is color-coded based on how long this time is:
-            #     TTL > 2 hours = black
-            #     1.5 < TTL < 2 hours = dark yellow
-            #     TTL < 1.5 hours = red
+            # The timer is color-coded based on how long this time is
             local2 = self.local_now.replace(tzinfo=None)
             landing2 = self.landing.replace(tzinfo=None)
             self.ttl = landing2 - local2
@@ -693,34 +677,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Only runs if the "Start" button in the "Leg Timer"
             # panel is pressed
 
-            # local2 = self.local_now.replace(tzinfo=None)
-            # leg_end = self.timer_end_time.replace(tzinfo=None)
-            # leg_start = self.timer_start_time.replace(tzinfo=None)
-
             if self.leg_count_remaining:
                 time_string = self.leg_timer.timer_string('remaining')
                 self.leg_timer_color(self.leg_timer.remaining.total_seconds())
             else:
                 time_string = self.leg_timer.timer_string('elapsed')
             self.txt_leg_timer.setText(time_string)
-
-
-#            if self.do_leg_count_remaining is True:
-#                # Formats to Leg Timer to show how much time is remaining
-#                # until the leg ends
-#                # The timer is color-coded based on how long this time is:
-#                #     Time left > 2 hours = black
-#                #     1.5 < Time left < 2 hours = dark yellow
-#                #     Time left < 1.5 hours = red
-#                self.leg_remain = leg_end - local2
-#                self.leg_remain_str = total_sec_to_hms_str(self.leg_remain)
-#                self.txt_leg_timer.setText(self.leg_remain_str)
-#
-#            if self.do_leg_count_elapsed is True:
-#                # Formats the Leg Timer to show how much time has elapsed
-#                self.leg_elapsed = local2 - leg_start
-#                self.leg_elapsed_str = total_sec_to_hms_str(self.leg_elapsed)
-#                self.txt_leg_timer.setText(self.leg_elapsed_str)
 
         # Update the UTC and Local Clocks in the 'World Times' panel
         self.txt_utc.setText(self.utc_now_str)
@@ -729,9 +691,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if self.start_data_log is True and \
                 self.data_log_autoupdate.isChecked() is True:
             if self.utc_now.second % self.data_log_update_interval.value() == 0:
-                # self.update_data_log()
                 self.update_data()
-                # print self.datatable
 
     def leg_timer_color(self, remaining_seconds):
         """
@@ -987,18 +947,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.blockSignals(True)
 
         # Add the data to the table
-        # init_row_count = self.table_data_log.rowCount()
-        # rows_to_add = len(self.new_files)
-        # for n,(file_key,row) in enumerate(self.data.header_vals.items()):
-        # for n, file_key in enumerate(self.new_files):
         for file_key in self.new_files:
             row_count = self.table_data_log.rowCount()
             self.table_data_log.insertRow(row_count)
             for m, key in enumerate(self.headers):
                 val = self.data.header_vals[file_key][key]
                 item = QtWidgets.QTableWidgetItem(str(val))
-                self.table_data_log.setItem(row_count,
-                                            m, item)
+                self.table_data_log.setItem(row_count, m, item)
 
         # Set the row labels
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
@@ -1031,7 +986,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.txt_rof.setVisible(False)
             self.txt_target.setVisible(False)
         else:
-            # print('Invalid key in toggle_leg_param_labels: {0:s}'.format(key))
             return
 
     def toggle_leg_param_values_off(self):
@@ -1194,24 +1148,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.flight_plan_filename.setText(self.err_msg)
             self.success_parse = False
 
-    def browse_folder(self):
-        """
-        What is this function for?  Is it vestigial?  I don't remember
-        this function or its purpose at all :-/
-        """
-        # In case there are any existing elements in the list
-        self.listWidget.clear()
-        title_str = 'Choose a SOFIA mission file (.mis)'
-        directory = QtWidgets.QFileDialog.getExistingDirectory(self,
-                                                               title_str)[0]
-
-        # if user didn't pick a directory don't continue
-        if directory:
-            # for all files, if any, in the directory
-            for file_name in listdir(directory):
-                # add file to the listWidget
-                self.listWidget.addItem(file_name)
-
 
 class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
     """
@@ -1226,7 +1162,6 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         # Text log stuff
         self.local_input_line.returnPressed.connect(lambda:
                                                     self.message('post'))
-
         self.local_fault_mccs.clicked.connect(lambda: self.message('mccs'))
         self.local_fault_si.clicked.connect(lambda: self.message('si'))
         self.local_landing.clicked.connect(lambda: self.message('land'))
@@ -1261,9 +1196,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
             return
 
     def line_stamper(self, line):
-        """
-        Updates the Cruise Director Log
-        """
+        """ Updates the Cruise Director Log """
         # Format log line
         time_stamp = datetime.datetime.utcnow()
         time_stamp = time_stamp.replace(microsecond=0)
@@ -1277,9 +1210,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         self.write_director_log()
 
     def write_director_log(self):
-        """
-        Writes the cruise_log to file
-        """
+        """ Writes the cruise_log to file """
         if self.output_name:
             try:
                 with open(self.output_name, 'w') as f:
@@ -1344,7 +1275,6 @@ class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
                         rowdata.append('')
                 writer.writerow(rowdata)
                 f.close()
-                # statusline = "File Written: %s" % str(self.kwname)
                 statusline = 'File Written: {0:s}'.format(self.kwname)
                 self.txt_fitskw_status.setText(statusline)
             except IOError as why:
@@ -1438,7 +1368,6 @@ class FITSHeader(object):
 
     def __init__(self):
 
-        # self.header_vals = {}
         self.header_vals = OrderedDict()
         self.blank_count = 0
 
@@ -1575,7 +1504,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
     def __init__(self, parent=None):
 
-        # super(self.__class__,self).__init__()
         super(StartupApp, self).__init__(parent)
 
         self.setupUi(self)
@@ -1617,7 +1545,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Closes this window and passes results to main program
         """
-
         # Read the timezone
         self.local_timezone = str(self.timezoneSelect.currentText())
 
@@ -1749,8 +1676,6 @@ class LegTimerObj(object):
         """
         Initializes the leg timer
         """
-        # super(self.__class__,self).__init__()
-
         self.status = 'stopped'
         self.duration = None
         self.init_duration = None
@@ -1795,8 +1720,6 @@ class LegTimerObj(object):
                 self.status = 'running'
                 self.timer_start = datetime.datetime.utcnow().replace(microsecond=0)
                 self.duration = self.init_duration
-                # h,m,s = [int(i) for i in self.duration.text().split(':')]
-                # self.duration = datetime.timedelta(hours=h,minutes=m,seconds=s)
             else:
                 # Paused
                 self.status = 'running'
