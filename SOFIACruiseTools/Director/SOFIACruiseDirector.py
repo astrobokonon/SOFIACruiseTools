@@ -52,6 +52,8 @@ from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
 
+from .header_checker import file_checker as fc
+from .header_checker import header_checker as hc
 
 class ConfigError(Exception):
     """ Exception for errors in the config file """
@@ -143,6 +145,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.kwname = None
         self.new_headers = None
         self.flight_info = None
+        self.checker = fc.FileChecker()
+        self.checker_rules = None
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -213,8 +217,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
         self.data_log_delete_row.clicked.connect(self.del_data_log_row)
 
-        # Instrument selection
-        # self.data_log_instrument_select.activated.connect(self.select_instr)
         # Add an action that detects when a cell is changed by the user
         #  in table_datalog!
 
@@ -292,7 +294,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def popout_director_log(self):
         """
         Pops open the director log
-        :return:
         """
         DirectorLogDialog(self)
 
@@ -323,7 +324,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if header_text == 'BADCAL':
                 self.table_data_log.setItem(row, column,
                                             QtWidgets.QTableWidgetItem(flag_text))
-
         self.repopulate_data_log()
 
     def fill_blanks(self):
@@ -368,6 +368,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Instrument
             self.instrument = window.instrument
             self.instrument_text.setText(self.instrument)
+            self.checker_rules = self.checker.choose_rules(self.instrument)
+            print(self.checker_rules)
 
             # Cruise Director Log filename
             if window.dirlog_name:
@@ -445,10 +447,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if result == 1:
             self.fits_hdu = np.int(window.fitskw_hdu.value())
             self.new_headers = window.headers
-            if 'NOTES' not in self.new_headers:
-                self.new_headers.insert(0, 'NOTES')
-            if 'BADCAL' not in self.headers:
-                self.headers.insert(1, 'BADCAL')
+            required = ['NOTES', 'BADCAL', 'HEADER_CHECK']
+            for i,require in enumerate(required):
+                if require not in self.new_headers:
+                    self.new_headers.insert(i, require)
 
             # Update the column data itself if we're actually logging
             if self.start_data_log is True:
@@ -469,7 +471,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.setColumnCount(0)
         self.table_data_log.setRowCount(0)
 
-        # This always puts the NOTES col. right next to the filename
+        # This always puts the notes col. right next to the filename
         # self.table_data_log.insertColumn(0)
 
         # Add the number of columns we'll need for the header keys given
@@ -901,7 +903,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         new_files = [join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
         for fname in new_files:
-            self.data.add_image(fname, self.headers, hdu=self.fits_hdu)
+            self.data.add_image(fname, self.headers, hdu=self.fits_hdu, 
+                                rules=self.checker_rules)
             bname = basename(fname)
             self.data_filenames.append(bname)
             self.new_files.append(bname)
@@ -1371,7 +1374,7 @@ class FITSHeader(object):
         self.header_vals = OrderedDict()
         self.blank_count = 0
 
-    def add_image(self, infile, hkeys, hdu=0):
+    def add_image(self, infile, hkeys, rules=None, hdu=0):
         """
         Adds FITS header to data structure
 
@@ -1391,6 +1394,17 @@ class FITSHeader(object):
             # Select out the keywords of interest
             for key in hkeys:
                 header[key] = head[key] if key in head else ''
+
+        # Check the header 
+        if rules:
+            print('Checking header')
+            rules.check(infile)
+            print(rules.warnings)
+            if rules.warnings:
+                header['HEADER_CHECK'] = 'Failed'
+            else:
+                header['HEADER_CHECK'] = 'Passed'
+        
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
 
@@ -1646,10 +1660,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         # Read the default keywords for each instrument
         self.headers = self.config['keywords'][self.instrument]
-        if 'NOTES' not in self.headers:
-            self.headers.insert(0, 'NOTES')
-        if 'BADCAL' not in self.headers:
-            self.headers.insert(1, 'BADCAL')
+        required = ['NOTES', 'BADCAL', 'HEADER_CHECK']
+        for i, require in enumerate(required):
+            if require not in self.headers:
+                self.headers.insert(i, require)
 
         if not default:
             window = FITSKeyWordDialog(self)
@@ -1657,10 +1671,9 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
             if result == 1:
                 self.fits_hdu = np.int(window.fitskw_hdu.value())
                 self.headers = window.headers
-                if 'NOTES' not in self.headers:
-                    self.headers.insert(0, 'NOTES')
-                if 'BADCAL' not in self.headers:
-                    self.headers.insert(1, 'BADCAL')
+                for i, require in enumerate(required):
+                    if require not in self.headers:
+                        self.headers.insert(i, require)
                 self.fitskwText.setText('Custom')
 
 
