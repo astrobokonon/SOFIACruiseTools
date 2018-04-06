@@ -89,6 +89,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
         self.data = FITSHeader()
+        self.header_check_warnings = 'header_check_warnings.txt'
+        with open(self.header_check_warnings, 'w') as f:
+            pass
 
         self.leg_timer = LegTimerObj()
         self.leg_timer.init_duration = None
@@ -305,19 +308,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         fname = self.data_filenames[row]
         flag_text = 'FLAG'
         flag_col = 'BADCAL'
-        print(self.data.header_vals[fname][flag_col])
-        print(self.data.header_vals[fname][flag_col] is True)
         if self.data.header_vals[fname][flag_col]:
-            print('\tAlready populated')
             flag_text = '{0:s}, {1:s}'.format(self.data.header_vals[fname][flag_col],
                                               flag_text)
-            print(flag_text)
             self.data.header_vals[fname][flag_col] = flag_text
         else:
-            print('\tEmpty')
             self.data.header_vals[fname][flag_col] = flag_text
 
-        print(self.data.header_vals[fname][flag_col])
         # Change the qTable
         for column in range(self.table_data_log.columnCount()):
             header_text = self.table_data_log.horizontalHeaderItem(column).text()
@@ -369,7 +366,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.instrument = window.instrument
             self.instrument_text.setText(self.instrument)
             self.checker_rules = self.checker.choose_rules(self.instrument)
-            print(self.checker_rules)
 
             # Cruise Director Log filename
             if window.dirlog_name:
@@ -559,7 +555,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # self.do_leg_count_elapsed = True
             self.leg_count_remaining = False
         else:
-            # print('Invalid key in count_direction: {0:s}'.format(key))
             return
 
     def set_date_time_edit_boxes(self):
@@ -597,7 +592,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Add tzinfo to this object to make it able to interact
             self.landing = self.landing.replace(tzinfo=self.localtz)
         if self.ttl_counting is False and self.met_counting is False:
-            # print('Invalid key in set_flight_timer: {0:s}'.format(key))
             return
 
     def update_times(self):
@@ -747,8 +741,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Alters table_data_log
         """
         bad = self.table_data_log.currentRow()
-        print('\nCurrent Row = ', bad)
-        print('Type = ', type(bad))
         # -1 means we didn't select anything
         if bad != -1:
             self.table_data_log.blockSignals(True)
@@ -903,8 +895,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         new_files = [join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
         for fname in new_files:
-            self.data.add_image(fname, self.headers, hdu=self.fits_hdu, 
-                                rules=self.checker_rules)
+            self.data.add_image(fname, self.headers, self.header_check_warnings, 
+                                hdu=self.fits_hdu, rules=self.checker_rules)
             bname = basename(fname)
             self.data_filenames.append(bname)
             self.new_files.append(bname)
@@ -1106,7 +1098,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         elif key == 'landing':
             time = self.flight_info.landing.replace(tzinfo=pytz.utc)
         else:
-            # print('Invalid key in update_flight_time: {0:s}'.format(key))
             return
         time = time.astimezone(self.localtz)
         time_str = time.strftime('%m/%d/%Y %H:%M:%S')
@@ -1374,7 +1365,7 @@ class FITSHeader(object):
         self.header_vals = OrderedDict()
         self.blank_count = 0
 
-    def add_image(self, infile, hkeys, rules=None, hdu=0):
+    def add_image(self, infile, hkeys, warning_file, rules=None, hdu=0):
         """
         Adds FITS header to data structure
 
@@ -1397,13 +1388,18 @@ class FITSHeader(object):
 
         # Check the header 
         if rules:
-            print('Checking header')
+            rule.warnings = {}
             rules.check(infile)
-            print(rules.warnings)
+            f = open(warning_file,'a')
+            f.write('\nFile: {0:s}\n'.format(infile))
             if rules.warnings:
                 header['HEADER_CHECK'] = 'Failed'
+                # Write to file
+                for key, message in rules.warnings.items():
+                    f.write('{0:s}: {1:s}\n'.format(key, message))
             else:
                 header['HEADER_CHECK'] = 'Passed'
+            f.close()
         
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
@@ -1564,8 +1560,11 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         # Read the instrument selection
         self.instrument = str(self.instSelect.currentText())
-        if 'HAWC' in self.instrument:
-            self.instrument = 'HAWCFLIGHT'
+        if 'hawc' in self.instrument.lower():
+            if 'flight' in self.instrument.lower():
+                self.instrument = 'HAWCFLIGHT'
+            elif 'ground' in self.instrument.lower():
+                self.instrument = 'HAWCGROUND'
         self.close()
 
     def load_flight(self):
