@@ -32,7 +32,7 @@ import glob
 import fnmatch
 import datetime
 import itertools
-from os import listdir, walk
+from os import walk
 from os.path import join, basename, getmtime
 from collections import OrderedDict
 import configobj as co
@@ -51,9 +51,7 @@ from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
-
 from .header_checker import file_checker as fc
-from .header_checker import header_checker as hc
 
 class ConfigError(Exception):
     """ Exception for errors in the config file """
@@ -89,8 +87,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
         self.data = FITSHeader()
-        self.header_check_warnings = 'header_check_warnings.txt'
-        with open(self.header_check_warnings, 'w') as f:
+
+        date = datetime.datetime.utcnow().strftime('%Y%m%d')
+        self.header_check_warnings = 'header_check_{0:s}.log'.format(date)
+        with open(self.header_check_warnings, 'w'):
             pass
 
         self.leg_timer = LegTimerObj()
@@ -111,7 +111,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.last_instrument_index = -1
         # Things are easier if the keywords are always in CAPS
         self.headers = [each.upper() for each in self.headers]
-        # The addition of the NOTES column happens in here
+        # The addition of the notes column happens in here
         self.update_table_cols()
 
         # Read config file
@@ -154,9 +154,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
-        # Resize the Notes column, which should be 
+        # Resize the Notes column, which should be
         # first column
-        self.table_data_log.setColumnWidth(1,10)
+        self.table_data_log.setColumnWidth(1, 10)
 
         # Actually show the table
         self.table_data_log.show()
@@ -444,7 +444,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.fits_hdu = np.int(window.fitskw_hdu.value())
             self.new_headers = window.headers
             required = ['NOTES', 'BADCAL', 'HEADER_CHECK']
-            for i,require in enumerate(required):
+            for i, require in enumerate(required):
                 if require not in self.new_headers:
                     self.new_headers.insert(i, require)
 
@@ -466,9 +466,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Clear the table
         self.table_data_log.setColumnCount(0)
         self.table_data_log.setRowCount(0)
-
-        # This always puts the notes col. right next to the filename
-        # self.table_data_log.insertColumn(0)
 
         # Add the number of columns we'll need for the header keys given
         for _ in self.headers:
@@ -895,7 +892,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         new_files = [join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
         for fname in new_files:
-            self.data.add_image(fname, self.headers, self.header_check_warnings, 
+            self.data.add_image(fname, self.headers, self.header_check_warnings,
                                 hdu=self.fits_hdu, rules=self.checker_rules)
             bname = basename(fname)
             self.data_filenames.append(bname)
@@ -1212,8 +1209,8 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
             except IOError:
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
-    def closeEvent(self, evnt):
-        """ 
+    def closeEvent(self):
+        """
         When window is closed, write the contents to the host director log
         """
         for line in self.cruise_log:
@@ -1386,11 +1383,11 @@ class FITSHeader(object):
             for key in hkeys:
                 header[key] = head[key] if key in head else ''
 
-        # Check the header 
+        # Check the header
         if rules:
-            rule.warnings = {}
+            rules.warnings = {}
             rules.check(infile)
-            f = open(warning_file,'a')
+            f = open(warning_file, 'a')
             f.write('\nFile: {0:s}\n'.format(infile))
             if rules.warnings:
                 header['HEADER_CHECK'] = 'Failed'
@@ -1400,7 +1397,7 @@ class FITSHeader(object):
             else:
                 header['HEADER_CHECK'] = 'Passed'
             f.close()
-        
+
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
 
@@ -1680,7 +1677,7 @@ class LegTimerObj(object):
     """
     Class to hold the leg timer
 
-    Calculates elapsed time, remaining time for the leg, 
+    Calculates elapsed time, remaining time for the leg,
     as well as handles response to start, stop, and reset buttons
     """
 
@@ -1742,7 +1739,7 @@ class LegTimerObj(object):
             if self.status == 'running':
                 self.status = 'paused'
         elif key == 'reset':
-            """ Reset button pushed """
+            # Reset button pushed
             self.status = 'running'
             self.timer_start = datetime.datetime.utcnow().replace(microsecond=0)
             self.duration = self.init_duration
@@ -1769,7 +1766,6 @@ class LegTimerObj(object):
             print(type(self.remaining), type(self.duration), type(self.elapsed))
             self.print_state()
             sys.exit()
-
         if mode == 'remaining':
             if self.remaining < datetime.timedelta(0):
                 return '-'+clock_string(-self.remaining)
