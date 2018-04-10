@@ -1,0 +1,31 @@
+{
+    "INSTCFG": {"dtype": "str",
+		"drange":[{"type": "enum",
+			   "value": "IMAGING",
+			   "representation": "general"}],
+		 "requirement": "*"},
+    "INSTMODE": {"dtype": "str",
+		 "drange":[{"type": "enum",
+			    "value": "FAST_STARE, OTFMAP",
+			    "representation": "general"}],
+		 "requirement": "*"},
+    "INSTRUME": {"dtype": "str",
+		 "drange":[{"type": "enum",
+			    "value": "FPI_PLUS",
+			    "representation": "general"}],
+		 "requirement": "*"},
+    "SPECTEL1": {"dtype": "str",
+		 "drange":[{"type": "enum",
+			    "value": "Open",
+			    "representation": "general"
+			   }],
+		 "requirement": "*"
+		},
+    "SPECTEL2": {"dtype": "str",
+		 "drange":[{"type": "enum",
+			    "value": "Open",
+			    "representation": "general"
+			   }],
+		 "requirement": "*"
+		}
+}

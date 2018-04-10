@@ -1388,8 +1388,8 @@ class FITSHeader(object):
             rules.warnings = {}
             rules.check(infile)
             f = open(warning_file, 'a')
-            f.write('\nFile: {0:s}\n'.format(infile))
             if rules.warnings:
+                f.write('\nFile: {0:s}\n'.format(infile))
                 header['HEADER_CHECK'] = 'Failed'
                 # Write to file
                 for key, message in rules.warnings.items():

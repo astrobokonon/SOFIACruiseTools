@@ -1,0 +1,13 @@
+{"display": ["EXCLUDE", "REMOVE", "FILENAME", 
+             "MISSN-ID", "DATE-OBS", "OBS_ID", "PLANID", 
+             "AOR_ID", "OBJECT", "TELRA", 
+             "TELDEC", "OBSTYPE", "INSTCFG", 
+             "INSTMODE", "SLIT", "SPECTEL1", 
+             "SPECTEL2", "FCFILTA", "FCFILTB", 
+             "CYCLES", "COADDS", "ITIME", 
+             "EXPTIME", "SRCTYPE", "CRPIX1", 
+             "CRPIX2", "CRVAL1", "CRVAL2", 
+             "PROCSTAT", "DITHER", "DTHXOFF", 
+             "DTHYOFF", "NODDING"],
+ "exclude": ["EXCLUDE", "REMOVE"]
+}

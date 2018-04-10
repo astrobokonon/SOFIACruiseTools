@@ -1,0 +1,10 @@
+{"display": ["EXCLUDE", "REMOVE", "FILENAME", 
+             "MISSN-ID", "DATE-OBS", "OBS_ID", "PLANID", 
+             "AOR_ID", "OBJECT", "TELRA", 
+             "TELDEC", "UTCSTART", "INSTRUME", 
+             "OBSTYPE", "INSTCFG", "SLIT", 
+             "ALTI_STA", "EXPTIME", "CHOPPING", 
+             "NODDING", "MAPPING", "SCANNING", 
+             "DITHER"],
+ "exclude": ["EXCLUDE", "REMOVE"]
+}
