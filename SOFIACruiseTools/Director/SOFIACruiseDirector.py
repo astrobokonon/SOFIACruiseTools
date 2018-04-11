@@ -945,7 +945,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             for m, key in enumerate(self.headers):
                 val = self.data.header_vals[file_key][key]
                 item = QtWidgets.QTableWidgetItem(str(val))
+                if key=='HEADER_CHECK' and val=='Failed':
+                    # Set text to red
+                    #item.setBackground(QtGui.QColor(255,128,128))
+                    item.setForeground(QtGui.QColor(255,0,0))
                 self.table_data_log.setItem(row_count, m, item)
+                    
+                    
 
         # Set the row labels
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
@@ -1387,16 +1393,15 @@ class FITSHeader(object):
         if rules:
             rules.warnings = {}
             rules.check(infile)
-            f = open(warning_file, 'a')
-            if rules.warnings:
-                f.write('\nFile: {0:s}\n'.format(infile))
-                header['HEADER_CHECK'] = 'Failed'
-                # Write to file
-                for key, message in rules.warnings.items():
-                    f.write('{0:s}: {1:s}\n'.format(key, message))
-            else:
-                header['HEADER_CHECK'] = 'Passed'
-            f.close()
+            with open(warning_file, 'a') as f:
+                if rules.warnings:
+                    f.write('\nFile: {0:s}\n'.format(infile))
+                    header['HEADER_CHECK'] = 'Failed'
+                    # Write to file
+                    for key, message in rules.warnings.items():
+                        f.write('{0:s}: {1:s}\n'.format(key, message))
+                else:
+                    header['HEADER_CHECK'] = 'Passed'
 
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
