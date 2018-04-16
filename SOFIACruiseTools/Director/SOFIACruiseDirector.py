@@ -46,7 +46,8 @@ try:
 except ImportError:
     import pyfits as pyf
 
-from .. import support as fpmis
+#from .. import support as fpmis
+from .. support import regex as fpmis
 from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
@@ -1012,20 +1013,26 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.leg_number.setText(legtxt)
 
             # Target name
-            self.leg_target.setText(self.leg_info.target)
+            # self.leg_target.setText(self.leg_info.target)
+            self.leg_target.setText(self.leg_info.astro.target)
 
             # If the leg type is an observing leg, show the deets
-            if self.leg_info.leg_type == 'Observing':
+            # if self.leg_info.leg_type == 'Observing':
+            if self.leg_info.leg_type == 'science':
                 self.leg_param_labels('on')
                 elevation_label = '{0:.1f} to {1:.1f}'.format(
                     self.leg_info.range_elev[0],
                     self.leg_info.range_elev[1])
                 self.leg_elevation.setText(elevation_label)
                 rof_label = '{0:.1f} to {1:.1f} | {2:.1f} to {3:.1f}'.format(
-                    self.leg_info.range_rof[0],
-                    self.leg_info.range_rof[1],
-                    self.leg_info.range_rofrt[0],
-                    self.leg_info.range_rofrt[1])
+                    # self.leg_info.range_rof[0],
+                    # self.leg_info.range_rof[1],
+                    # self.leg_info.range_rofrt[0],
+                    # self.leg_info.range_rofrt[1])
+                    self.leg_info.plane.rof_range[0],
+                    self.leg_info.plane.rof_range[1],
+                    self.leg_info.plane.rof_rate_range[0],
+                    self.leg_info.plane.rof_rate_range[1])
                 self.leg_rof_rof_rate.setText(rof_label)
                 try:
                     self.leg_obs_block.setText(self.leg_info.obs_plan)
@@ -1080,8 +1087,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         if self.success_parse is True:
             self.leg_pos += 1
-            if self.leg_pos > self.flight_info.nlegs - 1:
-                self.leg_pos = self.flight_info.nlegs - 1
+            if self.leg_pos > self.flight_info.num_legs - 1:
+                self.leg_pos = self.flight_info.num_legs - 1
             self.leg_info = self.flight_info.legs[self.leg_pos]
         else:
             pass
@@ -1129,9 +1136,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   cut out the path so we just have the filename instead of huge str
         self.flight_plan_filename.setStyleSheet('QLabel { color : black; }')
         self.flight_plan_filename.setText(basename(str(self.fname)))
+        print(self.fname)
         try:
-            self.flight_info = fpmis.parseMIS(self.fname)
+            # self.flight_info = fpmis.parseMIS(self.fname)
+            self.flight_info = fpmis.parse_mis_file(self.fname)
+            print(self.flight_info)
             self.leg_info = self.flight_info.legs[self.leg_pos]
+            print(self.leg_info)
             self.success_parse = True
             self.update_leg_info_window()
             if self.set_takeoff_fp.isChecked() is True:
