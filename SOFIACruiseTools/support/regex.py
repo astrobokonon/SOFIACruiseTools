@@ -15,6 +15,7 @@ def split_string_size(line, size):
 
 
 class ParseError(Exception):
+    """ Generic exception for when parsing fails """
     def __init__(self, value):
         self.value = value
 
@@ -23,7 +24,7 @@ class ParseError(Exception):
 
 
 class FlightComments(object):
-    """  
+    """
     Useful for reviewing flight plans and keeping their comments
     """
 
@@ -36,8 +37,8 @@ class FlightComments(object):
 
 
 class SeriesReview(object):
-    """  
-
+    """
+    Hey Hey!
     """
 
     def __init__(self):
@@ -47,6 +48,7 @@ class SeriesReview(object):
         self.summary = ''
 
     def summarize(self):
+        """ Thing """
         self.progs = {}
         flighthashes = self.flights.keys()
         for fhash in flighthashes:
@@ -70,7 +72,7 @@ class SeriesReview(object):
 
                         # Still need to catch case differences ?
                         if eachleg.astro.target in targsinprog:
-                            # Need to use atarg here because that was the 
+                            # Need to use atarg here because that was the
                             #   one already stored and it'll have the correct
                             #   case!
                             sht = self.progs[eachleg.obsplan][eachleg.target]
@@ -82,7 +84,7 @@ class SeriesReview(object):
 
 
 class NonSiderial(object):
-    """  
+    """
     Keeping all the non-siderial object info in a helpful place.
     """
 
@@ -155,9 +157,11 @@ class FlightProfile(object):
         return s
 
     def add_leg(self, parsed_leg):
+        """ Doesn't work """
         self.legs.append(parsed_leg)
 
     def flat_profile(self, epoch=datetime(1970, 1, 1)):
+        """ Some Ryan thing"""
         time, lat, lon, mhdg, thdg = [], [], [], [], []
         for each in self.legs:
             time.append(each.relative_time)
@@ -192,16 +196,19 @@ class FlightProfile(object):
         s += 'Flight Plan ID: {0:s}\n'.format
         s += 'Instrument: {0:s}\n'.format(self.instrument)
 
-        txtStr = "%s to %s, %d flight legs." % (
-        self.origin, self.destination, self.num_legs)
-        txtStr += "\nTakeoff at %s\nLanding at %s\n" % (self.takeoff, self.landing)
-        txtStr += "Flight duration of %s including %s observing time\n" % (
-        str(self.flight_time), self.obs_time)
-        txtStr += "Filename: %s" % self.filename
+        txt_str = "%s to %s, %d flight legs." % (
+            self.origin, self.destination, self.num_legs)
+        txt_str += "\nTakeoff at %s\nLanding at %s\n" % (self.takeoff, self.landing)
+        txt_str += "Flight duration of %s including %s observing time\n" % (
+            str(self.flight_time), self.obs_time)
+        txt_str += "Filename: %s" % self.filename
 
         return txtStr
 
     def parse_mission(self, section, tag):
+        """
+        Parse the mission section at the top of the flight plan
+        """
         lines = section.split('\n')
         if tag == 'Flight':
             # This flight plan has an additional line containing the flight plan id
@@ -221,11 +228,14 @@ class FlightProfile(object):
         # Third line: Observing time, Flight time
         l = lines[2].split()
         observing_str = l[2]
-        t = datetime.strptime(observing_str, '%H:%M:%S')
-        self.obs_time = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+        t_string = datetime.strptime(observing_str, '%H:%M:%S')
+        self.obs_time = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                                  seconds=t_string.second)
         flight_str = l[5]
-        t = datetime.strptime(flight_str, '%H:%M:%S')
-        self.flight_time = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+        t_string = datetime.strptime(flight_str, '%H:%M:%S')
+        self.flight_time = timedelta(hours=t_string.hour,
+                                     minutes=t_string.minute,
+                                     seconds=t_string.second)
 
         # Forth line: landing timestamp, landing airport
         l = lines[3].split()
@@ -239,6 +249,12 @@ class FlightProfile(object):
         self.sunset = datetime.strptime(l[6], '%H:%M:%S')
 
     def parse_section(self, section):
+        """
+        Oversees the parsing of a section of the flight plan
+
+        Identifies the type of leg then calls the correct parser.
+        Identification is based on the first word of the secition.
+        """
         tag = section.split()[0]
         if tag == 'Filename:':
             filename = section.split()[1]
@@ -257,7 +273,7 @@ class FlightProfile(object):
             if leg_type == 'takeoff':
                 leg.parse_takeoff_leg(section, self.size)
             elif leg_type == 'landing':
-                leg.parse_landing_leg(section, self.size)
+                leg.parse_landing_leg(section)
             elif leg_type == 'dead':
                 leg.parse_dead_leg(section, self.size)
             elif leg_type == 'science':
@@ -283,6 +299,9 @@ class LegProfile(object):
         self.obs_plan = ''
         self.obs_blk = ''
         self.priority = ''
+        self.rof_rate_range = ''
+        self.rof_range = ''
+        self.rof_rate_unit = ''
 
         self.astro = AstroProfile()
         self.plane = PlaneProfile()
@@ -292,10 +311,10 @@ class LegProfile(object):
         s = '\nLeg: {0:d} ({1:s})\n'.format(self.leg_num, self.leg_type)
         s += 'Start: {0}\n'.format(self.start)
         s += 'Duration: {0} total, {1} observing\n'.format(self.duration,
-                                                         self.obs_dur)
+                                                           self.obs_dur)
         s += 'Obs_plan: {0:s}\n'.format(self.obs_plan)
         s += 'Obs_blk: {0:s}\n'.format(self.obs_blk)
-        if self.leg_type=='science':
+        if self.leg_type == 'science':
             s += str(self.astro)
             s += str(self.plane)
         return s
@@ -303,23 +322,33 @@ class LegProfile(object):
     def parse_science_leg(self, section, size):
         """ Parses a science leg, filling LegProfile leg """
         lines = section.split('\n')
+        # Remove possible nonsense lines that start with blank space
+        lines = [l for l in lines if len(l)-len(l.lstrip()) == 0]
         # size = 20
 
         # Line 1: Leg number, start time, duration, altitude
         # Formatted to fields 20 characters wide
-        line = lines[0].strip()
-        l = split_string_size(line, size)
-        # l = [line[i:i+size].strip() for i in range(0,len(line),size)]
-        self.leg_num = int(l[0].split()[1])
-        self.leg_type = 'science'
-        # Start time
-        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
-        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        # Duration
-        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
-        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        # Altitude
-        self.plane.altitude = l[3].split(':')[-1].split()[0].strip()
+        parsed = self.parse_first_line(lines[0])
+        # parsed = leg_num, description, start, duration, altitude
+        self.leg_num = parsed[0]
+        self.leg_type = parsed[1]
+        self.start = parsed[2]
+        self.duration = parsed[3]
+        self.plane.altitude = parsed[4]
+
+#        line = lines[0].strip()
+#        l = split_string_size(line, size)
+#        # l = [line[i:i+size].strip() for i in range(0,len(line),size)]
+#        self.leg_num = int(l[0].split()[1])
+#        self.leg_type = 'science'
+#        # Start time
+#        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
+#        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+#        # Duration
+#        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
+#        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+#        # Altitude
+#        self.plane.altitude = l[3].split(':')[-1].split()[0].strip()
 
         # Line 2: ObspID, Blk, Priority, Obs Duration
         line = lines[1].strip()
@@ -332,8 +361,9 @@ class LegProfile(object):
         # Priority
         self.priority = l[2].split(':')[1].strip()
         # Observation duration
-        t = datetime.strptime(l[3].split()[-1], '%H:%M:%S')
-        self.obs_dur = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+        t_string = datetime.strptime(l[3].split()[-1], '%H:%M:%S')
+        self.obs_dur = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                                 seconds=t_string.second)
 
         # Line 3: Target, RA, DEC, Equinox
         line = lines[2].strip()
@@ -362,7 +392,8 @@ class LegProfile(object):
         # formats for this line, depending on when the flight plan was made.
         # From what I can tell, the different styles can be identified by if
         # the FPI keyword is present. This also determines if there is a fifth line
-        if 'FPI' in lines[3]:
+        # if 'FPI' in lines[3]
+        if len(lines) > 4:
             line = lines[3].strip()
             # Line 4: Elevation range, ROF range, ROF rate range, ROF rate unit, FPI
             # Ranges are contained in square backets
@@ -376,8 +407,9 @@ class LegProfile(object):
             self.plane.rof_rate_range = [float(i) for i in l[2].split(',')]
             # ROF rate unit:
             self.plane.rof_rate_unit = line.split(':')[3].split()[2].strip()
-            # FPI is the last field:
-            self.plane.fpi = int(line.split(':')[-1])
+            if 'FPI' in line:
+                # FPI is the last field:
+                self.plane.fpi = int(line.split(':')[-1])
 
             # Line 5: Moon angle, Moon illumination, True heading range,
             # True heading rate range, True heading rate unit
@@ -415,8 +447,8 @@ class LegProfile(object):
             # ROF rate unit:
             self.rof_rate_unit = line.split()[-4]
             # Last field: Moon angle
+            #try:
             self.astro.moon_angle = int(line.split()[-1])
-
             # No line 5 for the old format
 
     def parse_takeoff_leg(self, section, size):
@@ -425,32 +457,39 @@ class LegProfile(object):
         """
         lines = section.split('\n')
         # Line 1: Leg description, start time, duration, altitude
-        line = lines[0].strip()
-        l = split_string_size(line, size)
-        # Let number and type
-        self.leg_num = int(l[0].split()[1])
-        self.leg_type = 'takeoff'
-        # Start time
-        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
-        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        # Duration
-        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
-        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        # Altitude
-        self.plane.altitude = l[3].split(':')[1].split()[0].strip()
+        parsed = self.parse_first_line(lines[0])
+        # parsed = leg_num, description, start, duration, altitude
+        self.leg_num = parsed[0]
+        self.leg_type = parsed[1]
+        self.start = parsed[2]
+        self.duration = parsed[3]
+        self.plane.altitude = parsed[4]
+#        line = lines[0].strip()
+#        l = split_string_size(line, size)
+#        # Let number and type
+#        self.leg_num = int(l[0].split()[1])
+#        self.leg_type = 'takeoff'
+#        # Start time
+#        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
+#        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+#        # Duration
+#        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
+#        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+#        # Altitude
+#        self.plane.altitude = l[3].split(':')[1].split()[0].strip()
 
         # Line 2: Runway, End Latitude, End Longitude, Sunset, Sunset Az
         # Ignore Sunset and Sunset Az as they are contained in the mission section
         line = lines[1].strip()
         l = split_string_size(line, size)
         # Runway
-        self.plane.takeoff_runway = int(l[0].split()[-1])
+        self.plane.takeoff_runway = l[0].split()[-1]
         # Ending latitude
         self.plane.takeoff_latitude = l[1].split(':')[-1].strip()
         # Ending longitude
         self.plane.takeoff_longitude = l[2].split(':')[-1].strip()
 
-    def parse_landing_leg(self, section, size):
+    def parse_landing_leg(self, section):
         """
         Parse the landing leg
 
@@ -465,12 +504,14 @@ class LegProfile(object):
         self.leg_type = 'landing'
         # Start time
         start_string = l.split('Start:')[-1].split()[0]
-        t = datetime.strptime(start_string, '%H:%M:%S')
-        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+        t_string = datetime.strptime(start_string, '%H:%M:%S')
+        self.start = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                               seconds=t_string.second)
         # Duration
         duration_string = l.split('Dur:')[-1].split()[0]
-        t = datetime.strptime(duration_string, '%H:%M:%S')
-        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+        t_string = datetime.strptime(duration_string, '%H:%M:%S')
+        self.duration = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                                  seconds=t_string.second)
         # Altitude
         self.plane.altitude = l.split(':')[1].split()[0].strip()
 
@@ -483,21 +524,32 @@ class LegProfile(object):
         time, duration, and altitude
         """
         lines = section.split('\n')
-        parsed = self.parse_first_line(lines[0], size)
+        parsed = self.parse_first_line(lines[0])
+        # parsed = leg_num, description, start, duration, altitude
+        self.leg_num = parsed[0]
+        self.leg_type = parsed[1]
+        self.start = parsed[2]
+        self.duration = parsed[3]
+        self.plane.altitude = parsed[4]
+
         self.leg_num, self.start, self
 
-        self.leg_num = int(l[0].split()[1])
-        self.leg_type = l[0].split()[-1].strip('()')
-        # Start time
-        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
-        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        # Duration
-        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
-        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        # Altitude
-        self.plane.altitude = l[3].split(':')[1].split()[0].strip()
+    def parse_dead_leg(self, section, size):
+        """
+        Parses a dead leg
 
-    def parse_first_line(self, line, size):
+        Just get the times, nothing else is needed.
+        """
+        lines = section.split('\n')
+        parsed = self.parse_first_line(lines[0])
+        # parsed = leg_num, description, start, duration, altitude
+        self.leg_num = parsed[0]
+        self.leg_type = 'Dead'
+        self.start = parsed[2]
+        self.duration = parsed[3]
+        self.plane.altitude = parsed[4]
+
+    def parse_first_line(self, line):
         """
         Parses the first line of a section.
 
@@ -508,32 +560,52 @@ class LegProfile(object):
         :param line:
         :return:
         """
-        l = split_string_size(line, size)
+        # l = split_string_size(line, size)
         # l = [line[i:i+size].strip() for i in range(0,len(line),size)]
-        leg_num = int(l[0].split()[1])
-        description = line.split()[2][1:-1]
+        # leg_num = int(l[0].split()[1])
+
+        l = line.split()
+        leg_num = int(l[1])
+        start_ind = l.index('Start:')
+        dur_ind = l.index('Dur:')
+        description = ' '.join(l[2:start_ind])[1:-1].lower()
         # Start time
-        try:
-            t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
-        except ValueError:
-            start_string = line.split('Start:')[-1].split()[0]
-            t = datetime.strptime(start_string, '%H:%M:%S')
-            start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-            # Duration
-            duration_string = line.split('Dur:')[-1].split()[0]
-            t = datetime.strptime(duration_string, '%H:%M:%S')
-            duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-            # Altitude
-            altitude = line.split(':')[1].split()[0].strip()
+        t_string = datetime.strptime(l[start_ind+1].split()[-1], '%H:%M:%S')
+        start = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                          seconds=t_string.second)
+        # Duration
+        t_string = datetime.strptime(l[dur_ind+1].split()[-1], '%H:%M:%S')
+        duration = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                             seconds=t_string.second)
+        # Altitude
+        if l[-1] == 'ft':
+            altitude = l[-2]
         else:
-            start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-            # Duration
-            t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
-            duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-            # Altitude
-            altitude = l[3].split(':')[-1].split()[0].strip()
-        finally:
-            return leg_num, description, start, duration, altitude
+            altitude = l[-1]
+        return leg_num, description, start, duration, altitude
+
+    def test_parse(self):
+        """
+        Verifies that the leg has been successfully parsed
+
+        Conditions:
+        All legs have a start and duration time
+        All legs have a type
+        All legs have altitude
+        All science legs have a target
+        All legs have a leg number
+
+        Verify all conditions with assert
+        """
+        assert self.leg_num != 0
+        assert self.leg_type
+        if self.leg_type != 'departure':
+            assert self.start, 'Type = {0}'.format(self.leg_type)
+        assert self.duration
+        if self.leg_type == 'science':
+            assert self.astro.target
+            assert self.astro.ra
+            assert self.astro.dec
 
 
 class AstroProfile(object):
@@ -560,7 +632,7 @@ class AstroProfile(object):
         else:
             s += '\tSiderial\n'
         s += '\tRA: {0:s}\tDEC: {1:s}\t ({2:s})\n'.format(self.ra, self.dec,
-                                                        self.epoch)
+                                                          self.epoch)
         s += '\tMoon: {0:d}\t{1:s}\n'.format(self.moon_angle, self.moon_illum)
         return s
 
@@ -579,9 +651,10 @@ class PlaneProfile(object):
         self.true_heading_range = []
         self.true_heading_rate_range = []
         self.true_heading_rate_unit = ''
-        self.takeoff_runway = 0
+        self.takeoff_runway = ''
         self.takeoff_latitude = ''
         self.takeoff_longitude = ''
+        self.fpi = ''
 
     def __str__(self):
         s = '\nPlane:\n'
@@ -591,26 +664,26 @@ class PlaneProfile(object):
         s += '\tAltitude: {0:s}'.format(self.altitude)
         try:
             s += '\tElevation: {0} - {1} ft.\n'.format(self.elevation_range[0],
-                                                 self.elevation_range[1])
+                                                       self.elevation_range[1])
         except IndexError:
             s += '\tElevation Range: {0}\n'.format(self.elevation_range)
         s += '\tRate of Field:\n'
         try:
             s += '\t\tRange: {0} - {1}\n'.format(self.rof_range[0],
-                                              self.rof_range[1])
+                                                 self.rof_range[1])
         except IndexError:
             s += '\t\tRange: {0:s}\n'.format(self.rof_range)
         try:
             s += '\t\tRate Range: {0} - {1}  {2:s}\n'.format(self.rof_rate_range[0],
-                                                         self.rof_rate_range[1],
-                                                         self.rof_rate_unit)
+                                                             self.rof_rate_range[1],
+                                                             self.rof_rate_unit)
         except IndexError:
             s += '\t\tRate Range: {0} {1:s}\n'.format(self.rof_rate_range,
-                                                     self.rof_rate_unit)
+                                                      self.rof_rate_unit)
         s += '\tTrue Heading:\n'
         try:
             s += '\t\tRange: {0} - {1}\n'.format(self.true_heading_range[0],
-                                              self.true_heading_range[1])
+                                                 self.true_heading_range[1])
         except IndexError:
             s += '\t\tRange: {0}\n'.format(self.true_heading_range)
         try:
@@ -619,7 +692,7 @@ class PlaneProfile(object):
                 self.true_heading_rate_unit)
         except IndexError:
             s += '\t\tRate Range: {0} {1:s}\n'.format(self.true_heading_rate_range,
-                                                    self.true_heading_rate_unit)
+                                                      self.true_heading_rate_unit)
         return s
 
 
@@ -680,8 +753,9 @@ def identify_leg_type(section):
     return leg_type
 
 
-def summary_object(obj):
-    attrs = vars(flight)
+def summary_object(flight_obj):
+    """ Very generic summary of object attributes. """
+    attrs = vars(flight_obj)
     s = []
     for item in attrs.items():
         s.append('{0}: {1}'.format(item[0], item[1]))
@@ -696,7 +770,7 @@ if __name__ == '__main__':
     for fname in filenames:
         # fname = loc + '201803_FI_DIANA_SCI.mis'
 
-        print(fname.split('/')[-1])
+        print('\n', fname.split('/')[-1])
         flight = FlightProfile()
         with open(fname, 'r') as f:
             data = f.read()
@@ -705,6 +779,7 @@ if __name__ == '__main__':
         for section in sections:
             flight.parse_section(section.strip())
 
-        print(flight)
+#        print(flight)
         for i, l in enumerate(flight.legs):
-            print(l)
+#            print(l)
+            l.test_parse()
