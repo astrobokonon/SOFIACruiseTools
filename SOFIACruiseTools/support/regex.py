@@ -336,20 +336,6 @@ class LegProfile(object):
         self.duration = parsed[3]
         self.plane.altitude = parsed[4]
 
-#        line = lines[0].strip()
-#        l = split_string_size(line, size)
-#        # l = [line[i:i+size].strip() for i in range(0,len(line),size)]
-#        self.leg_num = int(l[0].split()[1])
-#        self.leg_type = 'science'
-#        # Start time
-#        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
-#        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-#        # Duration
-#        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
-#        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-#        # Altitude
-#        self.plane.altitude = l[3].split(':')[-1].split()[0].strip()
-
         # Line 2: ObspID, Blk, Priority, Obs Duration
         line = lines[1].strip()
         l = split_string_size(line, size)
@@ -464,19 +450,6 @@ class LegProfile(object):
         self.start = parsed[2]
         self.duration = parsed[3]
         self.plane.altitude = parsed[4]
-#        line = lines[0].strip()
-#        l = split_string_size(line, size)
-#        # Let number and type
-#        self.leg_num = int(l[0].split()[1])
-#        self.leg_type = 'takeoff'
-#        # Start time
-#        t = datetime.strptime(l[1].split()[-1], '%H:%M:%S')
-#        self.start = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-#        # Duration
-#        t = datetime.strptime(l[2].split()[-1], '%H:%M:%S')
-#        self.duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-#        # Altitude
-#        self.plane.altitude = l[3].split(':')[1].split()[0].strip()
 
         # Line 2: Runway, End Latitude, End Longitude, Sunset, Sunset Az
         # Ignore Sunset and Sunset Az as they are contained in the mission section
@@ -760,6 +733,23 @@ def summary_object(flight_obj):
     for item in attrs.items():
         s.append('{0}: {1}'.format(item[0], item[1]))
     return '\n'.join(s)
+
+
+def parse_mis_file(filename):
+    """
+    Main control
+
+    Open the MIS file given by filename, 
+    returns a filled out FlightProfile
+    """
+    flight = FlightProfile()
+    with open(filename, 'r') as f:
+        data = f.read()
+    flight.hash = hashlib.sha1(data).hexdigest()
+    sections = re.split(r'\n{2}', data)
+    for section in sections:
+        flight.parse_section(section.strip())
+    return flight
 
 
 if __name__ == '__main__':
