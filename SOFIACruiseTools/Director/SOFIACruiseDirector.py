@@ -356,6 +356,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         result = window.exec_()
 
         if result:
+            print(self.flight_plan)
             # Parse the results of the dialog.
             if not window.fname:
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
@@ -1006,14 +1007,18 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         for the leg occurring at self.legpos.
         """
         # Only worth doing if we read in a flight plan file
-        if self.success_parse is True:
+        if self.success_parse:
             # Quick and dirty way to show the leg type
+            leg_labels = 'landing departure science dead'.split()
+            if self.leg_info.leg_type.lower() not in leg_labels:
+                leg_label = 'Other'
+            else:
+                leg_label = self.leg_info.leg_type
             legtxt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
-                                           self.leg_info.leg_type)
+                                           leg_label.capitalize())
             self.leg_number.setText(legtxt)
 
             # Target name
-            # self.leg_target.setText(self.leg_info.target)
             self.leg_target.setText(self.leg_info.astro.target)
 
             # If the leg type is an observing leg, show the deets
@@ -1021,8 +1026,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if self.leg_info.leg_type == 'science':
                 self.leg_param_labels('on')
                 elevation_label = '{0:.1f} to {1:.1f}'.format(
-                    self.leg_info.range_elev[0],
-                    self.leg_info.range_elev[1])
+                    #self.leg_info.range_elev[0],
+                    #self.leg_info.range_elev[1])
+                    self.leg_info.plane.elevation_range[0],
+                    self.leg_info.plane.elevation_range[1])
                 self.leg_elevation.setText(elevation_label)
                 rof_label = '{0:.1f} to {1:.1f} | {2:.1f} to {3:.1f}'.format(
                     # self.leg_info.range_rof[0],
@@ -1042,10 +1049,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # If it's a dead leg, update the leg number and we'll move on
                 # Clear values since they're probably crap
                 self.toggle_leg_param_values_off()
-                # Quick and dirty way to show the leg type
-                leg_txt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
-                                                self.leg_info.leg_type)
-                self.leg_number.setText(leg_txt)
 
             # Update leg_timer
             # Now take the duration and autoset our timer duration
@@ -1136,13 +1139,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   cut out the path so we just have the filename instead of huge str
         self.flight_plan_filename.setStyleSheet('QLabel { color : black; }')
         self.flight_plan_filename.setText(basename(str(self.fname)))
-        print(self.fname)
         try:
             # self.flight_info = fpmis.parseMIS(self.fname)
             self.flight_info = fpmis.parse_mis_file(self.fname)
-            print(self.flight_info)
             self.leg_info = self.flight_info.legs[self.leg_pos]
-            print(self.leg_info)
             self.success_parse = True
             self.update_leg_info_window()
             if self.set_takeoff_fp.isChecked() is True:
@@ -1150,6 +1150,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if self.set_landing_fp.isChecked() is True:
                 self.update_flight_time('landing')
         except IOError:
+            print('IOError')
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing File!'
             self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
@@ -1596,14 +1597,15 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.flightText.setStyleSheet('QLabel { color : black; }')
         self.flightText.setText(basename(str(self.fname)))
         try:
-            self.flight_info = fpmis.parseMIS(self.fname)
+            # self.flight_info = fpmis.parseMIS(self.fname)
+            self.flight_info = fpmis.parse_mis_file(self.fname)
             self.success_parse = True
             self.flightButton.setText('Change')
             inst_index = self.instSelect.findText(self.flight_info.instrument,
                                                   QtCore.Qt.MatchFixedString)
             if inst_index > 0:
                 self.instSelect.setCurrentIndex(inst_index)
-        except (IOError, IndexError, AttributeError):
+        except (IOError, IndexError, AttributeError) as e:
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
                             basename(self.fname))

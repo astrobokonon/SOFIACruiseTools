@@ -112,8 +112,8 @@ class FlightProfile(object):
         self.origin = ''
         self.destination = ''
         self.drunway = ''
-        self.takeoff = 0
-        self.landing = 0
+        self.takeoff = datetime.utcfromtimestamp(0)
+        self.landing = datetime.utcfromtimestamp(0)
         self.obs_time = 0
         self.flight_time = 0
         self.mach = 0
@@ -331,7 +331,7 @@ class LegProfile(object):
         parsed = self.parse_first_line(lines[0])
         # parsed = leg_num, description, start, duration, altitude
         self.leg_num = parsed[0]
-        self.leg_type = parsed[1]
+        self.leg_type = 'science'
         self.start = parsed[2]
         self.duration = parsed[3]
         self.plane.altitude = parsed[4]
