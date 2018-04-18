@@ -6,3 +6,4 @@
 DataLog_*csv
 SILog_*txt
 KWList_*txt
+header_check*.log

@@ -255,8 +255,8 @@ class FlightProfile(object):
         Identifies the type of leg then calls the correct parser.
         Identification is based on the first word of the secition.
         """
-        tag = section.split()[0]
-        if tag == 'Filename:':
+        tag = section.split()[0].strip(':')
+        if tag == 'Filename':
             filename = section.split()[1]
             instrument_key = filename.split('_')[1]
             self.instrument = self.inst_dict[instrument_key]
@@ -631,7 +631,7 @@ class PlaneProfile(object):
 
     def __str__(self):
         s = '\nPlane:\n'
-        s += '\tTakeoff: {0:s}, {1:s}, Runway {2:d}\n'.format(self.takeoff_latitude,
+        s += '\tTakeoff: {0:s}, {1:s}, Runway {2:s}\n'.format(self.takeoff_latitude,
                                                               self.takeoff_longitude,
                                                               self.takeoff_runway)
         s += '\tAltitude: {0:s}'.format(self.altitude)
@@ -758,7 +758,7 @@ if __name__ == '__main__':
     tags = ['Filename:', 'Flight', 'Leg', 'UTC', 'Comment:',
             '============================= ', 'Airport:']
     for fname in filenames:
-        # fname = loc + '201803_FI_DIANA_SCI.mis'
+        fname = loc + '201604_HA_03_WX12.mis'
 
         print('\n', fname.split('/')[-1])
         flight = FlightProfile()
@@ -769,7 +769,9 @@ if __name__ == '__main__':
         for section in sections:
             flight.parse_section(section.strip())
 
-#        print(flight)
+        print(flight)
         for i, l in enumerate(flight.legs):
-#            print(l)
+            print(l)
             l.test_parse()
+
+        break

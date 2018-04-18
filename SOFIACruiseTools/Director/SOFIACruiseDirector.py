@@ -356,13 +356,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         result = window.exec_()
 
         if result:
-            print(self.flight_plan)
             # Parse the results of the dialog.
             if not window.fname:
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
 
             # Flight information
-            self.select_input_file(window.fname)
+            self.parse_flight_file(window.fname)
+            #self.select_input_file(window.fname)
 
             # Instrument
             self.instrument = window.instrument
@@ -1120,7 +1120,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.landing_time.setDateTime(time_qt)
 
-    def select_input_file(self, from_gui=None):
+    def parse_flight_file(self, from_gui=None):
         """
         Parses flight plan from .msi file.
 
@@ -1150,7 +1150,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if self.set_landing_fp.isChecked() is True:
                 self.update_flight_time('landing')
         except IOError:
-            print('IOError')
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing File!'
             self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
