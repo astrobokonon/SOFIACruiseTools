@@ -54,6 +54,7 @@ from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
 from .header_checker import file_checker as fc
 
+
 class ConfigError(Exception):
     """ Exception for errors in the config file """
     pass
@@ -141,8 +142,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.ttl_str = None
         self.instrument = ''
         self.new_files = None
-        self.data_new = None
-        self.last_data_row = None
+        # self.data_new = None
+        # self.last_data_row = None
         self.leg_info = None
         self.fname = None
         self.err_msg = None
@@ -517,6 +518,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     'takeoff': 'Beginning of flight, getting set up',
                     'turn': 'Turning off target',
                     'ignore': 'Ignore the previous message'}
+
         if key in messages.keys():
             self.line_stamper(messages[key])
         elif key == 'post':
