@@ -112,7 +112,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Set the default instrument and FITS headers
         self.last_instrument_index = -1
         # Things are easier if the keywords are always in CAPS
-        self.headers = [each.upper() for each in self.headers]
+#         self.headers = [each.upper() for each in self.headers]
         # The addition of the notes column happens in here
         self.update_table_cols()
 
@@ -949,13 +949,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             for m, key in enumerate(self.headers):
                 val = self.data.header_vals[file_key][key]
                 item = QtWidgets.QTableWidgetItem(str(val))
-                if key=='HEADER_CHECK' and val=='Failed':
+                if key == 'HEADER_CHECK' and val == 'Failed':
                     # Set text to red
-                    #item.setBackground(QtGui.QColor(255,128,128))
-                    item.setForeground(QtGui.QColor(255,0,0))
+                    item.setForeground(QtGui.QColor(255, 0, 0))
                 self.table_data_log.setItem(row_count, m, item)
-                    
-                    
 
         # Set the row labels
         self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
@@ -1606,7 +1603,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                                                   QtCore.Qt.MatchFixedString)
             if inst_index > 0:
                 self.instSelect.setCurrentIndex(inst_index)
-        except (IOError, IndexError, AttributeError) as e:
+        except (IOError, IndexError, AttributeError):
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
                             basename(self.fname))
