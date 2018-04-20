@@ -161,18 +161,13 @@ timer_start | What time the timer was started for this leg
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+#### Future Work
++ Can always use more streamlining
++ There are too many variables, with too similar of names
++ Split separate classes into different files. SOFIACruiseDirector.py is 
+quite large.
++ Improve flight parser error reporting
++ Implement pydocs 
++ Improve testing methods for flight parser
++ Add notification to user if the flight parser fails to read in takeoff/landing
+times correctly, as some have all times relative to zero.

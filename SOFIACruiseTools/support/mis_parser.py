@@ -745,7 +745,7 @@ def parse_mis_file(filename):
     flight = FlightProfile()
     with open(filename, 'r') as f:
         data = f.read()
-    flight.hash = hashlib.sha1(data).hexdigest()
+    flight.hash = hashlib.sha1(data.encode('utf-8')).hexdigest()
     sections = re.split(r'\n{2}', data)
     for section in sections:
         flight.parse_section(section.strip())

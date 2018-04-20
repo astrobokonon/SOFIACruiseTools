@@ -46,8 +46,7 @@ try:
 except ImportError:
     import pyfits as pyf
 
-#from .. import support as fpmis
-from .. support import regex as fpmis
+from .. support import mis_parser as fpmis
 from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
@@ -89,6 +88,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_met.setText('+00:00:00 MET')
         self.txt_ttl.setText('+00:00:00 TTL')
         self.data = FITSHeader()
+        self.required_fields = ['NOTES', 'BADCAL', 'HEADER_CHECK']
 
         date = datetime.datetime.utcnow().strftime('%Y%m%d')
         self.header_check_warnings = 'header_check_{0:s}.log'.format(date)
@@ -98,7 +98,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_timer = LegTimerObj()
         self.leg_timer.init_duration = None
 
-        # Is a list really the best way of handling this? Don't know yet.
         self.cruise_log = []
         self.start_data_log = False
         self.data_current = []
@@ -112,7 +111,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Set the default instrument and FITS headers
         self.last_instrument_index = -1
         # Things are easier if the keywords are always in CAPS
-#         self.headers = [each.upper() for each in self.headers]
         # The addition of the notes column happens in here
         self.update_table_cols()
 
@@ -142,8 +140,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.ttl_str = None
         self.instrument = ''
         self.new_files = None
-        # self.data_new = None
-        # self.last_data_row = None
         self.leg_info = None
         self.fname = None
         self.err_msg = None
@@ -190,7 +186,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                    self.count_direction('remain'))
         self.time_select_elapsed.clicked.connect(lambda:
                                                  self.count_direction('elapse'))
-
         self.leg_timer_start.clicked.connect(lambda:
                                              self.leg_timer.control_timer('start'))
         self.leg_timer_stop.clicked.connect(lambda:
@@ -203,7 +198,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                         self.leg_timer.minute_adjust('sub'))
 
         # Text log stuff
-        self.log_input_line.returnPressed.connect(self.post_log_line)
+        self.log_input_line.returnPressed.connect(lambda: self.mark_message('post'))
         self.open_director_log.clicked.connect(self.popout_director_log)
 
         self.log_fault_mccs.clicked.connect(lambda: self.mark_message('mccs'))
@@ -221,9 +216,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
         self.data_log_add_row.clicked.connect(self.add_data_log_row)
         self.data_log_delete_row.clicked.connect(self.del_data_log_row)
-
-        # Add an action that detects when a cell is changed by the user
-        #  in table_datalog!
 
         # Hide buttons that aren't needed anymore due to setup prompt
         self.set_takeoff_time.hide()
@@ -298,13 +290,17 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
     def popout_director_log(self):
         """
-        Pops open the director log
+        Pops open the director log in seperate window
         """
         DirectorLogDialog(self)
 
     def flag_file(self):
         """
         Updates "BADCAL" flag for the selected row
+
+        When the "Flag File" on the Data Log tab is pressed, the "BADCAL" value
+        for the selected row is set to "FLAG" in both the table and the
+        background data structure.
         """
         row = self.table_data_log.currentRow()
         fname = self.data_filenames[row]
@@ -317,17 +313,24 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.data.header_vals[fname][flag_col] = flag_text
 
-        # Change the qTable
+        # Change the QtTable
         for column in range(self.table_data_log.columnCount()):
             header_text = self.table_data_log.horizontalHeaderItem(column).text()
             if header_text == 'BADCAL':
                 self.table_data_log.setItem(row, column,
                                             QtWidgets.QTableWidgetItem(flag_text))
+        # Update the widget with the new values
         self.repopulate_data_log()
 
     def fill_blanks(self):
         """
-        Fills blanks in data table
+        Fills blanks in QtTableWidget
+
+        Loops through the files in the background data structure and
+        calls the fill_data_blank_cells method of the FITSHeader class
+        to verify all header values that can be filled for the file are
+        filled. Most useful for when a new FITS header keyword is added
+        during the flight and previous observations need to be updated.
         """
         for fname in self.data.header_vals:
             filename = join(self.data_log_dir, fname)
@@ -337,6 +340,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def table_update(self, item):
         """
         Updates the data structure when the table is changed by the user
+
+        This is called automatically whenever the QtTableWidget detects a
+        change to its contents. Most likely this is due to a user manually
+        changing a cell in the table. Gets the new value from the QtTableWidget
+        and updates the background data structure.
         """
         # Change the value
         fname = self.table_data_log.verticalHeaderItem(item.row()).text()
@@ -361,9 +369,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if not window.fname:
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
 
-            # Flight information
+            # Parse the flight plan
             self.parse_flight_file(window.fname)
-            #self.select_input_file(window.fname)
 
             # Instrument
             self.instrument = window.instrument
@@ -371,6 +378,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.checker_rules = self.checker.choose_rules(self.instrument)
 
             # Cruise Director Log filename
+            # If this hasn't been set, change text to red as this
+            # is required for the program to run
             if window.dirlog_name:
                 self.output_name = window.dirlog_name
                 self.txt_log_output_name.setText('{0:s}'.format(
@@ -392,6 +401,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     basename(str(self.log_out_name))))
 
             # Data headers
+            # Get the headers and set up the QtTableWidget
             self.headers = window.headers
             self.update_table_cols()
             self.table_data_log.resizeColumnsToContents()
@@ -406,7 +416,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Starts the inner workings of the program.
 
         Flips the flags so the code starts looking for FITS files
-        and starts the flight timers
+        and starts the flight timers, but only if the Director Log
+        output has been set up properly
         """
         if self.output_name:
             # Start collecting data
@@ -418,7 +429,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.txt_log_output_name.setStyleSheet('QLabel { color : red; }')
 
     def end_run(self):
-        """ Ends the program after prompting for confirmation. """
+        """
+        Ends the program
+
+        Prompts the user for confirmation. If yes, write the data log and
+        director log to file once again for good measure. Then close
+        the app.
+        """
         choice = QtWidgets.QMessageBox.question(self, 'Confirm',
                                                 'Quit Cruise Director?',
                                                 QtWidgets.QMessageBox.Yes |
@@ -435,7 +452,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Opens the FITS Keywords select window.
 
         Called when the 'Edit Keywords...' button on the Data Log tab
-        is pressed. Currently does not affect anything.
+        is pressed.
         """
         window = FITSKeyWordDialog(self)
         # Open the FITS keyword dialog. The result is one if
@@ -446,8 +463,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if result == 1:
             self.fits_hdu = np.int(window.fitskw_hdu.value())
             self.new_headers = window.headers
-            required = ['NOTES', 'BADCAL', 'HEADER_CHECK']
-            for i, require in enumerate(required):
+            for i, require in enumerate(self.required_fields):
                 if require not in self.new_headers:
                     self.new_headers.insert(i, require)
 
@@ -460,10 +476,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Updates the columns in the QTable Widget in the Data Log tab.
 
         Called initially when the window is first opened and again if the
-        FITS keywords are changed via the repopulateDatalog function in
-        spamkwwindow function.
-        Sets:
-            table_data_log
+        FITS keywords are changed. Due to the weird way the QtTableWidget
+        works, the best way is to completely clear the table then remake it.
         """
 
         # Clear the table
@@ -480,10 +494,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Updates the Cruise Director Log
 
-        Called by:
-            mark_fault_mccs, mark_fault_si, mark_landing,
-            mark_on_heading, mark_on_target, mark_takeoff,
-            mark_turning, postlogline
+        Appends a string given by line to the Director Log after
+        it has been properly formatted by adding the UTC time and data
+        stamp to the beginning. The line is added to both the GUI Log
+        and the background list.
         """
         # Format log line
         time_stamp = datetime.datetime.utcnow()
@@ -499,6 +513,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def write_director_log(self):
         """
         Writes the cruise_log to file
+
+        Dumps the contents of the background list, cruise_log, to
+        the file specified by output_name. If any error occurs,
+        change the name of the output file on the GUI to an error
+        message.
         """
         if self.output_name:
             try:
@@ -508,7 +527,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
     def mark_message(self, key):
-        """ Write a message to the director's log """
+        """
+        Write a message to the director's log
+
+        Accepts a key which determines what the message will be.
+        The key sent is determined by which quick-log button is
+        pressed. If no key is sent, do nothing.
+        Regardless of the contents of the  message, sent it to
+        line_stamper for the addition of the time stamp and for
+        it to be added to the actual logs.
+        """
 
         messages = {'mccs': 'MCCS fault encountered',
                     'si': 'SI fault encountered',
@@ -548,6 +576,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def count_direction(self, key):
         """
         Sets the direction the leg timer counts
+
+        Accepts a key that's determined by which button is pressed
+        in the Leg Timer panel of the main UI.
         """
         if key == 'remain':
             # self.do_leg_count_elapsed = False
@@ -562,7 +593,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Initializes the takeoff/landing fields.
 
-        Intiially sets the fields to the current time, so we don't have
+        Initially sets the fields to the current time, so we don't have
         to type in as much. The fields will be overwritten if a flight
         plan is read in.
         """
@@ -603,7 +634,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         together, otherwise it'll be out of sync due to microsecond
         delay between triggers/button presses.
         Called during initialization of the app and at the beginning
-        of every showlcd loop.
+        of every show_lcd loop.
         """
         self.utc_now = datetime.datetime.utcnow()
         self.utc_now = self.utc_now.replace(microsecond=0)
@@ -658,22 +689,17 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             timer_warnings = self.config['ttl_timer_hour_warnings']
             first_warning = float(timer_warnings['first'])*3600.
             second_warning = float(timer_warnings['second'])*3600.
-
             if self.ttl.total_seconds() >= first_warning:
                 self.txt_ttl.setStyleSheet('QLabel { color : black; }')
-
             elif self.ttl.total_seconds() >= second_warning:
                 self.txt_ttl.setStyleSheet('QLabel { color : darkyellow; }')
-
             else:
                 self.txt_ttl.setStyleSheet('QLabel { color : red; }')
 
-        # if self.leg_counting is True:
         if self.leg_timer.status == 'running':
             # Addresses the timer in the "Leg Timer" panel.
             # Only runs if the "Start" button in the "Leg Timer"
             # panel is pressed
-
             if self.leg_count_remaining:
                 time_string = self.leg_timer.timer_string('remaining')
                 self.leg_timer_color(self.leg_timer.remaining.total_seconds())
@@ -685,8 +711,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_utc.setText(self.utc_now_str)
         self.txt_local_time.setText(self.local_now_str)
 
-        if self.start_data_log is True and \
-                self.data_log_autoupdate.isChecked() is True:
+        # If the program is set to look for data automatically and the time
+        # is a multiple of the update frequency
+        if self.start_data_log and self.data_log_autoupdate.isChecked():
             if self.utc_now.second % self.data_log_update_interval.value() == 0:
                 self.update_data()
 
@@ -716,7 +743,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Adds a blank row to the Data Log
 
         Called when the 'Add Blank Row' button in the Data Log tab is pressed.
-        Alters table_datalog
         """
 
         # Add the blank row to the data structure
@@ -739,7 +765,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         Called when the 'Remove Highlighted Row' button in the Data Log
         tab is pressed.
-        Alters table_data_log
         """
         bad = self.table_data_log.currentRow()
         # -1 means we didn't select anything
@@ -758,9 +783,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Recreates the data log table after keyword changes.
 
-        After changing the column ordering or adding/removing keywords,
-        use this to redraw the table in the new positions.
-        Currently not working.
+        This is called after changing keywords, blanks are filled,
+        or a file has been flagged.
         """
         # Disable fun stuff while we update
         self.table_data_log.setSortingEnabled(False)
@@ -840,6 +864,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
     def fill_space_from_header(self, n, hkey):
         """
+        Attempts to fill an empty cell in the QtTableWidget
+
         If a cell in the data_log is empty after a change in
         keyword headers, read through the file headers again
         to see if the keyword is there.
@@ -853,7 +879,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
     def update_data(self):
         """
-        Updates the data
+        Looks for new observations
 
         Reads in new FITS files and adds them to the header_vals
         """
@@ -892,6 +918,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             bnpre = [basename(x) for x in self.data_filenames]
 
+        # Separate out the new files
         new_files = set(bncur) - set(bnpre)
         new_files = [join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
@@ -912,8 +939,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def sort_files(self, files):
         """
         Sort files based on method in config
-        :param files: files to be sorted
-        :return: None
+
+        Takes in the a list of files and sorts them. If there
+        are problems, exit.
         """
         if self.config['sort'][self.instrument] == 'time':
             return sorted(files, key=getmtime)
@@ -1025,16 +1053,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if self.leg_info.leg_type == 'science':
                 self.leg_param_labels('on')
                 elevation_label = '{0:.1f} to {1:.1f}'.format(
-                    #self.leg_info.range_elev[0],
-                    #self.leg_info.range_elev[1])
                     self.leg_info.plane.elevation_range[0],
                     self.leg_info.plane.elevation_range[1])
                 self.leg_elevation.setText(elevation_label)
                 rof_label = '{0:.1f} to {1:.1f} | {2:.1f} to {3:.1f}'.format(
-                    # self.leg_info.range_rof[0],
-                    # self.leg_info.range_rof[1],
-                    # self.leg_info.range_rofrt[0],
-                    # self.leg_info.range_rofrt[1])
                     self.leg_info.plane.rof_range[0],
                     self.leg_info.plane.rof_range[1],
                     self.leg_info.plane.rof_rate_range[0],
@@ -1123,7 +1145,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Parses flight plan from .msi file.
 
-        Spawn the file chooser diaglog box and return the result, attempting
+        Spawn the file chooser dialog box and return the result, attempting
         to parse the file as a SOFIA flight plan (.mis).
         If successful, set the various state parameters for further use.
         If unsuccessful, make the label text red and angry and give the
@@ -1236,8 +1258,6 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
 class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     """
     Dialog box to allow for interactive selection of FITS keywords
-
-    Currently non-functional
     """
 
     def __init__(self, parent=None):
@@ -1501,7 +1521,6 @@ class FITSHeader(object):
     def check_user_updates(self, table, filenames, hkeys):
         """
         Checks if the user has made any updates to the table.
-        :return:
         """
 
         # Cycle through the table
@@ -1523,7 +1542,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
     """
     GUI to configure run of Cruise Director
     """
-
     def __init__(self, parent=None):
 
         super(StartupApp, self).__init__(parent)
@@ -1531,6 +1549,11 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.setupUi(self)
 
         self.config = self.parentWidget().config
+
+        # Grab stuff from parent
+        self.utc_now = self.parent().utc_now
+        self.fits_hdu = self.parentWidget().fits_hdu
+        self.required_fields = self.parent().required_fields
 
         self.flightButton.clicked.connect(self.load_flight)
         self.instSelect.activated.connect(self.select_instr)
@@ -1558,10 +1581,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.flight_info = None
         self.success_parse = False
         self.headers = self.config['keywords'][self.instrument]
-
-        # Grab stuff from parent
-        self.utc_now = self.parent().utc_now
-        self.fits_hdu = self.parentWidget().fits_hdu
 
     def start(self):
         """
@@ -1631,7 +1650,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Selects the output file for the director log
         """
-
         default = 'SILog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
         self.dirlog_name = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                  'Save File',
@@ -1644,10 +1662,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Sets where to look for data files
         """
-
         dtxt = 'Select Data Directory'
         self.data_dir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt)
-
         if self.data_dir:
             self.datalocText.setText(self.data_dir)
             self.datalocButton.setText('Change')
@@ -1672,8 +1688,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         # Read the default keywords for each instrument
         self.headers = self.config['keywords'][self.instrument]
-        required = ['NOTES', 'BADCAL', 'HEADER_CHECK']
-        for i, require in enumerate(required):
+        for i, require in enumerate(self.required_fields):
             if require not in self.headers:
                 self.headers.insert(i, require)
 
@@ -1683,7 +1698,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
             if result == 1:
                 self.fits_hdu = np.int(window.fitskw_hdu.value())
                 self.headers = window.headers
-                for i, require in enumerate(required):
+                for i, require in enumerate(self.required_fields):
                     if require not in self.headers:
                         self.headers.insert(i, require)
                 self.fitskwText.setText('Custom')
@@ -1817,26 +1832,6 @@ def total_sec_to_hms_str(obj):
     else:
         done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
     return done_str
-
-
-def header_dict(infile, header_keys, hdu=0):
-    """
-    Given a filename (fullpath), return a dict of the desired header keywords.
-    """
-    # Select out the headers from hed that are in headerlist
-    # If that keyword is not in hed, fill the new dictionary with
-    # a blank string
-    try:
-        hed = pyf.getheader(infile, ext=hdu)
-        item = {key: hed.get(key, '') for key in header_keys}
-    except IOError:
-        # Problem reading header, return an empty dictionary
-        item = {key: '' for key in header_keys}
-    # To avoid overlapping a possible FITS keyword named 'FILENAME', give
-    # the filename the key of 'PhysicalFilename'
-    item['PhysicalFilename'] = basename(infile)
-    return item
-
 
 def main():
     """ Generate the gui and run """
