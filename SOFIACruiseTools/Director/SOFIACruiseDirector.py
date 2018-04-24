@@ -374,7 +374,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Instrument
             self.instrument = window.instrument
             self.instrument_text.setText(self.instrument)
-            self.checker_rules = self.checker.choose_rules(self.instrument)
+            #self.checker_rules = self.checker.choose_rules(self.instrument)
 
             # Cruise Director Log filename
             # If this hasn't been set, change text to red as this
@@ -392,6 +392,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.data_log_dir = window.data_dir
                 self.txt_data_log_dir.setText('{0:s}'.format(
                     self.data_log_dir))
+                # Select header checker rules
+                self.checker_rules = self.choose_rules()
 
             # Data Log filename
             if window.datalog_name:
@@ -409,6 +411,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Local timezone
             self.local_timezone = window.local_timezone
             self.localtz = pytz.timezone(self.local_timezone)
+
+    def checker_rules(self):
+        """
+        Selects the rules for checking header values.
+        """
+        # Get a sample fits file from data directory
+        
+        # Pass it to self.checker.choose_rules
+    
+        # Set return value to self.checker_rules
 
     def start_run(self):
         """
