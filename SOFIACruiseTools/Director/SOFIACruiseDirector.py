@@ -51,8 +51,7 @@ from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
-from .header_checker import file_checker as fc
-
+from ..qa_tools.pyqatools.header_checker import file_checker as fc
 
 class ConfigError(Exception):
     """ Exception for errors in the config file """
