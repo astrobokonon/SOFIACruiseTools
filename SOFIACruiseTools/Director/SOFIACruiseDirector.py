@@ -55,8 +55,10 @@ from . import directorLogDialog as dl
 try:
     from ..qa_tools.pyqatools.header_checker import file_checker as fc
 except ImportError:
+    source = 'qa-tools'
+    link_name = './SOFIACruiseTools/qa_tools'
+    symlink(source, link_name)
     try:
-        symlink('qa-tools','../qa_tools')
         from ..qa_tools.pyqatools.header_checker import file_checker as fc
     except ImportError:
         print('Cannot find header checker code.')
