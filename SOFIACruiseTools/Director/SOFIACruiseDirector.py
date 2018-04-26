@@ -57,10 +57,10 @@ try:
 except ImportError:
     source = 'qa-tools'
     link_name = './SOFIACruiseTools/qa_tools'
-    symlink(source, link_name)
     try:
+        symlink(source, link_name)
         from ..qa_tools.pyqatools.header_checker import file_checker as fc
-    except ImportError:
+    except (ImportError, OSError):
         print('Cannot find header checker code.')
         print('Verify that the git submodule has been properly pulled.')
         print('In the top directory, run:')
