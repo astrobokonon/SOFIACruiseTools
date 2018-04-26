@@ -51,7 +51,18 @@ from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
-from ..qa_tools.pyqatools.header_checker import file_checker as fc
+
+try:
+    from ..qa_tools.pyqatools.header_checker import file_checker as fc
+except ImportError:
+    print('Cannot find header checker code.')
+    print('Verify that the git submodule has been properly pulled.')
+    print('In the top directory, run:')
+    print('\tgit submodule update --init --recursive')
+    print('\nTo avoid this error in the future, use '
+          'the --recursive flag while cloning the repo')
+    sys.exit()
+
 
 class ConfigError(Exception):
     """ Exception for errors in the config file """
@@ -393,7 +404,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.txt_data_log_dir.setText('{0:s}'.format(
                     self.data_log_dir))
                 # Select header checker rules
-                self.checker_rules = self.choose_rules()
+                self.choose_head_check_rules()
 
             # Data Log filename
             if window.datalog_name:
@@ -412,15 +423,37 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.local_timezone = window.local_timezone
             self.localtz = pytz.timezone(self.local_timezone)
 
-    def checker_rules(self):
+    def choose_head_check_rules(self):
         """
         Selects the rules for checking header values.
         """
         # Get a sample fits file from data directory
-        
+        config = self.config['search'][self.instrument]
+        # Get the current list of FITS files in the location
+        if config['method'] == 'glob':
+            pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
+                                             config['extension'])
+            data_file = glob.glob(pattern)[0]
+
+        elif config['method'] == 'walk':
+            pattern = '*.{0:s}'.format(config['extension'])
+            current_data = []
+            for root, _, filenames in walk(str(self.data_log_dir)):
+                for filename in fnmatch.filter(filenames, pattern):
+                    data_file = join(root, filename)
+                    break
+                break
+        else:
+            # Unknown method
+            print('Unknown method {0:s} for instrument {1:s}'.format(
+                config['method'], self.instrument))
+            return
+
         # Pass it to self.checker.choose_rules
+        rule = self.checker.choose_rules(data_file)
     
         # Set return value to self.checker_rules
+        self.checker_rules = rule
 
     def start_run(self):
         """
@@ -1453,14 +1486,10 @@ class FITSHeader(object):
 
         If a header keyword is added after data collection has begun
         then the cells for that keyword for existing data will be
-        empty.
-
-        :param infile: The full filename of the FITS file
-        :param hkeys: List of header keys
-        :param hdu: Header unit of FITS to use
-        :returns: None
-        :raises IOError: Can't open file
-        :raises KeyError: Infile not found in header_vals
+        empty. This method searches for blanks in header_vals
+        for the FITS image infile. If any blanks are found, it will
+        attempt to fill them from the file's header. No changes are 
+        made to the QtTableWidget.
         """
         # Read in file
         try:
