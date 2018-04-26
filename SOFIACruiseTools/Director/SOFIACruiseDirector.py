@@ -32,7 +32,7 @@ import glob
 import fnmatch
 import datetime
 import itertools
-from os import walk
+from os import walk, symlink
 from os.path import join, basename, getmtime
 from collections import OrderedDict
 import configobj as co
@@ -55,13 +55,17 @@ from . import directorLogDialog as dl
 try:
     from ..qa_tools.pyqatools.header_checker import file_checker as fc
 except ImportError:
-    print('Cannot find header checker code.')
-    print('Verify that the git submodule has been properly pulled.')
-    print('In the top directory, run:')
-    print('\tgit submodule update --init --recursive')
-    print('\nTo avoid this error in the future, use '
-          'the --recursive flag while cloning the repo')
-    sys.exit()
+    try:
+        symlink('qa-tools','../qa_tools')
+        from ..qa_tools.pyqatools.header_checker import file_checker as fc
+    except ImportError:
+        print('Cannot find header checker code.')
+        print('Verify that the git submodule has been properly pulled.')
+        print('In the top directory, run:')
+        print('\tgit submodule update --init --recursive')
+        print('\nTo avoid this error in the future, use '
+              'the --recursive flag while cloning the repo')
+        sys.exit()
 
 
 class ConfigError(Exception):
