@@ -140,6 +140,69 @@ generated during this process, flag the file.
 10. If new files were found, update the data log in the UI and write the 
 contents of the log to file. 
 
+###### Header Checker
+The header_checker code comes from the qa-tools repository, which is included
+in the Cruise Director repository as a git submodule in the SOFIACruiseTools
+directory. Importing the code is a bit tricky as the name of the repository
+has a hyphen in it and Python does not allow you to import a module that has 
+a hyphen in the name. This is invalid syntax. As the name of the repository 
+cannot be changed, the simplest solution is to make symbolic link to the 
+directory:
+
+`ln -s qa_tools qa-tools`
+    
+then import qa_tools. To avoid this in the future, don't put hyphens in the 
+names of repositories. 
+
+Working with git submodules is easy, but fraught with pitfalls. The biggest 
+of which is the fact that pulling the main repo (SOFIACruiseTools) to get 
+updates will *not* update the submodule (qa-tools). Also, when the main repo 
+is initially cloned, the submodule's code is not cloned as well. To pull the 
+submodule code independently use:
+    
+`git submodule update --init --recursvie`
+
+To avoid this, the submodule code can be cloned at the same time as the main 
+repo using the --recursive flag:
+
+`git clone --recursive git@gitlab.sofia.usra.edu:/dps/SOFIACruiseTools.git`
+
+The process for updating qa-tools to a new release is very similar to the 
+normal practice. There are two ways to do this, explicitly or passively. For 
+the explicit method, first move to the submodule directory. Then pull from 
+the desired branch, usually master:
+
+```
+cd ./SOFIACruiseTools/qa-tools/
+git pull origin master
+```
+
+The passive or automatic method is simplier and can be done from main repo. 
+
+`git submodule foreach git pull origin master`
+
+This pulls from the master branch for *all* submodules. There's only one in 
+Cruise Director at the moment, so this isn't an important distinction here. 
+
+There are a few useful git configuration options to make working with 
+submodules easier. 
+
+```
+git config --global status.submoduleSummary true
+git config --global diff.submodule log
+git config --global fetch.recurseSubmodules on-demand
+```
+
+This put details of the submodule on the status command, includes clearer 
+information on changes to the submodule, and automatically fetches updates 
+for all submodules respectively. 
+
+The best resources for submodules are:
+
+- [Github's Guide] [1] , good for basics.
+- [Chrisophe Porteneuve's Guide] [2] for a lot more detail on 
+what's actually happening. 
+
 ###### Leg Timer
 The leg timer is handled by the LegTimerObj class. The specifics of how to 
 properly track the elapsed and remaining time while adding/subtracting 
@@ -171,3 +234,8 @@ quite large.
 + Improve testing methods for flight parser
 + Add notification to user if the flight parser fails to read in takeoff/landing
 times correctly, as some have all times relative to zero.
+
+
+
+[1]: https://blog.github.com/2016-02-01-working-with-submodules/
+[2]: https://medium.com/@porteneuve/mastering-git-submodules-34c65e940407
