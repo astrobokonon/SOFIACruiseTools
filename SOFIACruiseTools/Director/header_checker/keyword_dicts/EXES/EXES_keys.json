@@ -1,0 +1,10 @@
+{"display": ["EXCLUDE", "REMOVE", "FILENAME", 
+             "MISSN-ID", "DATE-OBS", "OBS_ID", "PLANID", 
+             "AOR_ID", "OBJECT", "TELRA", 
+             "TELDEC", "DATATYPE", "PROCSTAT", "INSTCFG", 
+             "INSTMODE", "SPECTEL1", "SPECTEL2", 
+             "SLIT", "WAVENO0", "OBSTYPE", 
+             "SRCTYPE", "ALTI_STA", "ALTI_END",
+             "ZA_START", "ZA_END"],
+ "exclude": ["EXCLUDE", "REMOVE"]
+}

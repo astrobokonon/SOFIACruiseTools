@@ -1,0 +1,11 @@
+{"display": ["EXCLUDE", "REMOVE", "FILENAME", 
+             "MISSN-ID", "DATE-OBS", "OBS_ID", "PLANID", 
+             "AOR_ID", "OBJECT", "EXPTIME", "TELRA",
+             "TELDEC", "OBSRA", "OBSDEC", "DATATYPE", "INSTCFG", 
+             "INSTMODE", "DETCHAN", "SPECTEL1", "SPECTEL2", "DICHROIC",
+             "OBSTYPE", "ALTI_STA", "ALTI_END",
+             "ZA_START", "ZA_END", "NODSTYLE", "NODBEAM",
+	     "DLAM_MAP", "DBET_MAP", "DET_ANGL",
+             "OBSLAM", "OBSBET", "WAVECENT", "FILEGPID"],
+ "exclude": ["EXCLUDE", "REMOVE"]
+}

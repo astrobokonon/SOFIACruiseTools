@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- <?xml-stylesheet type="text/xsl" href="Descriptions.xsl"?> -->
+<?xml-stylesheet type="text/xsl" href="Descriptions_new.xsl"?>
+<!--
+<?xml-stylesheet type="text/xsl" href="FITS_new.xsl"?>
+-->
+<!--
+<?xml-stylesheet type="text/xsl" href="FITS_Li.xsl"?>
+-->
+
+
+<!-- <?xml-stylesheet type="text/xsl" href="FITS.xsl"?> -->
+<!-- <?xml-stylesheet type="text/xsl" href="FITSSample.xsl"?> -->
+
+
+<!DOCTYPE KeywordDictionary SYSTEM "KeywordDictionary.dtd">
+
+<!-- Data Processing -->
+<KeywordDictionary title="SOFIA Keyword Dictionary"
+                   version="REV F DRAFT"
+                   date="04-11-2015"
+                   author="R. Y. Shuping/E. Moore / L. Lin">
+
+  <!-- ===============   Data Processing Related Keywords  ============== -->
+  <KeywordList title="Data Processing Related Keywords ">
+    <Keyword title="ProcessingStatus" >      
+      <IsUpdated></IsUpdated>
+      <Description> Status of any processing applied to the data, as defined in the SOFIA Project Data Management Plan:
+        LEVEL_0 = Raw engineering data for diagnostic purposes, generally not intended for archiving;
+        LEVEL_1 = Raw, uncalibrated science data in FITS or SDFITS format with complete header adhering to the SOFIA Keyword Dictionary;
+        LEVEL_2 = Processed science data orrected for instrument artifacts;
+        LEVEL_3 = Flux-calibrated science data (e.g. BUNIT keyword takes image to MJy/sr);
+        LEVEL_4 = Higher order products.
+      </Description>
+      <Value representation="string">
+        <Range type="enum"> LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4 </Range>
+        <Example>'LEVEL_1'</Example>
+        <Default>'LEVEL_0'</Default>
+      </Value>
+      <Comment>Processing status</Comment>
+      <FITS name="PROCSTAT" hdu="primary" type="str"/>
+      <Source provider="SI | Pipeline" />
+      <Requirement phase="ES" condition="Required for all SI, FLITECAM already has "/>
+    </Keyword>
+    <Keyword title="HeaderStatus" >
+      <IsUpdated></IsUpdated>
+      <Description> Status of FITS header data (updated during post-processing).  ORIGINAL:  Header values are from original raw data file and have not been modified.  UNKNOWN:  header values have not been reviewed/verified.  CORRECTED:  header values have been corrected as part of post-processing, see HISTORY records for details.  ERROR: There is a problem with the header values that has not been fixed, see COMMENT records for details.
+        SI would set HEADSTAT = 'ORIGINAL" for raw data acquired on the AC. MODIFIED: Headers have been changed but are not yet fully CORRECTED.
+      </Description>
+      <Value representation="string">
+        <Range type="enum"> ORIGINAL, UNKNOWN, CORRECTED, ERROR, MODIFIED</Range>
+        <Example>'ORIGINAL'</Example>
+        <Default>'UNKNOWN'</Default>
+      </Value>
+      <Comment>Header status, added MODIFIED in revF</Comment>
+      <FITS name="HEADSTAT" hdu="primary" type="str"/>
+      <Source provider="SI | DCS" />
+      <Requirement phase="S3"/>
+    </Keyword>
+    <Keyword title="FileGroupID" >      
+      <IsNew/>
+      <Description> File group ID </Description>
+      <Value representation="string"></Value>
+      <Comment>Currently not used by DPS but may use for HAWC</Comment>
+      <FITS name="FILEGPID" hdu="primary" type="str"/>
+      <Source provider="SI" />
+      <Requirement phase="ES" condition="SI"/>
+    </Keyword>   
+    <Keyword title="DataQuality" >
+      <IsNew></IsNew>
+      <Description> Indicates overall data quality; indicator of scientific reliability for the dataset.  Values are:
+          NOMINAL:  no outstanding issues with processing/calibration/observing conditions. USABLE:  minor issue(s) with processing/calibration/conditions but should still be scientifically valid (perhaps with larger than usual uncertainties);  see HISTORY records for details.
+          PROBLEM:  significant issue(s) encountered with processing, calibration, or observing conditions; may not be scientifically useful (depending on application);  see HISTORY records for details. In general, these cases are addressed through manual re-processing before archiving and distribution.
+          FAIL:  data could not be processed successfully for some reason.  These cases are rare and generally not archived or distributed to the GI.
+      </Description>
+      <Value representation="string">
+        <Range type="enum"> NOMINAL, USABLE, FAIL</Range>
+        <Example>'NOMINAL'</Example>
+        <Default>'NOMINAL?'</Default>
+      </Value>
+      <Comment>Result of data processing </Comment>
+      <FITS name="DATAQUAL " hdu="primary" type="str"/>
+      <Source provider="Pipeline" />
+      <Requirement phase="S3"/>
+    </Keyword>
+    <Keyword title="NumberOfSpectral" >
+      <IsNew></IsNew>
+      <Description> Number of spectral, optional for spectroscopic modes.
+      </Description>
+      <Value representation="integer">
+      </Value>
+      <Comment>Number of spectra included in file.</Comment>
+      <FITS name="N_SPEC " hdu="primary" type="int"/>
+      <Source provider="Pipeline" />
+      <Requirement phase="S3"/>
+    </Keyword>
+  </KeywordList>  
+  <!-- ==================   Mission Management Keywords  ================= -->
+  <KeywordList title="Mission Management Keywords">
+    <Keyword title="FlightLeg" >
+      <IsUpdated></IsUpdated>
+      <Description> Flight leg identifier for given mission ID.</Description>
+      <Value representation="integer">
+        <Example> 4</Example>
+      </Value>
+      <Comment>Flight leg, updated to fltexes_data from leg_data</Comment>
+      <FITS name="FLIGHTLG	" hdu="primary" type="int"/>
+      <Source provider="MCCS" location="fltexec.fltexec_data.leg_seq" />
+      <Requirement phase="conditional" />
+    </Keyword>
+  </KeywordList>  
+  <!-- =====================   Aircraft Keywords  ==================== --> 
+  <KeywordList title="Aircraft Keywords">
+    <Keyword title="TelescopeRA" >
+      <IsUpdated></IsUpdated>
+      <Description>Right ascension of SI boresight (SIBS), as returned by the telescope
+        control system (J2000).  Representation may be either decimal hours or HH:MM:SS.s.
+      </Description>
+      <Value representation="general">
+        <Units>Hours</Units>
+        <Range type="interval">0,24 </Range>
+        <Example>9.023456</Example>
+      </Value>
+      <Value representation="hh:mm:ss.s">
+        <Units>Hours</Units>
+        <Range type="interval">0,24 </Range>
+        <Example>5:35:17.3</Example>
+      </Value>
+      <Comment>SI Boresight RA (J2000) - as returned by MCCS, removed type str in revF</Comment>
+      <FITS name="TELRA" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.ra" />
+      <Requirement phase="ES" />
+    </Keyword>
+    <Keyword title="TelescopeDec" >
+      <IsUpdated></IsUpdated>
+      <Description> Declination of SI boresight, as returned by the telescope
+        control system (J2000).  Representation may be either decimal degrees or DD:MM:SS.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-90,90</Range>
+        <Example>47.345789</Example>
+      </Value>
+      <Value representation="dd:mm:ss">
+        <Units>Degrees</Units>
+        <Range type="interval">-90,90</Range>
+        <Example>-5:23:28</Example>
+      </Value>
+      <Comment>SI Boresight Dec (J2000) - as returned by MCCS, removed type str in revF</Comment>
+      <FITS name="TELDEC" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.dec" />
+      <Requirement phase="ES" />
+    </Keyword>
+    <Keyword title="TelescopeElevation" >
+      <IsUpdated></IsUpdated>
+      <Description> Telescope elevation above the horizon.  At start of observation.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">0,90</Range>
+        <Example>47.345789</Example>
+      </Value>
+      <Comment>Telescope elevation above the horizon at observation start - as returned by MCCS. Changed source from coord.pos.sibs.el to coord.pos.sibs.alt in revF. (J. Rasmussen 7/18/14 SI monthly:) This value is in terms of an internal reference frame called the TA Reference Frame (TARF). TARF follows where we’re pointing….so, expect very small values. These appear of no utility for determining vignetting</Comment>
+      <FITS name="TELEL" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.alt" />
+      <Requirement phase="S3" />
+    </Keyword>
+    <Keyword title="TelescopeCrossElevation" >
+      <IsUpdated></IsUpdated>
+      <Description> Telescope cross elevation in the cavity reference frame.  At start of observation.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-90,90</Range>
+        <Example>0.543</Example>
+      </Value>
+      <Comment>Telescope cross elevation at observation start - as returned by MCCS. ( See J. R comments on TELEL)</Comment>
+      <FITS name="TELXEL" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.xel" />
+      <Requirement phase="S3" />
+    </Keyword>
+    <Keyword title="TelescopeLineOfSight" >
+      <IsUpdated></IsUpdated>
+      <Description> Telescope line of sight angle in the cavity reference frame.  At start of observation.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-180,180</Range>
+        <Example>0.543</Example>
+      </Value>
+      <Comment>Telescope LOS at observation start - as returned by MCCS. ( See J. R comments on TELEL)</Comment>
+      <FITS name="TELLOS" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.los" />
+      <Requirement phase="S3" />
+    </Keyword>
+    <Keyword title="CoarseDriveElevation" >
+      <IsNew></IsNew>
+      <Description> Telescope elevation in the cavity reference frame.  At start of observation.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">0,90</Range>
+        <Example>47.345789</Example>
+      </Value>
+      <Comment>Telescope Coarse Drive elevation at observation start - as returned by MCCS. (J. Rasmussen 7/18/14 SI monthly:) Vignetting check needs telescope coarse drive elevation, fine drive el/xel/los and well-known min/max door setpoints.</Comment>
+      <FITS name="COARSEEL" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="ta_state.coarse_deg_el" />
+      <Requirement phase="S3" />
+    </Keyword>
+    <Keyword title="FineDriveElevation" >
+      <IsNew></IsNew>
+      <Description>Telescope cross elevation in the cavity reference frame.  At start of observation.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-90,90</Range>
+        <Example>0.543</Example>
+      </Value>
+      <Comment>Telescope Fine Drive elevation at observation start - as returned by MCCS ( See J. R comments on CoarseDriveElevation )</Comment>
+      <FITS name="FD_EL" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="ta_state.fd_deg_el" />
+      <Requirement phase="S3" />
+    </Keyword>
+    <Keyword title="FineDriveCrossElevation" >
+      <IsNew></IsNew>
+      <Description>Telescope Fine Drive cross elevation in the cavity reference frame ?.  At start of observation.
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-90,90</Range>
+        <Example>0.543</Example>
+      </Value>
+      <Comment>Telescope Fine Drive elevation at observation start - as returned by MCCS ( See J. R comments on CoarseDriveElevation )</Comment>
+      <FITS name="FD_XEL" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="ta_state.fd_deg_xel" />
+      <Requirement phase="S3" />
+    </Keyword>
+    <Keyword title="FineDriveLineOfSight" >
+      <IsNew></IsNew>
+      <Description>Telescope Fine Drive line of sight angle in the cavity reference frame (Check with MCCS).  At start of observation. ( See J. R comments on CoarseDriveElevation )
+      </Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-180,180</Range>
+        <Example>0.543</Example>
+      </Value>
+      <Comment>Telescope Fine Drive LOS at observation start - as returned by MCCS</Comment>
+      <FITS name="FD_LOS" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="ta_state.fd_deg_los" />
+      <Requirement phase="S3" />
+    </Keyword>    
+  </KeywordList>
+  <!-- =====================   Array Detector Keywords  ==================== -->   
+  <KeywordList title="Array Detector Keywords">
+    <Keyword title="ScienceInstrumentBoresightX" >
+      <IsUpdated></IsUpdated>
+      <Description>Location of SI boresight in pixel space -- x_si. </Description>
+      <Value representation="float">
+        <Example>255</Example>
+      </Value>
+      <Comment>SI Boresight (x) - as returned by MCCS, typo in name fixed</Comment>
+      <FITS name="CRPIXX" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.xsi" />
+      <Requirement phase="S3" condition="Array instruments only." />
+    </Keyword>
+    <Keyword title="ScienceInstrumentBoresightY" >s
+      <IsUpdated></IsUpdated>
+      <Description>Location of SI boresight in pixel space -- y_si. </Description>
+      <Value representation="float">
+        <Example>255</Example>
+      </Value>
+      <Comment>SI Boresight (y) - as returned by MCCS, typo in name fixed</Comment>
+      <FITS name="SIBS_Y" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="coord.pos.sibs.ysi" />
+      <Requirement phase="S3" condition="Array instruments only." />
+    </Keyword>
+    <Keyword title="WCS_CRPIX" >
+      <IsUpdated></IsUpdated>
+      <Description>WCS:  pixel coordinates of the reference point of the n-th axis to which the projection and the rotation refer.</Description>
+      <Value representation="float">
+        <Example>511</Example>
+      </Value>
+      <Comment>Array location of the reference point in pixels for the n-th axis. Changed from int to float in revF</Comment>
+      <FITS name="CRPIXn" hdu="any" type="flt"/>
+      <Requirement phase="S3" condition="Array instruments only."/>
+    </Keyword>
+  </KeywordList>
+  <!-- =====================   Chopping Keywords  ==================== -->
+  <KeywordList title="Chopping Keywords">
+    <Keyword title="ChopCoordSys" >
+      <IsUpdated></IsUpdated>
+      <Description> Reference frame for which MCCS computes SMA parameters. MCCS calculates sky_tip, sky_tilt, and sky_angle differently depending on which reference frame was last used in the sma.chop command. This value defaults to TARF  if sma.chop has not been sent previously.</Description>
+      <Value representation="string">
+        <Range type="enum">TARF, ERF, SIRF</Range>
+        <Example>ERF </Example>
+      </Value>
+      <Comment>MCCS Coordinate system for sky tip, tilt, and angle. Added SIRF in revF</Comment>
+      <FITS name="CHPCRSYS" hdu="any" type="str"/>
+      <Source provider="MCCS" location="sma.sky_coord_sys" />
+      <Requirement phase="ES" condition="Chopping"/>
+    </Keyword>
+    <Keyword title="ChopAngle" >
+      <IsUpdated></IsUpdated>
+      <Description> Calculated angle in the sky_coord_sys reference frame. MCCS calculates the angle in the sky_coord_sys reference frame based on actual SMA data. The angle is the orientation of the chop throw with  up equals zero.</Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-360,360</Range>
+        <Example> 45.0</Example>
+      </Value>
+      <Comment>Calculated angle in the sky_coord_sys reference frame. Range increased in revF from -/+180 to -/+360</Comment>
+      <FITS name="CHPANGLE" hdu="any" type="flt"/>
+      <Source provider="MCCS" location="sma.sky_angle" />
+      <Requirement phase="ES" condition="Chopping"/>
+    </Keyword>
+    <Keyword title="ChopPhase" >
+      <IsUpdated></IsUpdated>
+         <Description> Chopper phase as defined by MCCS.  Time delay between the synch signal and the start of the setpoint which has the positive tilt increment with respect to the commanded offset.  </Description>
+         <Value representation="float">
+         <Units>millisec</Units>
+	    <Range type="interval"> 0,1000 </Range>
+            <Example> 200</Example>
+         </Value>
+         <Comment>Chop phase, User-supplied phase for the sma.chop command, changed to float in revF</Comment>
+         <FITS name="CHPPHASE" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="sma.chop.phase" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+  </KeywordList>
+  <!-- ========================   Nodding Keywords  ======================= -->
+  <KeywordList title="Nodding Keywords">
+    <Keyword title="NodPattern" >
+      <IsUpdated></IsUpdated>
+      <Description> Pointing sequence pattern for one nod cycle (there could be many
+        nod cycles in an observation).  Beam A is usually assumed to contain
+        the object of interest. 
+      </Description>
+      <Value representation="string">
+        <Range type="enum"> ABBA, AB, BA, CUSTOM </Range>
+        <Example>'ABBA' </Example>
+      </Value>
+      <Comment>Nodding pattern, one cycle. Added BA in revF</Comment>
+      <FITS name="NODPATT" hdu="any" type="str"/>
+      <Requirement phase="ES" condition="Nodding"/>
+    </Keyword>
+    <Keyword title="NodAngle" >
+      <IsUpdated></IsUpdated>
+      <Description> Nod angle, clockwise from y axis defined by NODCRSYS.</Description>
+      <Value representation="general">
+        <Units>decimal degrees</Units>
+        <Range type="interval">-360,360</Range>
+        <Example> 45.0</Example>
+      </Value>
+      <Comment>Nod angle, range increased in revF from -/+360 to -/+360</Comment>
+      <FITS name="NODANGLE" hdu="any" type="flt"/>
+      <Requirement phase="ES" condition="Nodding"/>
+      <Source provider="MCCS" location="(e.g. nod.pos_angle)" />
+    </Keyword>
+  </KeywordList> 
+  
+  <!-- ===========================   Dither  ========================== -->
+  <KeywordList title="Dithering Coordinate">
+    <Keyword title="DitherCoordiante" >
+      <IsNew></IsNew>
+      <Description> Coordinate system for dither offsets.</Description>
+      <Value representation="str">
+        <Range type="enum">SIRF,TARF,ERF</Range>           
+        <Example>SIRF</Example>
+      </Value>
+      <Comment>Dither coordinate, needed by DPS for FORCAST, FLITECAM</Comment>
+      <FITS name="DTHCRSYS" hdu="any" type="str"/>
+      <Source provider="SI | DCS, not from MCCS" />
+      <Requirement phase="S3" condition="Dithering"/>
+    </Keyword>
+      
+    <Keyword title="DitherXOffset" >
+      <IsNew></IsNew>
+      <Description> Specified dither offset X for each subsequent frame, in arcseconds.</Description>
+      <Value representation="float">
+        <Units>arcsec</Units>            
+        <Example> 2.5</Example>
+      </Value>
+      <Comment>Dither offset in X axis (arcseconds).</Comment>
+      <FITS name="DTHXOFF" hdu="any" type="flt"/>
+      <Requirement phase="S3" condition="Dithering"/>
+    </Keyword>
+
+    <Keyword title="DitherYOffset" >
+      <IsNew></IsNew>
+      <Description> Specified dither offset Y for each subsequent frame, in arcseconds.</Description>
+      <Value representation="float">
+        <Units>arcsec</Units>            
+        <Example> 2.5</Example>
+      </Value>
+      <Comment>Dither offset in Y axis (arcseconds).</Comment>
+      <FITS name="DTHYOFF" hdu="any" type="flt"/>
+      <Requirement phase="S3" condition="Dithering"/>
+    </Keyword>
+  </KeywordList>
+  
+  <!-- ===========================   Dither  ========================== -->
+  <KeywordList title="Instrument Keywords">
+    <Keyword title="DetectorChannel" >
+      <IsNew></IsNew>
+      <Description> Detector Changgel as specified in the SI-DCS ICD.</Description>
+      <Value representation="string">
+        <Range type="enum"> SW, LW, BLUE, RED </Range> 
+        <Example>LW</Example>
+      </Value>                
+      <Comment> The values are 
+        FORCAST: SW | LW , FIFI-LS: BLUE | RED
+      </Comment>
+      <FITS name="DETCHAN" hdu="primary" type="str"/>
+      <Requirement phase="S3" condition="FORCAST and FIFI-LS should populate these."/>
+    </Keyword>     
+  </KeywordList>
+  <Keyword title="TotalIntegrationTime" >
+    <IsNew></IsNew>
+    <Description> Total integration time (s) </Description>
+    <Value representation="float">
+      <Units>s</Units>
+      <Example> 600</Example>
+    </Value>
+    <Comment>Total integration time (s)</Comment>
+    <FITS name="TOTINT" hdu="any" type="flt"/>
+    <Requirement phase="S3"/>
+  </Keyword>
+</KeywordDictionary>

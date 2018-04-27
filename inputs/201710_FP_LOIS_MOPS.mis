@@ -1,0 +1,235 @@
+Filename: 201710_FP_LOIS_MOPS.mis  Saved: 2017-Sep-18 22:11:07 UTC
+
+============================= Mission Summary ============================
+
+Flight Plan ID: 201710_FP_LOIS
+Airport: KDAB       Runway: 25R         Legs: 15            Mach: 0.85          
+Takeoff: 2017-Oct-05 19:35:51 UTC       
+Obs Time: 02:30:00  Flt Time: 08:16:28  
+Landing: 2017-Oct-06 03:52:19 UTC       Airport: KDAB (Approach via BARBS)
+Sunset: 23:06:16    Sunset Az: 265      Sunrise: 11:19:57   Sunrise Az: 96      
+
+
+Leg 1 (Departure via BARBS) Start: 19:35:51     Leg Dur: 00:06:48   Alt.: 4000 ft                           
+Runway: 25R         End Lat: N29 18.4   End Lon: W081 24.5  Sunset: 23:06:16    Sunset Az: 265      
+Sun Az Delta: -26   
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+19:35:51 251.9 245.2 N29 11.0 W081 02.8 054/006  23   15:10:20 N/A   N/A   N/A   N/A     41.5    TURN
+19:38:52 302.3 295.7 N29 11.0 W081 06.7 095/003  16   15:13:06 N/A   N/A   N/A   N/A     41.0    
+19:42:39 301.8 295.4 N29 18.4 W081 24.5 096/003  16   15:15:42 N/A   N/A   N/A   N/A     40.5    
+
+
+Leg 2 (DINNS)       Start: 19:43:24     Leg Dur: 00:08:20   Alt.: 35000 ft                          
+End lat: N30 25.9   End Lon: W081 48.0 
+Sun Az Delta: 22    
+
+Comment: Waypoint KAPDE
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+19:43:24 350.7 344.3 N29 20.9 W081 26.4 273/032  -46  15:16:19 N/A   N/A   N/A   N/A     40.3    
+19:51:44 346.4 340.1 N30 26.0 W081 48.0 273/035  -46  15:23:15 N/A   N/A   N/A   N/A     38.5    
+
+
+Leg 3 (OZENA)       Start: 19:55:01     Leg Dur: 00:18:27   Alt.: 35000 ft                          
+End lat: N30 25.9   End Lon: W078 21.0 
+Sun Az Delta: 132   
+
+Comment: Waypoint KAPDE
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+19:55:01 102.4 95.8  N30 43.9 W081 29.4 273/035  -46  15:27:46 N/A   N/A   N/A   N/A     37.5    
+20:13:28 105.9 97.4  N30 26.1 W078 20.9 271/034  -46  15:58:51 N/A   N/A   N/A   N/A     32.0    
+                  ******** Potential SUA Incursions ********
+Zone/Sec       Type       Ctrl Name                Effective Time
+W137L          Warning    KZJX MAYPORT, FL         CONTINUOUS
+W138D          Warning    KZJX MAYPORT, FL         CONTINUOUS
+W138L          Warning    KZJX CHARLESTON, SC      CONTINUOUS
+W139D          Warning    KZJX MAYPORT, FL         CONTINUOUS
+
+
+Leg 4 (Dead Leg)    Start: 20:13:59     Leg Dur: 00:34:00   Alt.: 37000 ft                          
+Init Hdg: 80.0 deg  
+Sun Az Delta: 108   
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+20:13:59 87.8  79.3  N30 26.2 W078 15.6 273/036  -51  15:59:43 N/A   N/A   N/A   N/A     31.9    
+20:47:59 94.3  82.5  N31 10.7 W072 31.8 269/035  -51  16:56:44 N/A   N/A   N/A   N/A     20.4    
+
+
+Leg 5 (HIP 77277)   Start: 20:48:05     Leg Dur: 00:30:00   Alt.: 39000 ft                          
+ObspID:             Blk:                Priority:           Obs Dur: 00:00:00   
+Target: HIP 77277   RA: 15h46m40.01s    Dec: 62d35m58.4s    Equinox: J2000.0    
+Elev: [56.6, 54.2]  ROF: [156.6, 138.0] rate: [-0.64, -0.60] deg/min
+Moon Angle: 108     Moon Illum: 100%    THdg: [79.2, 70.3] rate: [-0.32, -0.27] deg/min
+Sun Az Delta: 99    
+
+Comment: HIP 77277 - V=5.19, B-V=0.05
+Door open to cool TA.
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+20:48:05 91.0  79.2  N31 10.8 W072 30.9 270/036  -55  16:56:53 56.6  156.6 N/A   39.0    20.4    
+20:53:05 89.7  77.6  N31 19.1 W071 41.0 269/036  -55  17:05:14 56.3  153.4 -0.64 39.3    18.7    
+20:58:05 88.6  76.0  N31 28.4 W070 51.3 269/035  -55  17:13:33 55.9  150.2 -0.64 39.6    16.9    
+21:03:05 87.4  74.5  N31 38.9 W070 01.8 268/035  -55  17:21:52 55.5  147.1 -0.63 39.9    15.2    
+21:08:05 86.3  73.0  N31 50.5 W069 12.6 267/035  -55  17:30:09 55.1  144.0 -0.62 40.0    13.4    
+21:13:05 85.2  71.6  N32 03.0 W068 23.7 266/035  -55  17:38:26 54.6  141.0 -0.61 40.2    11.7    
+21:18:05 84.2  70.3  N32 16.6 W067 35.0 265/035  -56  17:46:41 54.2  138.0 -0.60 40.3    9.9     
+
+
+Leg 6 (HIP 72573)   Start: 21:18:30     Leg Dur: 01:30:00   Alt.: 39000 ft                          
+ObspID:             Blk:                Priority: B         Obs Dur: 01:20:00   
+Target: HIP 72573   RA: 14h50m20.42s    Dec: 82d30m43.0s    Equinox: J2000.0    
+Elev: [37.5, 34.3]  ROF: [134.8, 95.5] rate: [-0.45, -0.42] deg/min
+Moon Angle: 95      Moon Illum: 100%    THdg: [85.2, 82.6] rate: [-0.05, -0.01] deg/min
+Sun Az Delta: 98    
+
+Comment: HIP 72573 - V=5.64, B-V=0.68
+Test Occultation Star:
+UCAC4 833-014795
+J= 11.401, K=11.141
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+21:18:30 99.2  85.2  N32 17.3 W067 30.9 265/035  -56  17:47:23 37.5  134.8 N/A   53.7    9.8     
+21:23:30 99.2  85.0  N32 21.1 W066 39.7 264/035  -56  17:55:49 37.3  132.5 -0.45 54.2    8.0     
+21:28:30 99.2  84.8  N32 25.0 W065 48.5 264/035  -56  18:04:14 37.2  130.3 -0.45 54.8    6.3     
+21:33:30 99.2  84.5  N32 29.1 W064 57.3 263/034  -56  18:12:40 37.0  128.1 -0.45 55.3    4.5     
+21:38:30 99.2  84.3  N32 33.4 W064 06.2 263/034  -56  18:21:05 36.8  125.9 -0.44 56.1    2.8     
+21:43:30 99.2  84.1  N32 37.9 W063 15.1 263/033  -56  18:29:30 36.7  123.6 -0.44 56.8    1.0     
+21:48:30 99.2  83.9  N32 42.4 W062 24.0 264/033  -56  18:37:56 36.5  121.4 -0.44 57.5    -0.8    
+21:53:30 99.2  83.8  N32 47.1 W061 32.9 265/032  -56  18:46:21 36.4  119.2 -0.44 58.1    -2.5    
+21:58:30 99.1  83.6  N32 51.8 W060 41.9 265/032  -56  18:54:46 36.2  117.0 -0.44 58.7    -4.3    
+22:03:30 99.1  83.4  N32 56.5 W059 50.8 267/031  -56  19:03:11 36.0  114.9 -0.44 59.3    -6.1    
+22:08:30 99.0  83.3  N33 01.4 W058 59.8 268/031  -56  19:11:36 35.8  112.7 -0.44 59.6    -7.8    
+22:13:30 98.9  83.2  N33 06.2 W058 08.8 269/030  -56  19:20:00 35.6  110.5 -0.43 60.0    -9.6    
+22:18:30 98.9  83.1  N33 11.1 W057 17.8 270/030  -56  19:28:25 35.5  108.3 -0.43 60.3    -11.4   
+22:23:30 98.8  83.0  N33 16.0 W056 26.9 271/029  -56  19:36:50 35.3  106.2 -0.43 60.5    -13.1   
+22:28:30 98.7  82.9  N33 21.0 W055 35.9 272/029  -56  19:45:14 35.1  104.0 -0.43 60.8    -14.9   
+22:33:30 98.6  82.8  N33 26.0 W054 45.0 273/028  -56  19:53:39 34.9  101.9 -0.43 61.0    -16.6   
+22:38:30 98.5  82.7  N33 31.0 W053 54.1 274/028  -56  20:02:04 34.7  99.8  -0.43 61.0    -18.3   
+22:43:30 98.4  82.7  N33 36.0 W053 03.2 275/027  -56  20:10:28 34.5  97.6  -0.43 61.1    -20.1   
+22:48:30 98.2  82.6  N33 41.0 W052 12.3 275/026  -56  20:18:52 34.3  95.5  -0.42 61.0    -21.8   
+
+
+Leg 7 (Dead Leg)    Start: 22:49:01     Leg Dur: 00:10:41   Alt.: 39000 ft                          
+End lat: N34 19.2   End Lon: W050 27.4 
+
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+22:49:01 79.7  64.0  N33 42.2 W052 07.2 276/026  -56  20:19:44 N/A   N/A   N/A   N/A     -22.0   
+22:59:42 80.4  65.0  N34 19.1 W050 27.4 276/027  -56  20:37:06 N/A   N/A   N/A   N/A     -25.4   
+
+
+Leg 8 (Dead Leg)    Start: 23:04:21     Leg Dur: 00:10:00   Alt.: 39000 ft                          
+Init Hdg: 230.0 deg 
+
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+23:04:21 247.8 232.4 N33 57.0 W050 08.9 277/025  -56  20:42:59 N/A   N/A   N/A   N/A     -26.7   
+23:14:21 247.0 231.5 N33 06.2 W051 20.4 278/024  -56  20:48:15 N/A   N/A   N/A   N/A     -27.9   
+
+
+Leg 9 (Triton Occultation Star) Start: 23:14:24     Leg Dur: 00:40:00   Alt.: 39000 ft                          
+ObspID: 05_0125     Blk: OB_05_0125_01  Priority: A         Obs Dur: 00:30:00   
+Target: Triton Occultation Star (Tr20171005) Calibration Run RA: 22h54m18.43s    Dec: -08d00m08.3s   Equinox: J2000.0    
+Elev: [39.0, 44.5]  ROF: [328.6, 330.6] rate: [+0.04, +0.06] deg/min
+Moon Angle: 34      Moon Illum: 100%    THdg: [229.9, 234.2] rate: [+0.10, +0.11] deg/min
+
+
+Comment: Center at:
+UT 23:54:24
+Lat: 29d43.0m Lon: -56d3.5m
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+23:14:24 245.4 229.9 N33 05.9 W051 20.7 278/024  -56  20:48:17 39.0  328.6 N/A   54.4    -27.9   
+23:19:24 245.9 230.4 N32 39.5 W051 55.4 279/023  -56  20:50:59 39.8  328.8 +0.04 54.1    -28.6   
+23:24:24 246.5 230.9 N32 13.4 W052 30.2 280/023  -56  20:53:40 40.5  329.0 +0.04 53.7    -29.2   
+23:29:24 247.1 231.4 N31 47.6 W053 05.3 280/022  -56  20:56:21 41.1  329.3 +0.05 53.1    -29.9   
+23:34:24 247.6 232.0 N31 22.1 W053 40.5 281/021  -56  20:59:01 41.8  329.5 +0.05 52.6    -30.5   
+23:39:24 248.2 232.5 N30 56.8 W054 15.9 281/020  -56  21:01:40 42.5  329.8 +0.05 52.1    -31.2   
+23:44:24 248.8 233.1 N30 31.9 W054 51.6 282/020  -56  21:04:18 43.2  330.0 +0.05 51.7    -31.8   
+23:49:24 249.3 233.6 N30 07.3 W055 27.4 282/019  -56  21:06:55 43.9  330.3 +0.06 51.4    -32.5   
+23:54:24 249.9 234.2 N29 43.0 W056 03.5 283/018  -56  21:09:32 44.5  330.6 +0.06 51.2    -33.1   
+
+
+Leg 10 (Triton Occultation Star) Start: 23:54:24     Leg Dur: 00:20:00   Alt.: 39000 ft                          
+ObspID: 05_0125     Blk: OB_05_0125_01  Priority: A         Obs Dur: 00:20:00   
+Target: Triton Occultation Star (Tr20171005) Calibration Run RA: 22h54m18.43s    Dec: -08d00m08.3s   Equinox: J2000.0    
+Elev: [44.5, 47.1]  ROF: [330.6, 332.0] rate: [+0.06, +0.07] deg/min
+Moon Angle: 34      Moon Illum: 100%    THdg: [234.2, 236.6] rate: [+0.12, +0.12] deg/min
+
+
+Comment: Center at:
+UT 23:54:24
+Lat: 29d43.0m Lon: -56d3.5m
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+23:54:24 249.9 234.2 N29 43.0 W056 03.5 283/018  -56  21:09:32 44.5  330.6 N/A   51.2    -33.1   
+23:59:24 250.4 234.8 N29 19.0 W056 39.8 283/017  -56  21:12:08 45.2  331.0 +0.06 51.0    -33.8   
+00:04:24 251.0 235.4 N28 55.4 W057 16.2 283/017  -56  21:14:43 45.9  331.3 +0.07 50.8    -34.4   
+00:09:24 251.5 236.0 N28 32.1 W057 52.9 283/016  -56  21:17:17 46.5  331.7 +0.07 50.6    -35.0   
+00:14:24 252.1 236.6 N28 09.2 W058 29.8 284/015  -56  21:19:50 47.1  332.0 +0.07 50.4    -35.7   
+
+
+Leg 11 (Dead Leg)   Start: 00:15:36     Leg Dur: 01:00:00   Alt.: 39000 ft                          
+Init Hdg: 280.0 deg 
+
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+00:15:36 295.5 280.0 N28 07.2 W058 40.1 283/015  -56  21:20:22 N/A   N/A   N/A   N/A     -35.8   
+01:15:36 289.1 275.5 N29 11.7 W067 27.3 271/025  -55  21:45:23 N/A   N/A   N/A   N/A     -40.7   
+
+
+Leg 12 (Dead Leg)   Start: 01:20:01     Leg Dur: 00:20:00   Alt.: 39000 ft                          
+Init Hdg: 75.0 deg  
+
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+01:20:01 87.8  74.2  N29 37.1 W067 27.7 270/026  -55  21:49:47 N/A   N/A   N/A   N/A     -41.4   
+01:40:01 90.7  76.0  N30 19.2 W064 16.9 267/026  -56  22:22:33 N/A   N/A   N/A   N/A     -47.5   
+
+
+Leg 13 (Dead Leg)   Start: 01:44:43     Leg Dur: 01:00:00   Alt.: 39000 ft                          
+Init Hdg: 267.0 deg 
+
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+01:44:43 281.7 267.0 N30 44.8 W064 18.9 266/027  -56  22:27:08 N/A   N/A   N/A   N/A     -48.2   
+02:44:43 274.6 263.3 N30 02.9 W073 06.0 273/034  -55  22:52:10 N/A   N/A   N/A   N/A     -53.1   
+
+
+Leg 14 (Triton Occ. Star Revist) Start: 02:44:58     Leg Dur: 00:30:00   Alt.: 39000 ft                          
+ObspID: 05_0125     Blk: OB_05_0125_02  Priority: A         Obs Dur: 00:20:00   
+Target: Triton Occultation Star (Tr20171005) Calibration Run RA: 22h54m18.43s    Dec: -08d00m08.3s   Equinox: J2000.0    
+Elev: [52.0, 51.6]  ROF: [3.0, 7.4] rate: [+0.15, +0.15] deg/min
+Moon Angle: 36      Moon Illum: 100%    THdg: [272.0, 277.1] rate: [+0.17, +0.17] deg/min
+
+
+Comment: 20 of 20 minutes.
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+02:44:58 283.3 272.0 N30 02.8 W073 08.1 273/034  -55  22:52:16 52.0  3.0   N/A   42.8    -53.1   
+02:49:58 283.8 272.8 N30 04.4 W073 51.7 273/034  -55  22:54:22 51.9  3.8   +0.15 42.6    -53.4   
+02:54:58 284.3 273.7 N30 06.5 W074 35.2 273/035  -55  22:56:29 51.9  4.5   +0.15 42.3    -53.8   
+02:59:58 284.7 274.5 N30 09.3 W075 18.6 273/036  -55  22:58:36 51.9  5.2   +0.15 42.0    -54.1   
+03:04:58 285.2 275.4 N30 12.6 W076 01.9 274/037  -55  23:00:44 51.8  6.0   +0.15 41.8    -54.4   
+03:09:58 285.6 276.2 N30 16.6 W076 45.1 274/037  -55  23:02:52 51.7  6.7   +0.15 41.5    -54.7   
+03:14:58 286.1 277.1 N30 21.1 W077 28.2 274/038  -55  23:05:00 51.6  7.4   +0.15 41.2    -55.0   
+
+
+Leg 15 (Approach via BARBS) Start: 03:15:34     Leg Dur: 00:36:45   Alt.: 39000 ft                          
+Airport: KDAB       End lat: N29 18.4   End Lon: W081 24.5  Sunrise: 11:19:57   Sunrise Az: 96      
+
+
+UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt LosWV   SunElev 
+03:15:34 264.2 255.2 N30 20.7 W077 33.4 274/038  -55  23:05:16 N/A   N/A   N/A   N/A     -55.1   
+03:43:22 259.9 253.5 N29 18.4 W081 24.5 275/036  -55  23:17:44 N/A   N/A   N/A   N/A     -57.8   TURN
+03:49:11 51.4  44.9  N28 56.5 W081 10.2 055/006  23   23:24:31 N/A   N/A   N/A   N/A     -59.1   
+03:52:19 57.7  51.0  N29 05.1 W080 58.2 054/006  23   23:28:28 N/A   N/A   N/A   N/A     -59.5   
+                  ******** Potential SUA Incursions ********
+Zone/Sec       Type       Ctrl Name                Effective Time
+W136F          Warning    KZJX DAYTONA BEACH, FL   CONTINUOUS
+W137E          Warning    KZJX JACKSONVILLE, FL    CONTINUOUS
+W137F          Warning    KZJX DAYTONA BEACH, FL   CONTINUOUS
+W138E          Warning    KZJX JACKSONVILLE, FL    CONTINUOUS
+W139E          Warning    KZJX JACKSONVILLE, FL    CONTINUOUS

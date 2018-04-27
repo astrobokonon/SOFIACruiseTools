@@ -1,0 +1,9 @@
+{"display": ["FILENAME", "DATE-OBS",
+             "OBJECT", "AOR_ID", "SPECTEL", "DICHROIC",
+             "UTCSTART", "FRMTIME", "FRMRATE",
+             "ALTITUDE", "ZA", "WDEPTHPC",
+             "EPERADU", "EXPTIME", "TOTINT", "TELCORR",
+             "BGLEVEL1", "BGLEVEL2", "BGLEVEL3", "BGLEVEL4",
+             "BGAVG", "BGSTDDEV", "BGLGSM", "BGPERCEN",
+             "BGMES", "BGSTDMES"]
+}

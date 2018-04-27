@@ -1,0 +1,13 @@
+{"display": ["FILENAME", "MISSN-ID", "OBJECT", "PRODTYPE", "DATAQUAL", 
+             "OBSTYPE", "SPECTEL", "DICHROIC", "ALTITUDE", "ZA",
+             "SRCPOSX", "SRCPOSY",
+             "STCENTX", "STCENTXE", "STCENTY", "STCENTYE",
+             "SRCDIFF",
+             "STFWHMX", "STFWHMXE", "STFWHMY", "STFWHMYE", 
+             "STPEAK", "STPEAKE", "STANGLE", "STANGLEE", 
+             "STPRFLX", "STPRFLXE", "STAPFLX", "STAPFLXE", 
+             "MODLFLX", "MODLFLXE", "REFCALZA", "REFCALAW",
+             "REFCALFC", "REFCALER", "AVGCALFC", "AVGCALER", 
+             "TELCORR", "CALFCTR", "ERRCALF", "LAMREF",
+             "REPORT_REFCALFC", "REPORT_REFCALER", "CALFDIFF", "CALQUAL"]
+}

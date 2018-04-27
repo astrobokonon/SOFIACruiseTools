@@ -1,0 +1,2397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="Descriptions.xsl"?>
+<!-- <?xml-stylesheet type="text/xsl" href="FITS.xsl"?> -->
+<!-- <?xml-stylesheet type="text/xsl" href="FITSSample.xsl"?> -->
+
+<!DOCTYPE KeywordDictionary SYSTEM "KeywordDictionary.dtd">
+
+<KeywordDictionary title="SOFIA Keyword Dictionary"
+     version="REV D DRAFT"
+     date="10-17-2012"
+     author="R. Y. Shuping/E. Moore">
+<!-- All FITS files must adhere to the NOST FITS standard (REFERENCE).
+     A standard list can be found HERE (REFERENCE).
+     
+     VersionHistory version ="1.4a" date="10-6-2008"
+     - Changed <SCLData> to <HKData>
+     - Modified following keywords:
+     	- ObservationType
+     	- ObservationID
+     	- ObservationTitle
+     	- AORUniqueID
+     	- FlightLeg
+		- WaterVapor
+		- PrimaryMirrorTemperature_1,2,3
+		- SecondaryMirrorTemperature_1
+		- GroundSpeed
+		- TelescopeRA/Dec
+		- ObservationRA/Dec
+		- TrackingMode
+		- TrackingGuideStar
+		- ChopFrequency
+		- ChopMode
+		- ChopAmplitude_1,2
+		- ChopAngle
+		- ChopPhase
+		- ChopSourceSignal
+		- ChopSettleTime
+		- NodBeam
+		- NodAngle
+		- BandWidth
+		- ScanStartRA/Dec
+		- ScanEndRA/Dec
+		- ObjectName
+	- Removed following keywords:
+		- PipelineVersion
+		- ParentObservation
+		- ProposalUniqueID
+		- ScheduleBlock
+		- FlightNumber
+		- Altitude
+		- TelescopeFocus
+		- RotationAngle
+		- TelescopeControlSystem
+		- isROFFreeze
+		- PassBand
+		- HeaderChecksum
+		- ObservationTitle
+	- Added Following keywords:
+		- InstrumentRunID
+		- MissionID
+		- TASCUStatus
+		- CurrentAOI_ID	
+		- PressureAltitude
+		- SpectralElement
+
+     VersionHsitory version ="1.3b" date="11-29-2003"
+     - Minor updates to DetectorAngle and ChopMode
+
+     VersionHistory version="1.2" date="6-20-2003"
+     - Updates associated with HIPO integration
+     - HIPO spec changed in ObservationID to reflect red and blue channels, which act as seperate instruments.
+	- ObservationSerialNumber added.
+	- Filter changed to PassBand.
+	- Tightened KeywordDictionary specification
+	- Additional specification of some enumerated types.
+	- Data type for ChopPhase changed to string.
+	- SCDIR -> SCNDIR
+	- FLIGHTLEG -> FLIGHTLG
+	- ALTITUDE -> AC_ALT, to conform with AC_LAT and AC_LONG
+	- Sexigessimal support for all RA, Decs, and hour angle.
+	- ProcesingStatus updated to match SOFIA PDMP (DRAFT - G. Sandell)
+
+
+     VersionHistory version="1.1" date="12-4-2002"
+     - First version imported to CVS.
+     - Keyword lists updated: Observation, Pipeline, Origination, Environmental,
+       Telescope, Data Collection, Instrument, Array Detector, Chopping, Nodding,
+       Dithering, Mapping, Scanning
+     - SCL Data mapping complete.  There are still some keywords which need some
+       sort of SCL equivalent.  They are marked as NEEDED.
+     - New OBS_ID specification included.
+     - Scanning keywords re-defined based on HAWC data headers.
+     - Change example values to be consistent with an observation of Orion.
+     - Update comment fields - include units, etc...
+     - Our use of DefaultCoordSys (FITS: RADECSYS) in previous versions was
+       incorrect:  It is meant for use with WCS keywords, not with telescope
+       pointing keywords.  Eliminate RADECSYS and push ICRS specification into
+       TELRA/DEC and OBSRA/DEC.  Current use of EQUINOX is OK and remains
+       unchanged.
+     - Updated Nodding keywords.
+     - Data collection keywords updated based on SOFIA operational concept
+       document (USRA-SOF-A001 Rev 5):
+     - Mapping/SCanning separated; "Guiding" changed to "Tracking";
+       ROF Freeze-mode added; requirement status downgraded to "conditional"
+       for all.
+
+     VersionHistory version="1.0" date="15 July 2002"
+     - Minor changes in response to current issues:  Chop and nod amplitudes
+     changed to arcseconds; DeltaTrackRateRA/Dec.  Minor changes in response to
+     Proposed AOR Format (P. Stein, 16 July 2002):  AORUniqueID, AOTUniqueID,
+     ObservingPlanUniqueID.  Requirement code changes:
+     InstrumentHardware/SoftwareVersion; Sun/MoonAngle.
+     Dropped Keywords: isInherited, TemperatureDetector, Pipeline,
+     PipelineSoftwareVersion.
+     New Keywords:  FileGroupID, DataQualityAssessment, proposed aircraft
+     related keywords.
+
+     VersionHistory version="0.7" date="3 July 2002"
+     Many changes in reponse to current issues:  ObservationID and Filename
+     naming conventions changed; FOCAL PLANE added to user defined coordinate
+     system options; clarifications added to Error and ObservationRA/Dec
+     keywords; new keyword Resolution created for describing gross spectral
+     resolution of an instrument; keyword Bandwidth redefined to include imaging
+     and spectroscopy applications; new Heterodyne keywords created based on
+     SDFITS standard; new keyword DataQualityAssessment created.  Other mostly
+     cosmetic changes also made.
+
+     VersionHistory version="0.6" date="6 June 2002"
+     Dictionary converted to XML - content essentially the same as version 0.5.
+
+     VersionHistory version="0.5" date="6 November 2001"
+     First real on-line version of keyword list and dictionary. Many issues are
+     still unresolved.
+
+-->
+    <KeywordList title="Observation Keywords">
+      <Keyword title="Datasource" >
+         <Description> Overall source/type of data: ASTRO = Astronomical
+	 observation; CALIBRATION = calibration data; LAB = Laboratory data;
+	  TEST = Test data; FIRSTPOINT = SOFIA first pointing observation;
+	  OTHER = Any other source not listed here.  If datasource is set to "CALIBRATION", the host file will be made public immediately upon ingestion.</Description>
+         <Value representation="string">
+            <Range type="enum"> ASTRO, CALIBRATION, LAB, TEST, OTHER, FIRSTPOINT</Range>
+            <Example>ASTRO </Example>
+         </Value>
+         <Comment>Data Source</Comment>
+         <FITS name="DATASRC" hdu="primary" type="str"/>
+         <Requirement phase="ES" condition="*"/>
+      </Keyword>
+      <Keyword title="ObservationType" >
+         <Description> The type of observation such as an astronomical exposure or a particular type of calibration exposure:   OBJECT = astronomical object; STANDARD = Astronomical flux standard for calibration; LAMP = Calibration lamp; FLAT = Flat-field exposure for calibration;  DARK = Dark current exposure for calibration.</Description>
+         <Value representation="string">
+            <Range type="enum"> OBJECT, STANDARD_FLUX, STANDARD_TELLURIC, LAMP, FLAT, DARK, BIAS, SKY, BB, GASCELL, LASER, FOCUS_LOOP </Range>
+            <Example>'OBJECT' </Example>
+         </Value>
+         <Comment>Observation type </Comment>
+         <FITS name="OBSTYPE" hdu="any" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="SourceType" >
+         <Description>Source type.  Maps to AOR SourceType.  Needed for reduction of slit spectra, but useful for other data types as well.  </Description>
+         <Value representation="string">
+            <Range type="enum"> POINT_SOURCE,EXTENDED_SOURCE,OTHER,UNKNOWN</Range>
+            <Example>'POINT_SOURCE' </Example>
+         </Value>
+         <Comment>Source type </Comment>
+         <FITS name="SRCTYPE" hdu="any" type="str"/>
+         <Requirement phase="S3" provider="DCS" location="AOR" />
+      </Keyword>
+      <Keyword title="ObservationStatus" >
+         <Description> Status of the observation:  OK = observation performed successfully;  ERROR = Observation completed but with an error. </Description>
+         <Value representation="string">
+            <Range type="enum"> OK, ERROR </Range>
+            <Example>'OK' </Example>
+         </Value>
+         <Comment>Observation status</Comment>
+         <FITS name="OBSSTAT" hdu="primary" type="str"/>
+      </Keyword>
+      <Keyword title="KeywordDictionaryVersion" >
+         <Description> SOFIA keyword dictionary version.  Since the keywrod dictionary is now a part of the DCS ICD (DCS_SI_01, this keyword should reference which version of the ICD is being used.  The document rev (A, B, C, etc...) should be appended to the string 'DCS_SI_01' with an underscore (see example).  </Description>
+         <Value representation="string">
+            <Example>'DCS_SI_01_A'</Example>
+         </Value>
+         <Comment>SOFIA Keyword dictionary version, DCS ICD rev.</Comment>
+         <FITS name="KWDICT" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="ObservationID" >
+	 <Description>The unique identifier for any given data file, meant
+	 to provide ready timing and sequencing information at a glance to the user.
+	 It is created at the same time that the data file is first written, in a
+	 format common to all instruments (and thus mandated by the observatory).
+	 The OBS_ID is assigned to saved datasets only. Some test data may be taken
+	 during a flight for immediate diagnostic purposes, but not saved (e.g.,
+	 a snapshot to verify pointing), in which case there would be no point in
+	 assigning an OBS_ID, but we note that the default should almost always be
+	 to save the data and thus assign this keyword.
+	 The OBS_ID number is distinct from the AOR_ID. The AOR_ID is the unique
+	 identifier for an AOR which can, in principle, generate multiple files
+	 to be saved. Each of these files would have a unique OBS_ID. The mapping
+	 from AOR_ID to OBS_ID is one-to-many, i.e., one AOR can produce
+	 multiple data files. Note that the converse is not true -- one data file
+	 cannot be the product of multiple AORs.
+	 We suggest the following as a format for the OBS_ID keyword: MMMMMM_[C]nnn.
+	 Where: MMM = Mission ID (see MissionID) -- Data not
+	 taken as part of a SOFIA mission should set MMM to current date or some other suitable value;
+	 C = Channel identifier (optional) -- preferably a letter (B for Blue, S for short, etc...);
+	 nnn = Observation sequence number -- The sequence should be reset at mission
+	 start and advanced all the way through mission close-out (as defined my the MCCS),
+	 which should allow for capture of pre- and post-flight data -- This field
+	 will have a minimum of three digits (typical expected length), but more
+	 digits will be allowed as necessary.
+	 </Description>
+         <Value representation="MMMMMM_[C]nnn">
+            <Example>'2011-06-08_FO_F064B0187'</Example>
+         </Value>
+         <Comment>SOFIA Observation Identification</Comment>
+         <FITS name="OBS_ID" hdu="any" type="str"/>
+         <Requirement phase="ES" condition="*"/>
+      </Keyword>
+      <Keyword title="ObservationSerialNumber" >
+         <Description>Running count of observation number for observing session or flight, starting with 1.  This value should be identical to the observation sequence number appended to the ObservationID.</Description>
+         <Value representation="integer">
+            <Example> 1</Example>
+         </Value>
+         <Comment>Running count of observation number for observing session or flight.</Comment>
+         <FITS name="OBSERNO" hdu="primary" type="int"/>
+      </Keyword>
+      <Keyword title="ImageID" >
+         <Description>The image identification when there are multiple images for an observation within the SAME file (e.g. images stored as FITS extensions).</Description>
+         <Value representation="integer">
+            <Example> 1</Example>
+         </Value>
+         <Comment>Image identification index</Comment>
+         <FITS name="IMAGEID" hdu="extension" type="int"/>
+         <Requirement phase="conditional" condition="Multiple images in a single file for an observation, e.g. dithering, mapping, etc..."/>
+      </Keyword>
+      <Keyword title="ObjectName" >
+         <Description> The object name as given by the observer, or as specified by the flight plan.</Description>
+         <Value representation="string">
+            <Example>'Orion Nebula (M42)'</Example>
+         </Value>
+         <Comment>Object Name</Comment>
+         <FITS name="OBJECT" hdu="any" type="str"></FITS>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="AOTUniqueID" >
+         <Description> Unique Astronomical Observation Template (AOT) identifier as defined in DCS-SI ICD.  </Description>
+         <Value representation="string">
+            <Example>'AOT_FORCAST_GRISM'</Example>
+         </Value>
+         <Comment>Astronomical Observation Template Identifier</Comment>
+         <FITS name="AOT_ID" hdu="any" type="str"/>
+         <Requirement phase="conditional" condition="If AOT in use."/>
+      </Keyword>
+      <Keyword title="AORUniqueID" >
+         <Description> Unique Astronomical Observation Request (AOR) identifier.  The AOR_ID is assigned during the creation of the final version of an AOR to be used in flight planning. The value of this keyword should be equivalent to the AOR/ID tag in the AOR document.  During Early Science, the AOR ID will be equivalent to the proposed observation ID and will be documented in the observing plan.</Description>
+         <Value representation="string">
+            <Example>'02_0103_01'</Example>
+         </Value>
+         <Comment>Astronomical Observation Request Identifier.</Comment>
+         <FITS name="AOR_ID" hdu="any" type="str"/>
+	 <Source provider="DCS" location="Observing Plan" />
+         <Requirement phase="ES" condition="If observation associated with DCS AOR"/>
+      </Keyword>
+      <Keyword title="FileGroupID" >
+         <Description>Identifier for a group of images stored as seperate data files.  This is the mechanism for associating multiple data files that should be considered together.  Can be defined by the user -- not necessarily unique in the SOFIA mission.  For example, suppose a map of Orion is made such that each individual map point is stored in a seperate file.  The user could then set this keyword to something like "OrionMap_20040101" for each of the files so that they can be associated later.</Description>
+         <Value representation="string">
+            <Example>'ORIONMAP_20040101'</Example>
+         </Value>
+         <Comment>File group identifier.</Comment>
+         <FITS name="FILEGPID" hdu="primary" type="str"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Data Processing Related Keywords">
+   <Keyword title="ProcessingStatus" >
+         <Description> Status of any processing applied to the data, as defined in the SOFIA Project Data Management Plan:
+	 LEVEL_0 = Raw engineering data for diagnostic purposes, generally not intended for archiving;
+	 LEVEL_1 = Raw, uncalibrated science data in FITS or SDFITS format with complete header adhering to the SOFIA Keyword Dictionary;
+	 LEVEL_2 = Processed science data orrected for instrument artifacts;
+	 LEVEL_3 = Flux-calibrated science data (e.g. BUNIT keyword takes image to MJy/sr);
+	 LEVEL_4 = Higher order products.
+	 </Description>
+         <Value representation="string">
+            <Range type="enum"> LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4 </Range>
+            <Example>'LEVEL_1'</Example>
+            <Default>'LEVEL_0'</Default>
+         </Value>
+         <Comment>Processing status</Comment>
+         <FITS name="PROCSTAT" hdu="primary" type="str"/>
+         <Source provider="SI | Pipeline" />
+         <Requirement phase="ES" condition="*"/>
+      </Keyword>
+      <Keyword title="HeaderStatus" >
+         <Description> Status of FITS header data (updated during post-processing).  ORIGINAL:  Header values are from original raw data file and have not been modified.  UNKNOWN:  header values have not been reviewed/verified.  CORRECTED:  header values have been corrected as part of post-processing, see HISTORY records for details.  ERROR: There is a problem with the header values that has not been fixed, see COMMENT records for details.
+        SI would set HEADSTAT = 'ORIGINAL" for raw data acquired on the AC.
+     </Description>
+         <Value representation="string">
+            <Range type="enum"> ORIGINAL, UNKNOWN, MODIFIED, CORRECTED, ERROR </Range>
+            <Example>'ORIGINAL'</Example>
+            <Default>'UNKNOWN'</Default>
+         </Value>
+         <Comment>Header status</Comment>
+         <FITS name="HEADSTAT" hdu="primary" type="str"/>
+         <Source provider="SI | DCS" />
+         <Requirement phase="S3"/>
+      </Keyword>
+
+   <Keyword title="PipelineName" >
+         <Description>Name of pipeline/processing software used to generate file (e.g. “FDRP v1.0.0”).  LEVEL 2/3/4 data only.
+     </Description>
+         <Value representation="string">
+            <Example>'FDRP v1.0.0'</Example>
+         </Value>
+         <Comment>Pipeline/Processing Software</Comment>
+         <FITS name="PIPELINE" hdu="primary" type="str"/>
+         <Source provider="Pipeline" />
+         <Requirement phase="S3" condition="LEVEL 2/3/4 Product."/>
+      </Keyword>
+      
+       <Keyword title="PipelineVersion" >
+         <Description>Full release tag for pipeline that produced the file (e.g. “FDRP_1_0_0_UT2013_4_1”). LEVEL 2/3/4 data only.
+     </Description>
+         <Value representation="string">
+            <Example>'FDRP_1_0_0_UT2013_4_1'</Example>
+         </Value>
+         <Comment>Pipeline Version, full tag.</Comment>
+         <FITS name="PIPEVERS" hdu="primary" type="str"/>
+         <Source provider="Pipeline" />
+         <Requirement phase="S3" condition="LEVEL 2/3/4 Product."/>
+      </Keyword>
+
+
+
+   <Keyword title="ProductType" >
+         <Description>Type of product produced by the processing software or pipeline, as defined in SI-DCS ICD.   Should be simple identifier that the GI can use to look up in the processing handbook or ICD.  ID should include an identifier for the software that was used to produce the file (e.g. "DRIP_XXX").  For example, the FORCAST  product types are:  DRIP-UNDISTORTED, DRIP-MERGED, DRIP-COADDED, DRIP-REDALL.
+	 Generally, the SI will not need to set this keyword for raw data.
+     </Description>
+         <Value representation="string">
+            <Example>'DRIP-COADDED'</Example>
+         </Value>
+         <Comment>Product type.</Comment>
+         <FITS name="PRODTYPE" hdu="primary" type="str"/>
+         <Source provider="Pipeline" />
+         <Requirement phase="S3" condition="LEVEL 2/3/4 Product."/>
+      </Keyword>
+
+   <Keyword title="DCSFileRevision" >
+         <Description> File revision identifier, to be inserted by archive ingestion tasks if file was modified as part of post-processing.
+	 Change details to be documented using HISTORY records at the end of the header.  String value, typically a lower case 'r' (ASCII 114) immediately followed by a integer greater than zero in decimal format with no padding or leading zeros.
+E.g., "r1" not "r01".  The SI will not need to set this keyword for raw data; included here for completeness.  </Description>
+         <Value representation="string">
+            <Example>'r2'</Example>
+         </Value>
+         <Comment>File revision identifier.</Comment>
+         <FITS name="FILEREV" hdu="primary" type="str"/>
+         <Source provider="DCS only"/>
+         <Requirement phase="S3" condition="If file changed in post-processing."/>
+      </Keyword>
+      <Keyword title="DataQualityAssessment" >
+         <Description>Data quality assessment - to be inserted by SSMOC staff (TBD).  The value of this keyword should convey the utility of the data:  USELESS = Data which convey no meaning and cannot be "fixed" (e.g. all data values equal 0); BAD = data which cannot be "fixed" but may be useful; PROBLEM = data which require some "fix" beyond standard calibration techniques for the given instrumnet; GOOD = Data appear normal for the given instrument; UNKNOWN = Quality cannot be determined. </Description>
+         <Value representation="string">
+            <Range type="enum"> USELESS, BAD, PROBLEM, GOOD, UNKNOWN </Range>
+            <Example>'GOOD'</Example>
+         </Value>
+         <Comment>Data quality flag.</Comment>
+         <FITS name="DATAQUAL" hdu="primary" type="str"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Mission Management Keywords">
+      <Keyword title="ObservingPlanUniqueID" >
+         <Description> The observing plan which contains all the AORs.  The value of this keyword should be equivalent to &lt;AOR/Reference/ObservingPlan&gt; in the AOR document.  </Description>
+         <Value representation="string">
+            <Example>'81_0131'</Example>
+         </Value>
+         <Comment>Observing plan identification</Comment>
+         <FITS name="PLANID" hdu="primary" type="str"/>
+         <Requirement phase="ES" condition="*" />
+         <Source provider="DCS" location="Observing Plan" />
+      </Keyword>
+      <Keyword title="AircraftDeployment" >
+         <Description> Aircraft base of operations for current instrument run.</Description>
+         <Value representation="string">
+            <Example>'DAOF'</Example>
+            <Default>'DAOF'</Default>
+         </Value>
+         <Comment>Site deployment</Comment>
+         <FITS name="DEPLOY	" hdu="primary" type="str"/>
+	 <Source provider="SSC" location="Mission Plan" />
+         <Requirement phase="ES"/>
+      </Keyword>
+<!--       <Keyword title="InstrumentRunID" >
+         <Description> The scheduled instrument run, as specified by the flight planner, during which the data were obtained.</Description>
+         <Value representation="string">
+            <Example>'2002_01'</Example>
+         </Value>
+         <Comment>Scheduling block identifier</Comment>
+         <FITS name="INSTRNID	" hdu="primary" type="str"/>
+	 <Source provider="MCCS" location="TBD" />
+         <Requirement phase="conditional" />
+      </Keyword> -->
+<!-- Not clear that InstRun ID is needed post facto. -->      
+      <Keyword title="MissionID" >
+         <Description> Unique mission identifier, as specified in the Mission Plan and returned by the MCCS.  Current spec for mission ID includes a date stamp, instrument ID, and mission type indicators.  </Description>
+         <Value representation="string">
+            <Example>2011-06-08_FO_F06</Example>
+         </Value>
+         <Comment>Mission ID</Comment>
+         <FITS name="MISSN-ID	" hdu="primary" type="str"/>
+	 <Source provider="MCCS" location="session.user_environment.mission_id" />
+         <Requirement phase="ES" condition="*" />
+      </Keyword>
+      <Keyword title="FlightLeg" >
+         <Description> Flight leg identifier for given mission ID.</Description>
+         <Value representation="integer">
+            <Example> 4</Example>
+         </Value>
+         <Comment>Flight leg</Comment>
+         <FITS name="FLIGHTLG	" hdu="primary" type="int"/>
+	 <Source provider="MCCS" location="fltexec.leg_data.leg_seq" />
+         <Requirement phase="conditional" />
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Origination Keywords">
+   <Keyword title="Origin" >
+         <Description> Organization or institution responsible for creation of FITS file.</Description>
+         <Value representation="string">
+            <Default> none </Default>
+            <Example>'FORCAST -- Cornell Univ.'</Example>
+         </Value>
+         <Comment>Origin of FITS file.</Comment>
+         <FITS name="ORIGIN" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+
+      <Keyword title="Observers" >
+         <Description> Observer name(s). </Description>
+         <Value representation="string">
+            <Default> none </Default>
+            <Example>'Jane Astro'</Example>
+         </Value>
+         <Comment>Observer(s)</Comment>
+         <FITS name="OBSERVER" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="FileCreator" >
+         <Description> Software task which wrote the FITS file (including version information).</Description>
+         <Value representation="string">
+            <Example>'Mauna Kea IR'</Example>
+         </Value>
+         <Comment>File creation task (with version info). </Comment>
+         <FITS name="CREATOR	" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="TelescopeOperator" >
+         <Description> The telescope operator for the mission.  Can be obtained from list of active MCCS sessions (get list=active_session) if needed. </Description>
+         <Value representation="string">
+            <Example>'Joe Astro'</Example>
+         </Value>
+         <Comment>Telescope operator</Comment>
+         <FITS name="OPERATOR	" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+         <Source provider="SSC" location="Mission Plan" /> 
+      </Keyword>
+      <Keyword title="Filename" >
+	 <Description>Name of host file.  The FILENAME keyword allows for different
+	 stages in the treatment of a dataset: raw, calibrated, custom reduced,
+	 pipelined, or reduced at an intermediate stage. Files resulting from actions
+	 taken upon a given raw dataset will all have the same OBS_ID, but could
+	 have different values of the FILENAME keyword. For the FILENAME format, we
+	 recommend using OBSID as a prefix, and attach qualifiers denoting the stage
+	 of treatment and format.  </Description>
+         <Value representation="string">
+            <Example>'040101_077_05FL001.fits'</Example>
+         </Value>
+         <Comment>Name of host file</Comment>
+         <FITS name="FILENAME" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="Observatory" >
+         <Description> Observatory identification for the site of the observation.</Description>
+         <Value representation="string">
+            <Example>'SOFIA' </Example>
+         </Value>
+         <Comment>Observatory name</Comment>
+         <FITS name="OBSERVAT" hdu="primary" type="str"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Date and Time Keywords">
+      <Keyword title="CreationDate" >
+         <Description> UTC date of file creation in date/time format (yyyy-mm-ddThh:mm:ss.ssss); see FITS standard for additional detail.</Description>
+         <Value representation="yyyy-mm-ddThh:mm:ss[.sss]">
+            <Example>'2004-01-01T13:45:45.2'</Example>
+         </Value>
+         <Comment>Date of file creation</Comment>
+         <FITS name="DATE" hdu="any" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="ObservationDate" >
+         <Description> UTC date of observation at the start of the exposure in date/time format (yyyy-mm-ddThh:mm:ss.ssss); see FITS standard for additional detail.</Description>
+         <Value representation="yyyy-mm-ddThh:mm:ss[.sss]">
+            <Example>'2004-01-01T12:11:10.5'</Example>
+         </Value>
+         <Comment>UTC Date of exposure start</Comment>
+         <FITS name="DATE-OBS" hdu="any" type="str"/>
+         <Requirement phase="ES" condition="*"/>
+      </Keyword>
+      <Keyword title="ObservationStartUTC" >
+         <Description> UTC time at the start of the exposure.</Description>
+         <Value representation="hh:mm:ss.s">
+            <Example>'09:30:01.00'</Example>
+         </Value>
+         <Comment>UTC of exposure start</Comment>
+         <FITS name="UTCSTART" hdu="any" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="ObservationEndUTC" >
+         <Description> UTC time at the end of the exposure.</Description>
+         <Value representation="hh:mm:ss.s">
+            <Example>'09:30:01.00'</Example>
+         </Value>
+         <Comment>UTC of exposure end</Comment>
+         <FITS name="UTCEND" hdu="any" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="ObservationStartLST" >
+         <Description> Local siderial time at the start of the exposure.</Description>
+         <Value representation="hh:mm:ss.s">
+            <Example>'14:00:00.00'</Example>
+         </Value>
+         <Comment>LST of exposure start</Comment>
+         <FITS name="LST-OBS" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="ObservationStartMJD" >
+         <Description> Modified Julian date at the start of the exposure.  The fractional part of the date is given to better than a second of time.</Description>
+         <Value representation="general">
+            <Units>day</Units>
+            <Example> 46890.394063</Example>
+         </Value>
+         <Comment>MJD of exposure start</Comment>
+         <FITS name="MJD-OBS" hdu="any" type="flt"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Environmental Keywords">
+      <Keyword title="WaterVaporZenith_Start" >
+         <Description> Integrated precipitable water vapor to the zenith, running
+average of previous 60 seconds.  Start of observation. </Description>
+         <Value representation="general">
+            <Units>microns</Units>
+            <Range type="gt">0.0</Range>
+            <Example> 1.503</Example>
+         </Value>
+         <Comment>Water vapor, integrated to zenith, observation start.</Comment>
+         <FITS name="WVZ_STA" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="wvm_if.wvmdata.water_vapor" />
+         <Requirement phase="" />
+      </Keyword>
+      <Keyword title="WaterVaporZenith_End" >
+         <Description> Integrated precipitable water vapor to the zenith, running
+average of previous 60 seconds.  End of observation. </Description>
+         <Value representation="general">
+            <Units>microns</Units>
+            <Range type="gt">0.0</Range>
+            <Example> 1.634</Example>
+         </Value>
+         <Comment>Water vapor, integrated to zenith, observation end.</Comment>
+         <FITS name="WVZ_END" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="wvm_if.wvmdata.water_vapor" />
+         <Requirement phase="" />
+      </Keyword>
+      <Keyword title="WaterVaporTALOS" >
+         <Description> Integrated precipitable water vapor along the TA line of sight, running
+	 average of previous 60 second </Description>
+         <Value representation="general">
+            <Units>microns</Units>
+            <Range type="gt">0.0</Range>
+            <Example> 2.220</Example>
+         </Value>
+         <Comment>Water vapor, integrated along TA LOS.</Comment>
+         <FITS name="WVTALOS" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="TBD" />
+      </Keyword>
+      <Keyword title="static_air_temp">
+         <Description>Static air temperature, as returned by the MCCS at start of observation.</Description>
+         <Value representation="general">
+            <Units>C</Units>
+            <Example> -10.5</Example>
+         </Value>
+         <Comment>Static air temperature outside aircraft.    (For Early Science:  Value=NotSet)</Comment>
+         <FITS name="TEMP_OUT" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.static_air_temp | $static_air_temp" />
+     <Requirement phase="S3" />
+      </Keyword>
+<!--      <Keyword title="PrimaryMirrorTemp_Center" >
+         <Description> Primary mirror temp center, at start of observation.</Description>
+         <Value representation="general">
+            <Units>F</Units>
+            <Example> -10.5 </Example>
+         </Value>
+         <Comment>Temperature of primary mirror, center</Comment>
+         <FITS name="TEMPPRIC" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.telescope_env.primary_mirror_backside_edge_center" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="PrimaryMirrorTemp_Forward" >
+         <Description> Primary mirror temp forward, at start of observation.</Description>
+         <Value representation="general">
+            <Units>F</Units>
+            <Example> -10.5 </Example>
+         </Value>
+         <Comment>Temperature of primary mirror, forward</Comment>
+         <FITS name="TEMPPRIF" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.telescope_env.primary_mirror_backside_edge_fwd" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="PrimaryMirrorTemp_Left" >
+         <Description> Primary mirror temp left, at start of observation.</Description>
+         <Value representation="general">
+            <Units>F</Units>
+            <Example> -10.5 </Example>
+         </Value>
+         <Comment>Temperature of primary mirror, left</Comment>
+         <FITS name="TEMPPRIL" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.telescope_env.primary_mirror_backside_edge_left" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="PrimaryMirrorTemp_Right" >
+         <Description> Primary mirror temp right, at start of observation.</Description>
+         <Value representation="general">
+            <Units>F</Units>
+            <Example> -10.5 </Example>
+         </Value>
+         <Comment>Temperature of primary mirror, right</Comment>
+         <FITS name="TEMPPRIR" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.telescope_env.primary_mirror_backside_edge_right" />
+         <Requirement phase="S3" />
+      </Keyword>
+-->
+       <Keyword title="PrimaryMirrorTemperature_1" >
+         <Description> Primary mirror temp #1, at start of observation.</Description>
+         <Value representation="general">
+            <Units>C</Units>
+            <Range type="gt">-273.0</Range>
+            <Example> -10.5 </Example>
+         </Value>
+         <Comment>Temperature of primary mirror</Comment>
+         <FITS name="TEMPPRI1" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="ta_mcp.mcp_hk_pms.pms_temp_1" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="PrimaryMirrorTemperature_2" >
+	 <Description> Primary mirror temp #2, at start of observation.</Description>
+	 <Value representation="general">
+	    <Units>C</Units>
+	    <Range type="gt">-273.0</Range>
+	    <Example> -10.5 </Example>
+	 </Value>
+	 <Comment>Temperature of primary mirror</Comment>
+	 <FITS name="TEMPPRI2" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="ta_mcp.mcp_hk_pms.pms_temp_2" />
+	 <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="PrimaryMirrorTemperature_3" >
+	 <Description> Primary mirror temp #3, at start of observation.</Description>
+	 <Value representation="general">
+	    <Units>C</Units>
+	    <Range type="gt">-273.0</Range>
+	    <Example> -10.5 </Example>
+	 </Value>
+	 <Comment>Temperature of primary mirror</Comment>
+	 <FITS name="TEMPPRI3" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="ta_mcp.mcp_hk_pms.pms_temp_3" />
+	 <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="SecondaryMirrorTemperature_1" >
+         <Description> Temperature of secondary mirror, at start of observation.</Description>
+         <Value representation="general">
+            <Units>C</Units>
+            <Example> -15.2</Example>
+         </Value>
+         <Comment>Temperature of secondary</Comment>
+         <FITS name="TEMPSEC1" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="ta_mcp.mcp_hk_pms.sma_temp_1" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Temperature" >
+         <Description> General format for temperatures.</Description>
+         <Value representation="general">
+            <Units>K</Units>
+            <Range type="gt"> 0.0 </Range>
+            <Example> 250.0</Example>
+         </Value>
+         <Comment>Temperature of XXX</Comment>
+         <FITS name="TEMP_XXX" hdu="any" type="flt"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Aircraft Keywords">
+      <Keyword title="Altitude_Start"  >
+         <Description>Aircraft altitude from mean sea level according to MCCS (baro corrected), at start of observation.</Description>
+         <Value representation="general">
+            <Units>Feet</Units>
+            <Example> 35229</Example>
+         </Value>
+         <Comment>Aircraft pressure altitude, start of observation.</Comment>
+         <FITS name="ALTI_STA" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_15hz.press_alt" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Altitude_End"  >
+         <Description>Aircraft altitude from mean sea level according to MCCS (baro corrected), at end of observation.</Description>
+         <Value representation="general">
+            <Units>Feet</Units>
+            <Example> 35128</Example>
+         </Value>
+         <Comment>Aircraft pressure altitude, end of observation.</Comment>
+         <FITS name="ALTI_END" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_15hz.press_alt" />
+         <Requirement phase="ES" />
+      </Keyword>
+	<Keyword title="Airspeed"  >
+         <Description>True aircraft airspeed, as returned by the MCCS at start of observation. </Description>
+         <Value representation="general">
+            <Units>Knots</Units>
+            <Example> 375.0</Example>
+         </Value>
+         <Comment>True aircraft airspeed. </Comment>
+         <FITS name="AIRSPEED" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_10hz.true_airspeed | $true_airspeed" />
+         <Requirement phase="" />
+      </Keyword>
+      <Keyword title="GroundSpeed"  >
+         <Description>Current ground speed of aircraft, as returned by the MCCS at start of observation.</Description>
+         <Value representation="general">
+            <Units>Knots</Units>
+            <Example> 350.0</Example>
+         </Value>
+         <Comment>Aircraft ground speed. </Comment>
+         <FITS name="GRDSPEED" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.ground_speed | $ground_speed" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Latitude_Start"  >
+         <Description>Current aircraft latitude, as returned by the MCCS at start of observation.</Description>
+         <Value representation="general">
+            <Units>Degrees</Units>
+            <Example> 35.2567</Example>
+         </Value>
+         <Comment>Aircraft latitude, start of observation.</Comment>
+         <FITS name="LAT_STA" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.lat_fms_1 | $latitude" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Longitude_Start"  >
+         <Description>Current aircraft longitude, as returned by the MCCS at start of observation.  W is negative, E is positive, from prime meridian.</Description>
+         <Value representation="general">
+            <Units>Degrees</Units>
+            <Example> 35.2567</Example>
+         </Value>
+         <Comment>Aircraft longitude, start of observation.</Comment>
+         <FITS name="LON_STA" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.lon_fms_1 | $longitude" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Latitude_End"  >
+         <Description>Current aircraft latitude, as returned by the MCCS at end of observation.</Description>
+         <Value representation="general">
+            <Units>Degrees</Units>
+            <Example> 35.2567</Example>
+         </Value>
+         <Comment>Aircraft latitude, end of observation.</Comment>
+         <FITS name="LAT_END" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.lat_fms_1 | $latitude" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Longitude_End"  >
+         <Description>Current aircraft longitude, as returned by the MCCS at end of observation.  W is negative, E is positive, from prime meridian.</Description>
+         <Value representation="general">
+            <Units>Degrees</Units>
+            <Example> 35.2567</Example>
+         </Value>
+         <Comment>Aircraft longitude, end of observation.</Comment>
+         <FITS name="LON_END" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.lon_fms_1 | $longitude" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="Heading"  >
+         <Description>True aircraft heading, as returned by the MCCS at start of observation.</Description>
+         <Value representation="general">
+            <Units>Degrees</Units>
+            <Example> 10.7892</Example>
+         </Value>
+         <Comment>Aircraft true heading.</Comment>
+         <FITS name="HEADING" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.true_heading | $heading" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TrackAngle"  >
+         <Description>Aircraft track angle, as returned by the MCCS at start of observation.</Description>
+         <Value representation="general">
+            <Units>Degrees</Units>
+            <Example> 10.7892</Example>
+         </Value>
+         <Comment>Aircraft track angle.</Comment>
+         <FITS name="TRACKANG" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="das.ic1080_2hz.true_track_angle | $track_angle" />
+         <Requirement phase="S3" />
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Telescope Keywords">
+      <Keyword title="Telescope" >
+         <Description> Telescope used for the observation. Usually SOFIA but can also be telescope an another observatory.</Description>
+         <Value representation="string">
+            <Example>'SOFIA 2.5m' </Example>
+         </Value>
+         <Comment>Telescope name</Comment>
+         <FITS name="TELESCOP" hdu="primary" type="str"/>
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TelescopeConfig" >
+         <Description> Telescope configuration.  The configuration defines the mirrors, correctors, light paths, etc... On SOFIA, this should be controlled by the MCCS. </Description>
+         <Value representation="string">
+            <Example></Example>
+         </Value>
+         <Comment>Telescope configuration</Comment>
+         <FITS name="TELCONF" hdu="primary" type="str"/>
+         <Source provider="SSC" location="Mission Plan" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TelescopeRA" >
+         <Description>Right ascension of SI boresight (SIBS), as returned by the telescope
+	 control system (J2000).  Representation may be either decimal hours or HH:MM:SS.s.</Description>
+         <Value representation="general">
+            <Units>Hours</Units>
+            <Range type="interval">0,24 </Range>
+            <Example>9.023456</Example>
+         </Value>
+         <Value representation="hh:mm:ss.s">
+            <Units>Hours</Units>
+            <Range type="interval">0,24 </Range>
+            <Example>5:35:17.3</Example>
+         </Value>
+         <Comment>SI Boresight RA (J2000) - as returned by MCCS</Comment>
+         <FITS name="TELRA" hdu="any" type="flt"/>
+         <FITS name="TELRA" hdu="any" type="str"/>
+	 <Source provider="MCCS" location="coord.pos.sibs.ra" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TelescopeDec" >
+         <Description> Declination of SI boresight, as returned by the telescope
+	 control system (J2000).  Representation may be either decimal degrees or DD:MM:SS.
+	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>47.345789</Example>
+         </Value>
+         <Value representation="dd:mm:ss">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>-5:23:28</Example>
+         </Value>
+         <Comment>SI Boresight Dec (J2000) - as returned by MCCS</Comment>
+         <FITS name="TELDEC" hdu="any" type="flt"/>
+         <FITS name="TELDEC" hdu="any" type="str"/>
+         <Source provider="MCCS" location="coord.pos.sibs.dec" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TelescopeVPA" >
+         <Description> Vertical Position Angle (VPA) of SI boresight, as returned by the telescope control system in ICRS (J2000) -- Is this really VPA or ROF? -- TBC.	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">0,360</Range>
+            <Example>255.05</Example>
+         </Value>
+         <Comment>SI Boresight VPA (ICRS J2000) - as returned by MCCS</Comment>
+         <FITS name="TELVPA" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="coord.pos.sibs.vpa" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TelescopeEquinox" >
+         <Description> Equinox of returned RA/Dec/VPA.  </Description>
+         <Value representation="general">
+            <Example>J2000</Example>
+         </Value>
+         <Comment>Equinox of ERF coords (RA/Dec/VPA).  </Comment>
+         <FITS name="TELEQUI" hdu="any" type="str"/>
+         <Source provider="MCCS" location="coord.pos.sibs.equinox" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="LastRewindUTC" >
+         <Description> UTC time of last telescope rewind.</Description>
+         <Value representation="yyyy-mm-ddThh:mm:ss.sssZ">
+            <Example>'2012-09-13T21:30:28.317Z'</Example>
+         </Value>
+         <Comment>Time of last rewind (UTC).</Comment>
+         <FITS name="LASTREW" hdu="any" type="str"/>
+         <Source provider="MCCS" location="ta_pos.time_of_last_rewind" />
+         <Requirement phase="S3"/>
+      </Keyword>
+<!--     <Keyword title="TelescopeROF" >
+         <Description> Rotation of Field (ROF) for SI Field of View.  	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">0,360</Range>
+            <Example>125.5</Example>
+         </Value>
+         <Comment>SI Boresight ROF (ICRS J2000) - as returned by MCCS</Comment>
+         <FITS name="TELROF" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="ta_pos.sibs.no_chop.rof" />
+         <Requirement phase="ES" />
+      </Keyword> -->
+<!-- ROF is equivalent to VPA -->      
+<!--      <Keyword title="RotationAngle" >
+         <Description> Observed rotation angle of the sky relative to the SI mounting plate (?) at the telescope focal plane; calculated for the sky position on the SI boresight currently in use.   Same as 'rotation of field' in SCL Manual (?):  position angle of u-direction ('up' in telescope Ref frame).
+	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-180,180</Range>
+            <Example>47.345789</Example>
+         </Value>
+         <Comment>Rotation Angle of the sky, relative to SI mounting plate. </Comment>
+         <FITS name="ROTANGLE" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="TBD" />
+     </Keyword> -->
+<!-- VPA should be all that is needed -->
+     <Keyword title="TelescopeFocus_Start" >
+         <Description>Telescope focus:  Measured  position  of  the  FCM  focus  mechanism  in  the  T  direction -- as returned by the MCCS (microns) at observation start.</Description>
+         <Value representation="general">
+            <Units>microns</Units>
+            <Range type="interval">-5000,5000</Range>
+            <Example>1245</Example>
+         </Value>
+         <Comment>Telescope focus - SMA FCM t position (microns), observation start.</Comment>
+         <FITS name="FOCUS_ST" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="ta_scs.fcm_status.fcm_act_t" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="TelescopeFocus_End" >
+         <Description>Telescope focus:  Measured  position  of  the  FCM  focus  mechanism  in  the  T  direction -- as returned by the MCCS (microns) at observation end.</Description>
+         <Value representation="general">
+            <Units>microns</Units>
+            <Range type="interval">-5000,5000</Range>
+            <Example>1322</Example>
+         </Value>
+         <Comment>Telescope focus - SMA FCM t position (microns), observation end.</Comment>
+         <FITS name="FOCUS_EN" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="ta_scs.fcm_status.fcm_act_t" />
+         <Requirement phase="S3" />
+      </Keyword>
+
+      <Keyword title="TelescopeElevation" >
+         <Description> Telescope elevation in the cavity reference frame.  At start of observation.
+	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">0,90</Range>
+            <Example>47.345789</Example>
+         </Value>
+         <Comment>Telescope elevation at observation start - as returned by MCCS</Comment>
+         <FITS name="TELEL" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="coord.pos.sibs.el" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="TelescopeCrossElevation" >
+         <Description> Telescope cross elevation in the cavity reference frame.  At start of observation.
+	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>0.543</Example>
+         </Value>
+         <Comment>Telescope cross elevation at observation start - as returned by MCCS</Comment>
+         <FITS name="TELXEL" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="coord.pos.sibs.xel" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="TelescopeLineOfSight" >
+         <Description> Telescope line of sight angle in the cavity reference frame.  At start of observation.
+	 </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-180,180</Range>
+            <Example>0.543</Example>
+         </Value>
+         <Comment>Telescope LOS at observation start - as returned by MCCS</Comment>
+         <FITS name="TELLOS" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="coord.pos.sibs.los" />
+         <Requirement phase="S3" />
+      </Keyword>
+      <Keyword title="TascuStatus" >
+         <Description> State of the TASCU system at the end of the current observation as returned by the MCCS. See specification in MCCS_SI_04.  </Description>
+         <Value representation="string (TBC)">
+            <Example>STAB_INERTIAL_ONGOING</Example>
+         </Value>
+         <Comment>TASCU Status at observation end.</Comment>
+         <FITS name="TSC-STAT" hdu="any" type="str"/>
+         <Source provider="MCCS" location="ta_state.tsc_status" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="TascuFBCStatus" >
+         <Description> State of the flexible body compensation system at the end of the current observation as returned by the MCCS. See specification in MCCS_SI_04. </Description>
+         <Value representation="string">
+            <Example>FBC_ON</Example>
+            <Range type="enum"> FBC_OFF (1), FBC_QS (2), FBC_DY (3), FBC_ON (4) </Range>
+         </Value>
+         <Comment>FBC Status at observation end.</Comment>
+         <FITS name="FBC-STAT" hdu="any" type="str"/>
+         <Source provider="MCCS" location="ta_tsc.tsc_mcs_hk.fbc_status" />
+         <Requirement phase="ES" />
+      </Keyword>
+<!-- FBC Status not available in MCCS_SI_04 REv D.  -->
+      <Keyword title="ObservationRequestRA" >
+         <Description>Requested right ascension for the observation before any
+	 manual "tweaking", either from the instrument control software, an
+	 AOR, or the flight executor.  This may be different from the actual object coordinates
+	 and/or telescope coordinates.  Representation may be either decimal hours or HH:MM:SS.s. Reference frame can be specified in the comment
+	 field (ICRS recommended) and equinox specified using the Equinox keyword.
+	 </Description>
+         <Value representation="general">
+            <Units>Hours</Units>
+            <Range type="interval">0,24</Range>
+        	<Example>9.0230</Example>
+         </Value>
+         <Value representation="hh:mm:ss.s">
+            <Units>Hours</Units>
+            <Range type="interval">0,24 </Range>
+            <Example>5:35:17.3</Example>
+         </Value>
+         <Comment>RA - requested</Comment>
+         <FITS name="OBSRA" hdu="any" type="flt"/>
+         <FITS name="OBSRA" hdu="any" type="str"/>
+         <Source provider="DCS" location="AOR" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="ObservationRequestDec" >
+	 <Description>Requested declination for the observation before any
+	 manual "tweaking", either from the instrument control software, an
+	 AOR, or the flight executor.  This may be different from the actual object coordinates
+	 and/or telescope coordinates.  Representation may be either decimal degrees or DD:MM:SS.  Reference frame can be specified in comment
+	 field (ICRS recommended) and equinox specified using the Equinox keyword.
+	 </Description>
+	 <Value representation="general">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>47.3465</Example>
+         </Value>
+         <Value representation="dd:mm:ss">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>-5:23:28</Example>
+         </Value>
+         <Comment>Dec - requested</Comment>
+         <FITS name="OBSDEC" hdu="any" type="flt"/>
+         <FITS name="OBSDEC" hdu="any" type="str"/>
+         <Source provider="DCS" location="AOR" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="EquatorialCoordSystem" >
+         <Description>Equatorial coordinate system spec for requested RA and Dec (OBSRA and OBSDEC).  See FITS standard for additional detail. If not specified, coords are assumed to be ICRS (J2000).  </Description>
+           <Value representation="string">
+            <Range type="enum"> FK4, FK5, ICRS</Range>
+            <Default>ICRS</Default>
+            <Example>ICRS </Example>
+         </Value>
+         <Comment>Equatorial coord system for OBSRA and OBSDEC</Comment>
+         <FITS name="RADESYS" hdu="any" type="str"/>
+         <Source provider="DCS" location="AOR" />
+      </Keyword>
+
+      <Keyword title="ObservationRequestEquinox" >
+         <Description> Equinox for ObservationRA and ObservationDec.  Does not apply
+	 to TelescopeRA/Dec which are fixed to ICRS (J2000).  See FITS standard for additional detail. If not specified, equinox is assumed to be year 2000.   </Description>
+         <Value representation="general">
+            <Units>yr</Units>
+            <Default> 2000.0</Default>
+            <Example> 2000.0</Example>
+         </Value>
+         <Comment>Coordinate equinox for OBSRA and OBSDEC</Comment>
+         <FITS name="EQUINOX " hdu="any" type="flt"/>
+         <Source provider="DCS" location="AOR" />
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="ZenithAngle_Start" >
+         <Description> Zenith angle of telescope pointing at start of acquisition.  Use telescope elevation to calculate ZA.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">0,90</Range>
+            <Example> 42.359</Example>
+         </Value>
+         <Comment>Telescope zenith angle, start of observation.</Comment>
+         <FITS name="ZA_START" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="(90 - coord.pos.sibs.alt)" />         
+         <Requirement phase="ES" />
+      </Keyword>
+      <Keyword title="ZenithAngle_End" >
+         <Description> Zenith angle of telescope pointing at end of acquisition.  Use telescope elevation to calculate ZA.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">0,90</Range>
+            <Example> 39.285</Example>
+         </Value>
+         <Comment>Telescope zenith angle, end of observation.</Comment>
+         <FITS name="ZA_END" hdu="any" type="flt"/>
+         <Source provider="MCCS" location="(90 - coord.pos.sibs.alt)" />         
+         <Requirement phase="ES" />
+      </Keyword>
+
+      <Keyword title="HourAngle" >
+         <Description> Hour angle at start of acquisition.  Representation may be either decimal hours or HH:MM:SS.s.</Description>
+         <Value representation="general">
+            <Units>Hours</Units>
+            <Range type="interval">-12,12</Range>
+            <Example>-2.288390</Example>
+         </Value>
+         <Value representation="hh:mm:ss.s">
+            <Units>Hours</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>-2:00:00.0</Example>
+         </Value>
+         <Comment>Hour angle</Comment>
+         <FITS name="HA" hdu="any" type="flt"/>
+         <FITS name="HA" hdu="any" type="str"/>
+      </Keyword>
+<!--     <Keyword title="DeltaTrackRateRA" >
+         <Description>Deviation of right ascension telescope tracking rate from siderial in arc seconds per second.</Description>
+         <Value representation="general">
+            <Units> arcsec/sec</Units>
+            <Default> 0</Default>
+            <Example> 1.2</Example>
+         </Value>
+         <Comment>Offset of tracking rate from sidereal</Comment>
+         <FITS name="DELTKRA" hdu="primary" type="flt"/>
+         <Source provider="MCCS" location="TBD" />
+         <Requirement phase="conditional" condition="If not sidereal"/>
+      </Keyword>
+      <Keyword title="DeltaTrackRateDec" >
+         <Description>Deviation of declination telescope tracking rate from sidereal in arc seconds per second.</Description>
+         <Value representation="general">
+            <Units> arcsec/sec</Units>
+            <Default> 0</Default>
+            <Example> -3.4</Example>
+         </Value>
+         <Comment>Offset of tracking rate from sidereal</Comment>
+         <FITS name="DELTKDEC" hdu="primary" type="flt"/>
+         <Source provider="MCCS" location="TBD" />
+         <Requirement phase="conditional" condition="If not sidereal"/>
+      </Keyword>  -->
+<!-- SOFIA does not really have offsets from tracking rates.  How do we capture non-ERF tracking? -->
+      <Keyword title="SunAngle" >
+         <Description> Angular separation between telescope pointing and sun at start of acquisition.</Description>
+         <Value representation="general">
+            <Units> decimal degrees</Units>
+            <Range type="interval">0,180</Range>
+            <Example> 110.5</Example>
+         </Value>
+         <Comment>Sun angle</Comment>
+         <FITS name="SUNANGL" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="MoonAngle" >
+         <Description> Angular separation between telescope pointing and moon at start of acquisition.</Description>
+         <Value representation="general">
+            <Units> decimal degrees</Units>
+            <Range type="interval">0,180</Range>
+            <Example> 45.8</Example>
+         </Value>
+         <Comment>Moon angle</Comment>
+         <FITS name="MOONANGL" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="UserCoordSys" >
+         <Description> The name of a user defined coordinate system. Used to define object  coordinates and offsets.  If the value is USER, then it is assumed a new coordinate system is being defined based on a translation and rotation of a reference coordinate system defined in USRREFCR.</Description>
+         <Value representation="string">
+            <Range type="enum">EQUATORIAL, GALACTIC, ECLIPTIC, FOCAL PLANE, USER </Range>
+            <Example>'GALACTIC' </Example>
+         </Value>
+         <Comment>User defined coordinate system</Comment>
+         <FITS name="USRCRDSY" hdu="primary" type="str"/>
+      </Keyword>
+      <Keyword title="UserReferenceCoordSys" >
+         <Description> Reference coordinate system used to define a new user coordinate system, when USRCRDSY =USER   .</Description>
+         <Value representation="string">
+            <Range type="enum">EQUATORIAL, GALACTIC, ECLIPTIC, FOCAL PLANE</Range>
+            <Example>'GALACTIC' </Example>
+         </Value>
+         <Comment>Reference coordinate system</Comment>
+         <FITS name="USRREFCR" hdu="primary" type="str"/>
+      </Keyword>
+      <Keyword title="UserOriginX" >
+         <Description> Origin of user defined coordinate system, i.e. translation from the reference coordinate system defined in USRREFCR. </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Example> -34.567</Example>
+         </Value>
+         <Comment>X origin of user defined coordinate system.</Comment>
+         <FITS name="USRORIGX" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="UserOriginY" >
+         <Description> Origin of user defined coordinate system, i.e. translation from the reference  coordinate system defined in USRREFCR. </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Example> 15.645</Example>
+         </Value>
+         <Comment>X origin of user defined coordinate system.</Comment>
+         <FITS name="USRORIGY" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="UserRotation" >
+         <Description> Rotation of user defined coordinate system from USRREFCR. </Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Example> 85.879</Example>
+         </Value>
+         <Comment>Rotation of user coordinate system.</Comment>
+         <FITS name="USRCRROT" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="UserX" >
+         <Description> X coordinate of object in new user defined coordinate system. </Description>
+         <Value representation="general">
+            <Units>decimal degees</Units>
+            <Example> 0.155</Example>
+         </Value>
+         <Comment>Object coordinate in new user defined coordinate system</Comment>
+         <FITS name="USRX" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="UserY" >
+         <Description> Y coordinate of object in new user defined coordinate system. </Description>
+         <Value representation="general">
+            <Units>decimal degees</Units>
+            <Example> -1.278</Example>
+         </Value>
+         <Comment>Object coordinate in new user defined coordinate system</Comment>
+         <FITS name="USRY" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="UserEquinox" >
+         <Description> Equinox when equatorial coordinates are used.</Description>
+         <Value representation="general">
+            <Units>yr</Units>
+            <Default> 2000.0</Default>
+            <Example> 2000.0</Example>
+         </Value>
+         <Comment>User coordinate equinox </Comment>
+         <FITS name="USREQNX " hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="HelioVelocityCorrection" >
+         <Description> Velocity correction (DeltaV_helio) to bring observations into the heliocentric reference frame</Description>
+         <Value representation="general">
+            <Units>km/s</Units>
+            <Example> 40.6</Example>
+         </Value>
+         <Comment>Heliocentric correction</Comment>
+         <FITS name="HELIO_COR" hdu="primary" type="flt"/>
+         <Source provider="MCCS" location="TBD" />
+      </Keyword>
+      <Keyword title="LSRVelocityCorrection" >
+         <Description> Velocity correction (DeltaV_LSR) to bring observations into the local standard  of rest (LSR) reference frame</Description>
+         <Value representation="general">
+            <Units>km/s</Units>
+            <Example> 32.8</Example>
+         </Value>
+         <Comment>LSR correction</Comment>
+         <FITS name="LSR_COR" hdu="primary" type="flt"/>
+         <Source provider="MCCS" location="TBD" />
+      </Keyword>
+      <Keyword title="TrackingMode">
+         <Description> SOFIA Tracking mode (last commanded).  See MCCS_SI_04 for descirption of states and modes.  </Description>
+	 <Value representation="string">
+	    <Range type="enum"> OFF, CENTROID, ROF, LIMB, OFFSET,ROF+OFFSET, CENTROID+INERTIAL, ROF+INERTIAL, OFFSET+INERTIAL, ROF+OFFSET+INERTIAL </Range>
+	    <Example>'CENTROID' </Example>
+	  </Value>
+	  <Comment> SOFIA tracking mode </Comment>
+	  <FITS name="TRACMODE" hdu="any" type="str" />
+	  <Source provider="MCCS" location="ta_pos.track.state" />
+	  <Requirement phase="ES" condition="Tracking"/>
+	</Keyword>
+    <Keyword title="TrackingError">
+         <Description>Flag to indicate if there was a tracking error during the observation.  Ideally the SI software would monitor the tracking mode (ta_trc.trc_status_table.main_op_mode_id) for any error/abnormalities.  If an error does occur, the TRACERR would then be set to T. (</Description>
+	 <Value representation="boolean">
+	    <Example>F</Example>
+	  </Value>
+	  <Comment> Tracking error flag. </Comment>
+	  <FITS name="TRACERR" hdu="any" type="log" />
+	  <Source provider="" location="ta_trc.trc_status_table.main_op_mode_id" />
+	  <Requirement phase="S3" condition="Tracking"/>
+	</Keyword>
+<!--    <Keyword title="CurrentAOI_ID">
+         <Description> Current AOI in use by the TA tracker system (1-8): 0 indicates tracking is disabled.</Description>
+	 <Value representation="integer">
+	    <Range type="interval">0,8</Range>
+	    <Example> 2 </Example>
+	  </Value>
+	  <Comment> Current AOI ID </Comment>
+	  <FITS name="AOI-ID" hdu="any" type="int" />
+	  <Source provider="MCCS" location="ta_trc.trc_tracking_table.cent_ref_track_aoi" />
+	  <Requirement phase="ES" condition="Tracking enabled"/>
+	</Keyword>	
+ <Keyword title="TrackingGuideStar">
+  <Description> Name of guide star in use for SOFIA tracking mode. </Description>
+  <Value representation="string">
+     <Example> 'HD37022' </Example>
+   </Value>
+   <Comment> Guide star for tracking. </Comment>
+   <FITS name="TRACSTAR" hdu="any" type="str" />
+   <Requirement phase="ES" condition="Tracking enabled"/>
+	</Keyword> 	-->
+   </KeywordList>
+   <KeywordList title="Data Collection Keywords">
+      <Keyword title="isChopping" >
+         <Description> Chopping flag</Description>
+         <Value representation="boolean">
+            <Default> F</Default>
+            <Example> T</Example>
+         </Value>
+         <Comment>Chopping flag</Comment>
+         <FITS name="CHOPPING" hdu="primary" type="log"/>
+         <Requirement phase="ES" condition="Chopping."/>
+      </Keyword>
+      <Keyword title="isNodding" >
+         <Description> Nodding flag -- this should be set if the SI is executing a repeated nod pattern, for example (ABBA)(ABBA), etc... </Description>
+         <Value representation="boolean">
+            <Default> F</Default>
+            <Example> T</Example>
+         </Value>
+         <Comment>Nodding flag</Comment>
+         <FITS name="NODDING" hdu="primary" type="log"/>
+         <Requirement phase="ES" condition="Nodding."/>
+      </Keyword>
+      <Keyword title="isDithering" >
+         <Description> Dithering flag</Description>
+         <Value representation="boolean">
+            <Default> F</Default>
+            <Example> T</Example>
+         </Value>
+         <Comment>Dithering flag</Comment>
+         <FITS name="DITHER" hdu="primary" type="log"/>
+         <Requirement phase="ES" condition="Dithering."/>
+      </Keyword>
+      <Keyword title="isMapping" >
+         <Description> Mapping flag.</Description>
+         <Value representation="boolean">
+            <Default> F</Default>
+            <Example> T</Example>
+         </Value>
+         <Comment>Mapping flag.</Comment>
+         <FITS name="MAPPING" hdu="primary" type="log"/>
+         <Requirement phase="ES" condition="Mapping."/>
+      </Keyword>
+      <Keyword title="isScanning">
+         <Description> Scanning flag.</Description>
+         <Value representation="boolean">
+            <Default> F</Default>
+            <Example> T</Example>
+         </Value>
+         <Comment>Scanning flag.</Comment>
+         <FITS name="SCANNING" hdu="primary" type="log"/>
+         <Requirement phase="ES" condition="Scanning."/>
+      </Keyword>
+<!--      <Keyword title="isTracking">
+         <Description> SOFIA tracking flag. This can be either on-source or offset tracking. Set to "F" if MCCS data item not available.  </Description>
+         <Value representation="boolean">
+            <Default> F</Default>
+            <Example> T</Example>
+         </Value>
+         <Comment>SOFIA tracking flag.</Comment>
+         <FITS name="TRACKING" hdu="primary" type="log"/>
+         <Requirement phase="ES" condition="Tracking enabled"/>
+         <Source provider="MCCS" location="ta_pos.track.state" />
+      </Keyword> -->
+<!-- From John R.:  I’ve learned tracking is much more complicated and has a lot more status and it is possible for an SI to command the TA to move and initiate tracking and get a successful command answer even though the Tracker is not completely initiated it’s tracking loop ... TRACKING does not mean the TA is in closed-loop with the trackstar… -->     
+      
+   </KeywordList>
+   <KeywordList title="Annotation Keywords">
+      <Keyword title="Comment" >
+         <Description> Comment keyword.  This keyword does not normally have an equal sign. Any number of COMMENT records may be present from any legitimate source.  This is a good place for &lt;AOR/SpecialInstructions&gt;.</Description>
+         <Value representation="string">
+            <Example> These data on ORION are GRRRRREAAAT!</Example>
+         </Value>
+         <Comment>Comments may be placed anywhere throughout the header.</Comment>
+         <FITS name="COMMENT" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="History" >
+         <Description> History keyword.  This keyword does not normally have an equal sign.  This keyword should be reserved for any processing of the data, especially pre-processing (i.e. instrument level).  Any number of HISTORY records may be present.</Description>
+         <Value representation="string">
+            <Example>FDRP - Redux0 (2004-01-01, 00:00:00) OUTPUT = FILENAME</Example>
+         </Value>
+         <Comment>Processing history information. </Comment>
+         <FITS name="HISTORY" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="Error" >
+         <Description>Error information *useful to a guest investigator*;  this is not meant to be a catalog of system errors.  Any number of Error messages may be present.  In the FITS implementation, sequence numbers are used to order the information.  Generally this keyword should only be used if OBSTAT=ERROR. </Description>
+         <Value representation="string">
+            <Example>Guide star lost - reacquired</Example>
+         </Value>
+         <Comment>Error information.  FITS: Suffix index can be used to order entries (1-999).</Comment>
+         <FITS name="ERROR%3d" hdu="primary" type="str"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Instrument Keywords">
+      <Keyword title="Instrument" >
+         <Description> Instrument name, as specified in the SI-DCS ICD.</Description>
+         <Value representation="string">
+            <Example>'FLITECAM' </Example>
+         </Value>
+         <Comment>Instrument</Comment>
+         <FITS name="INSTRUME" hdu="primary" type="str"/>
+         <Requirement phase="ES" condition="*"/>
+      </Keyword>
+      <Keyword title="Datatype" >
+         <Description>Type of observation data:  Image, Spectral, ot Other.  </Description>
+         <Value representation="string">
+            <Range type="enum"> IMAGE, SPECTRAL, OTHER</Range>
+            <Example>IMAGE</Example>
+         </Value>
+         <Comment>Data type</Comment>
+         <FITS name="DATATYPE" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+<Keyword title="InstrumentConfiguration" >
+         <Description> Instrument configuration - simple description, as specified in the SI-DCS ICD.  e.g. IMAGING, GRISM, SPECTROSCOPY, etc...</Description>
+         <Value representation="string">
+            <Example>'IMAGING'</Example>
+         </Value>
+         <Comment>Instrument configuration</Comment>
+         <FITS name="INSTCFG" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="InstrumentMode" >
+         <Description> Instrument observing mode - simple description, as specified in the SI-DCS ICD.  e.g. C2D, MAPPING, etc...</Description>
+         <Value representation="string">
+            <Example>'C2N'</Example>
+         </Value>
+         <Comment>Instrument observing mode</Comment>
+         <FITS name="INSTMODE" hdu="primary" type="str"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="MCCSMode" >
+         <Description>SI mode as defined in the MCCS_SI_04.</Description>
+         <Value representation="string">
+            <Example>'flitecam_imaging'</Example>
+         </Value>
+         <Comment>MCCS SI Mode (MCCS_SI_04).</Comment>
+         <FITS name="MCCSMODE" hdu="primary" type="str"/>
+         <Source provider="MCCS" location="(instrument).si_config.current_mode" />
+         <Requirement phase="S3"/>
+      </Keyword>
+      <Keyword title="InstrumentHardwareVersion" >
+         <Description> Instrument hardware version.</Description>
+         <Value representation="string">
+            <Example>'FLITECAM V1.0'</Example>
+         </Value>
+         <Comment>Instrument hardware version</Comment>
+         <FITS name="INSTHWV" hdu="primary" type="str"/>
+      </Keyword>
+      <Keyword title="InstrumentSoftwareVersion" >
+         <Description> Instrument software version.</Description>
+         <Value representation="string">
+            <Example>'FLITECAM Control System V2.2'</Example>
+         </Value>
+         <Comment>Instrument software version</Comment>
+         <FITS name="INSTSWV" hdu="primary" type="str"/>
+      </Keyword>
+      <Keyword title="ExposureTime" >
+         <Description> Total effective on-source exposure time of the observation.  This is the total time during which photons from the object of interest are collected by the detector.  It includes any shutter corrections (which may not apply for most (all?) SOFIA instruments), and nodding/chopping corrections, and should match the algorithm(s) supplied for any time estimation tools (e.g. SITE). For FITS, EXPTIME should be used instead of the FITS specification EXPOSURE.  ExposureTime should be specified for all images in a data file. </Description>
+         <Value representation="general">
+            <Units>s</Units>
+            <Example> 600</Example>
+         </Value>
+         <Comment>On-source exposure time</Comment>
+         <FITS name="EXPTIME" hdu="any" type="flt"/>
+         <Requirement phase="ES"/>
+      </Keyword>
+      <Keyword title="SpectralElement1" >
+         <Description> First spectral element (filter, grism, etc...) as specified in SI-DCS ICD.  Need only contain the unique identifier from the SI-DCS ICD;  more detailed filter/grism/mixer can be stored in instrument-specific keywords.</Description>
+         <Value representation="string">
+            <Default> none </Default>
+            <Example>'FLT_J'</Example>
+         </Value>
+         <Comment>First spectral element in use.</Comment>
+         <FITS name="SPECTEL1" hdu="any" type="str"/>
+         <Requirement phase="ES" condition="*"/>
+      </Keyword>
+      <Keyword title="SpectralElement2" >
+         <Description> Second spectral element (filter, grism, etc...) as specified in SI-DCS ICD. Need only contain the unique identifier from the SI-DCS ICD;  more detailed filter/grism/mixer can be stored in instrument-specific keywords.  Set to "NONE" If no second element in use.</Description>
+         <Value representation="string">
+            <Default> none </Default>
+            <Example>'FOR_XG063'</Example>
+         </Value>
+         <Comment>Second spectral element in use -- Set to "NONE" if no second element.</Comment>
+         <FITS name="SPECTEL2" hdu="any" type="str"/>
+         <Requirement phase="S3" condition="*"/>
+      </Keyword>
+      <Keyword title="InstrumentSlit" >
+         <Description> Slit identifier, as specified in the SI-DCS ICD.  Need only contain the unique indentifier; more detialed info can be sotred in instrument-specific keywords.</Description>
+         <Value representation="string">
+            <Default> none </Default>
+            <Example>'FOR_SS24'</Example>
+         </Value>
+         <Comment>Instrument slit in use.</Comment>
+         <FITS name="SLIT" hdu="any" type="str"/>
+         <Requirement phase="ES" condition="Spectroscopy configs:  if slit in use."/>
+      </Keyword>
+
+      <Keyword title="WavelengthCentral" >
+         <Description> Central wavelength of observation for imaging modes. This is a rough figure only, intended to be used for archive searches across all SOFIA instruments.</Description>
+         <Value representation="general">
+            <Units>Microns</Units>
+            <Default> none </Default>
+            <Example> 2.2</Example>
+         </Value>
+         <Comment>Central wavelength of observation.</Comment>
+         <FITS name="WAVECENT" hdu="primary" type="flt"/>
+         <Requirement phase="conditional" condition="Imaging modes only."/>
+      </Keyword>
+      <Keyword title="BandWidth" >
+         <Description>Bandwidth (wavelength) of observation:  Filter bandwidth for imaging and wavelength range for spectroscopy.  This is a rough figure only, intended to be used for archive searches across all SOFIA instruments.</Description>
+         <Value representation="vector">
+            <Units>Microns</Units>
+            <Default> none </Default>
+            <Example>'[2.2034,2.5333]'</Example>
+         </Value>
+         <Comment>Wavelength range (bandwidth) of observation.</Comment>
+         <FITS name="BANDWDTH" hdu="primary" type="str"/>
+      </Keyword>
+      <Keyword title="Resolution" >
+         <Description>Approximate spectral resolution of observation for spectroscopy modes, expressed as R = c/DeltaV = Lambda/DeltaLambda.  This is a rough figure only, intended to be used for archive searches across all SOFIA instruments.</Description>
+         <Value representation="general">
+            <Example>2500</Example>
+         </Value>
+         <Comment>Spectral resolution of observation.</Comment>
+         <FITS name="RESOLUN" hdu="primary" type="flt"/>
+         <Requirement phase="conditional" condition="Spectroscopy modes only."/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Array Detector Keywords">
+      <Keyword title="Detector" >
+         <Description> Detector name.</Description>
+         <Value representation="string">
+            <Example>'SBRC InSb' </Example>
+         </Value>
+         <Comment>Detector name</Comment>
+         <FITS name="DETECTOR" hdu="primary" type="str"/>
+         <Requirement phase="conditional" condition="Array instruments only."/>
+      </Keyword>
+      <Keyword title="DetectorSize" >
+         <Description>Unbinned detector size in pixels.</Description>
+         <Value representation="vector">
+            <Example>'(1024,1024)'</Example>
+         </Value>
+         <Comment>Detector size</Comment>
+         <FITS name="DETSIZE" hdu="primary" type="str"/>
+         <Requirement phase="conditional" condition="Array instruments only."/>
+      </Keyword>
+      <Keyword title="PixelScale" >
+         <Description> Projected pixel scale on the sky.</Description>
+         <Value representation="general">
+            <Units> arcsec</Units>
+            <Example> 0.32</Example>
+         </Value>
+         <Comment>Pixel scale</Comment>
+         <FITS name="PIXSCAL" hdu="primary" type="flt"/>
+         <Requirement phase="conditional" condition="Array instruments only."/>
+      </Keyword>
+      <Keyword title="Subarrays" >
+         <Description> Number of sub arrays used in data acquisition.  Full array assumed if absent.</Description>
+         <Value representation="integer">
+            <Default> 0 (full array)</Default>
+            <Example> 2</Example>
+         </Value>
+         <Comment>Number of subarrays used</Comment>
+         <FITS name="SUBARRNO" hdu="primary" type="int"/>
+         <Requirement phase="conditional" condition="If subarrays in use."/>
+      </Keyword>
+      <Keyword title="SubarraySize" >
+         <Description> The log unbinned size of the  n-th subarray in section notation.</Description>
+         <Value representation="section">
+            <Example>'[0:255,0:255]'</Example>
+         </Value>
+         <Comment>Sub array size</Comment>
+         <FITS name="SUBARR%2d" hdu="primary" type="str"/>
+         <Requirement phase="conditional" condition="If subarrays in use."/>
+      </Keyword>
+      <Keyword title="DataMaximum" >
+         <Description> The value field shall always contain a floating point number, regardless of the value of BITPIX. This number shall give the minimum valid physical value represented by the array, exclusive of any special values.</Description>
+         <Value representation="integer">
+            <Default></Default>
+            <Example> 150000</Example>
+         </Value>
+         <Comment>Maximum data value</Comment>
+         <FITS name="DATAMAX" hdu="primary" type="int"/>
+      </Keyword>
+      <Keyword title="DataMinimum" >
+         <Description> The value field shall always contain a floating point number, regardless of the value of BITPIX. This number shall give the minimum valid physical value represented by the array, exclusive of any special values.</Description>
+         <Value representation="integer">
+            <Default></Default>
+            <Example> 0</Example>
+         </Value>
+         <Comment>Minimum data value</Comment>
+         <FITS name="DATAMIN" hdu="primary" type="int"/>
+      </Keyword>
+      <Keyword title="SaturationLevel" >
+         <Description>The value field shall always contain a floating point number, regardless of the value of BITPIX. This number shall give the approximate saturation value per raw frame of the array.</Description>
+         <Value representation="integer">
+            <Default></Default>
+            <Example> 100000</Example>
+         </Value>
+         <Comment>Saturation data value</Comment>
+         <FITS name="SATURATE" hdu="primary" type="int"/>
+      </Keyword>
+      <Keyword title="DetectorAngle" >
+         <Description> Position angle of detector y axis with respect to celestial North.
+	 Usually reported as degrees east of north.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-180,180</Range>
+            <Example> 10.0</Example>
+         </Value>
+         <Comment>Detector plane rotation angle</Comment>
+         <FITS name="DET_ANGL" hdu="primary" type="flt"/>
+      </Keyword>
+      <Keyword title="ExposureCoadds" >
+         <Description> Number of coadded raw detector frames.  This could also be
+	 number of coadds per chop position.</Description>
+         <Value representation="integer">
+            <Default> 1</Default>
+            <Example> 10</Example>
+         </Value>
+         <Comment>Number of coadds</Comment>
+         <FITS name="COADDS" hdu="any" type="int"/>
+      </Keyword>
+    <Keyword title="SienceInstrumentBoresigtX" >
+         <Description>Location of SI boresight in pixel space -- x_si. </Description>
+         <Value representation="integer">
+            <Example>255</Example>
+         </Value>
+         <Comment>SI Boresight (x) - as returned by MCCS</Comment>
+         <FITS name="SIBS_X" hdu="any" type="int"/>
+        <Source provider="MCCS" location="coord.pos.sibs.xsi" />
+         <Requirement phase="S3" condition="Array instruments only." />
+      </Keyword>
+     <Keyword title="SienceInstrumentBoresigtY" >
+         <Description>Location of SI boresight in pixel space -- y_si. </Description>
+         <Value representation="integer">
+            <Example>255</Example>
+         </Value>
+         <Comment>SI Boresight (y) - as returned by MCCS</Comment>
+         <FITS name="SIBS_Y" hdu="any" type="int"/>
+        <Source provider="MCCS" location="coord.pos.sibs.ysi" />
+         <Requirement phase="S3" condition="Array instruments only." />
+      </Keyword>
+      <Keyword title="WCS_CTYPE" >
+         <Description>WCS:  Coordinate type and projection for n-th axis. See list of supported projections at http://tdc-www.harvard.edu/wcstools/wcstools.fits.html. </Description>
+         <Value representation="string">
+            <Example>RA--TAN</Example>
+         </Value>
+         <Comment>Axis type (8 characters) </Comment>
+         <FITS name="CTYPEn" hdu="any" type="str"/>
+         <Requirement phase="S3" condition="Imaging only."/>
+      </Keyword>
+      <Keyword title="WCS_CRPIX" >
+         <Description>WCS:  pixel coordinates of the reference point of the n-th axis to which the projection and the rotation refer.</Description>
+         <Value representation="int">
+            <Example>511</Example>
+         </Value>
+         <Comment>Array location of the reference point in pixels for the n-th axis.</Comment>
+         <FITS name="CRPIXn" hdu="any" type="flt"/>
+         <Requirement phase="S3" condition="Imaging only."/>
+      </Keyword>
+      <Keyword title="WCS_CRVAL" >
+         <Description>WCS:  reference pixel coordinate for n-th axis as right ascension and declination or longitude and latitude in decimal degrees.  FITS Comment field should include estimate of uncertainty in absolute pointing (See TBD Document).</Description>
+         <Value representation="flt">
+            <Example>82.345690</Example>
+         </Value>
+         <Comment>Coordinate value at reference point for the n-th axis.</Comment>
+         <FITS name="CRVALn" hdu="any" type="flt"/>
+         <Requirement phase="S3" condition="Imaging only."/>
+      </Keyword>
+      <Keyword title="WCS_CDELT" >
+         <Description>WCS:  Plate scale in degrees per pixel for the n-th axis at the reference pixel.  Either the CDi_j *or* the CDELT/CROTA keywords should be used, but not both.  FITS comment field should include estimate of uncertainty based on known distortion or other optical effects. </Description>
+         <Value representation="flt">
+            <Example>1.3852E-4</Example>
+         </Value>
+         <Comment>Plate scale for the n-th axis at reference point (deg/pixel).</Comment>
+         <FITS name="CDELTn" hdu="any" type="flt"/>
+         <Requirement phase="S3" condition="Imaging only."/>
+      </Keyword>
+      <Keyword title="WCS_CROTA2" >
+         <Description>WCS:  Rotation of axes in degrees. WCS FITS convention is to use CROTA2.  Either the CDi_j *or* the CDELT/CROTA keywords should be used, but not both.  FITS comment field should include estimate of uncertainty in TA rotation of field (see TBD Document).  </Description>
+         <Value representation="flt">
+            <Example>113.45</Example>
+         </Value>
+         <Comment>Rotation of axes in degrees.</Comment>
+         <FITS name="CROTA2" hdu="any" type="flt"/>
+         <Requirement phase="S3" condition="Imaging only."/>
+      </Keyword>
+      <Keyword title="WCS_RotMatrix" >
+         <Description>WCS:  Rotation matrix for WCS -- CD1_1, CD1_2, CD2_1, and CD2_2.  Either the CDi_j *or* the CDELT/CROTA keywords should be used, but not both.  FITS comment field should include estimate of uncertainty for each matirix element.  </Description>
+         <Value representation="flt">
+            <Example>1.3852E-4</Example>
+         </Value>
+         <Comment>WCS Rotation Matrix elements.</Comment>
+         <FITS name="CDi_j" hdu="any" type="flt"/>
+         <Requirement phase="S3" condition="Imaging only."/>
+      </Keyword>
+   </KeywordList>
+ <KeywordList title="Heterodyne Keywords">
+      <Keyword title="FrontendDevice" >
+         <Description>Name of frontend device.</Description>
+         <Value representation="string">
+            <Example>'GREAT LOW 1'</Example>
+         </Value>
+         <Comment>Name of frontend device.</Comment>
+         <FITS name="FRONTEND" hdu="primary" type="str"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="BackendDevice" >
+         <Description>Name of backend device.</Description>
+         <Value representation="string">
+            <Example>'AOS'</Example>
+         </Value>
+         <Comment>Name of backend device.</Comment>
+         <FITS name="BACKEND" hdu="primary" type="str"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="BackendBandwidth" >
+         <Description>Total bandwidth of heterodyne backend (Hz).
+</Description>
+         <Value representation="general">
+            <Units>MHz</Units>
+            <Example> 300.547</Example>
+         </Value>
+         <Comment>Total bandwidth of heterodyne backend</Comment>
+         <FITS name="BANDWID" hdu="primary" type="flt"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="SystemTemperature" >
+         <Description> Heterodyne system temperature.</Description>
+         <Value representation="general">
+            <Units>K</Units>
+            <Example>10.5</Example>
+         </Value>
+         <Comment>System temperature.</Comment>
+         <FITS name="TSYS" hdu="primary" type="flt"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="FrequencyResolution" >
+         <Description>Nominal frequency resolution -- may differ from channel spacing.</Description>
+         <Value representation="general">
+            <Units>MHz</Units>
+            <Example>100.0</Example>
+         </Value>
+         <Comment>Nominal frequency resolution -- may differ from channel spacing.</Comment>
+         <FITS name="FREQRES" hdu="primary" type="flt"/>
+         <Requirement condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="ReferenceFrequency" >
+         <Description>The observed frequency (Hz) at the reference pixel of the frequency-like axis.</Description>
+         <Value representation="general">
+            <Units>MHz</Units>
+            <Example></Example>
+         </Value>
+         <Comment>Reference frequency.</Comment>
+         <FITS name="OBSFREQ" hdu="primary" type="flt"/>
+         <Requirement condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="SidebandFrequency" >
+         <Description>The image sideband freq (Hz) corresponding to ReferenceFrequency.</Description>
+         <Value representation="general">
+            <Units>MHz</Units>
+            <Example></Example>
+         </Value>
+         <Comment>Image sideband frequency.</Comment>
+         <FITS name="IMAGFREQ" hdu="primary" type="flt"/>
+         <Requirement condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="RestFrequency" >
+         <Description> Rest frequency.</Description>
+         <Value representation="general">
+            <Units>MHz</Units>
+            <Example></Example>
+         </Value>
+         <Comment>Rest frequency.</Comment>
+         <FITS name="RESTFREQ" hdu="primary" type="flt"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="VelocityDefinition" >
+         <Description> The velocity definition and frame (8 characters). The first 4 characters describe the velicity definition. Possible definitions include: RADI (radio); OPTI (optical); RELA (relativistic).  The second 4 characters describe the reference frame (e.g. ``-LSR'', ``-HEL'', ``-OBS''). If the frequency-like axis gives a frame, then the frame in VELDEF only applies to any velocities given as columns or keywords (virtual columns). </Description>
+         <Value representation="string">
+            <Example>RADI-LSR</Example>
+         </Value>
+         <Comment>Velocity Definition</Comment>
+         <FITS name="VELDEF" hdu="primary" type="str"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="VelocityFrame" >
+         <Description> The radial velocity of the reference frame wrt the observer. V_frame - V_telescope.</Description>
+         <Value representation="general">
+            <Units>km/s</Units>
+            <Example>250.3</Example>
+         </Value>
+         <Comment>Radial velocity of reference frame.</Comment>
+         <FITS name="VFRAME" hdu="primary" type="flt"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+      <Keyword title="RadialVelocity" >
+         <Description> The radial velocity, V_source - V_telescope.</Description>
+         <Value representation="general">
+            <Units>km/s</Units>
+            <Example>22.3</Example>
+         </Value>
+         <Comment>Radial velocity.</Comment>
+         <FITS name="RVSYS" hdu="primary" type="flt"/>
+         <Requirement phase="ES" condition="Heterodyne instruments only."/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Data Structure Keywords">
+      <Keyword title="DataChecksum" >
+         <Description> Data checksum value for verifying the data.  This follows the proposed FITS checksum standard.</Description>
+         <Value representation="string">
+            <Example>'aMmjbMkhaMkhaMkh'</Example>
+         </Value>
+         <Comment>Data checksum</Comment>
+         <FITS name="DATASUM" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="ChecksumVersion" >
+         <Description> Version of checksum method used for the checksums.</Description>
+         <Value representation="string">
+            <Example></Example>
+         </Value>
+         <Comment>Checksum version</Comment>
+         <FITS name="CHECKVER" hdu="any" type="str"/>
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Chopping Keywords">
+<!--     <Keyword title="ChopperHardwareVersion" >
+         <Description></Description>
+         <Value representation="string">
+            <Example>'SOFIA SMU V1.0'</Example>
+         </Value>
+         <Comment>Chopper hardware version	</Comment>
+         <FITS name="CHPHWV" hdu="primary" type="str"/>
+         <Requirement phase="conditional" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopperSoftwareVersion" >
+         <Description></Description>
+         <Value representation="string">
+            <Example>'SOFIA SMU Control System V2.2'</Example>
+         </Value>
+         <Comment>Chopper software version</Comment>
+         <FITS name="CHPSWV" hdu="primary" type="str"/>
+         <Requirement phase="conditional" condition="Chopping"/>
+      </Keyword> -->
+      <Keyword title="ChopFrequency" >
+         <Description> Measured TCM chop frequency</Description>
+         <Value representation="general">
+	    <Units>MHz</Units>
+            <Range type="interval"> 0.0, 20.0 </Range>
+            <Example> 15.0</Example>
+         </Value>
+         <Comment>Chop frequency</Comment>
+         <FITS name="CHPFREQ" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="sma.chop.frequency" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopProfile" >
+	 <Description>Indicates whether 2 or 3 point chopping profile is being used.
+	 For 3-point chopping, the center position usually contains the object of interest. MCCS returns '0' for 2 point and '1' for 3-point.  </Description>
+	 <Value representation="string">
+	    <Range type="enum"> 2-POINT, 3-POINT</Range>
+	    <Default>'2-POINT'</Default>
+	    <Example>'2-POINT'</Example>
+	 </Value>
+	 <Comment>Chopping profile: 2 or 3 point</Comment>
+	 <FITS name="CHPPROF" hdu="any" type="str"/>
+	 <Source provider="MCCS" location="sma.chop.profile" />
+	 <Requirement phase="S3" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopSymmetry" >
+	 <Description>Indicates whether symmetric or asymmetric chopping is being used.</Description>
+	 <Value representation="string">
+	    <!-- <Range type="enum"> SYM, ASYM</Range> -->
+	    <Example>'on-axis'</Example>
+	 </Value>
+	 <Comment>Chopping symmetry: symmetric or asymmetric</Comment>
+	 <FITS name="CHPSYM" hdu="any" type="str"/>
+	 <Source provider="MCCS" location="sma.chop_symmetry" />
+	 <Requirement phase="S3" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopAmplitude_1" >
+         <Description> Calculated amplitude on the sky.  MCCS calculates the amplitude on the sky based on actual SMA data.</Description>
+         <Value representation="general">
+	    <Units>arcsec</Units>
+	    <Range type="interval"> -1125.0, 1125.0 </Range>
+            <Example> 300.0</Example>
+         </Value>
+         <Comment>Chop amplitude 1</Comment>
+         <FITS name="CHPAMP1" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="sma.sky_amplitude" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopAmplitude_2" >
+	 <Description> Calculated second amplitude on the sky.  MCCS calculates the amplitude on the sky based on actual SMA data.</Description>
+	 <Value representation="general">
+	    <Units>arcsec</Units>
+	    <Range type="interval"> -1125.0, 1125.0 </Range>
+	    <Example> 300.0</Example>
+	 </Value>
+	 <Comment>Chop amplitude 2</Comment>
+	 <FITS name="CHPAMP2" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="sma.sky_amp2" />
+	 <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopCoordSys" >
+	 <Description> Reference frame for which MCCS computes SMA parameters. MCCS calculates sky_tip, sky_tilt, and sky_angle differently depending on which reference frame was last used in the sma.chop command. This value defaults to TARF  if sma.chop has not been sent previously.</Description>
+	 <Value representation="string">
+	    <Range type="enum">TARF, ERF, SIRF</Range>
+	    <Example>ERF </Example>
+	 </Value>
+	 <Comment>MCCS Coordinate system for sky tip, tilt, and angle. </Comment>
+	 <FITS name="CHPCRSYS" hdu="any" type="str"/>
+	 <Source provider="MCCS" location="sma.sky_coord_sys" />
+	 	 <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopAngle" >
+         <Description> Calculated angle in the sky_coord_sys reference frame. MCCS calculates the angle in the sky_coord_sys reference frame based on actual SMA data. The angle is the orientation of the chop throw with  up equals zero.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-360,360</Range>
+            <Example> 45.0</Example>
+         </Value>
+         <Comment>Calculated angle in the sky_coord_sys reference frame.</Comment>
+         <FITS name="CHPANGLE" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="sma.sky_angle" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopTip" >
+         <Description> Calculated tip in the sky_coord_sys reference frame. MCCS calculates the tip in the sky_coord_sys reference frame based on actual SMA data.</Description>
+         <Value representation="general">
+            <Units>arcsec</Units>
+            <Range type="interval">-301,301</Range>
+            <Example>15</Example>
+         </Value>
+         <Comment>Calculated tip in the sky_coord_sys reference frame.</Comment>
+         <FITS name="CHPTIP" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="sma.sky_tip" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+<Keyword title="ChopTilt" >
+         <Description> Calculated tilt in the sky_coord_sys reference frame. MCCS calculates the tilt in the sky_coord_sys reference frame based on actual SMA data.</Description>
+         <Value representation="general">
+            <Units>arcsec</Units>
+            <Range type="interval">-301,301</Range>
+            <Example>10</Example>
+         </Value>
+         <Comment>Calculated tilt in the sky_coord_sys reference frame.</Comment>
+         <FITS name="CHPTILT" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="sma.sky_tilt" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+<Keyword title="ChopPhase" >
+         <Description> Chopper phase as defined by MCCS.  Time delay between the synch signal and the start of the setpoint which has the positive tilt increment with respect to the commanded offset.  </Description>
+         <Value representation="int">
+         <Units>millisec</Units>
+	    <Range type="interval"> 0,1000 </Range>
+            <Example> 200</Example>
+         </Value>
+         <Comment>Chop phase</Comment>
+         <FITS name="CHPPHASE" hdu="any" type="int"/>
+         <Source provider="MCCS" location="sma.chop.phase" />
+         <Requirement phase="ES" condition="Chopping"/>
+      </Keyword>
+      <Keyword title="ChopSourceSignal" >
+	 <Description> Indicates use of either internal or external chop signal.</Description>
+	 <Value representation="string">
+	    <Range type="enum"> INTERNAL, EXTERNAL </Range>
+	    <Default>'INTERNAL' </Default>
+	    <Example>'INTERNAL' </Example>
+	 </Value>
+	 <Comment>Chopper source signal</Comment>
+	 <FITS name="CHPSRC" hdu="any" type="str"/>
+	 <Source provider="MCCS" location="ta_sma.tcm_chopper_status.tcm_sync_source" />
+      </Keyword>
+      <Keyword title="ChopACDC" >
+	 <Description>Indicates whether the Chopper is being driven digitally or via
+	 the analog inputs.</Description>
+	 <Value representation="string">
+	    <Range type="enum"> CHOPAC, CHOPDC </Range>
+	    <Example>'CHOPDC' </Example>
+	 </Value>
+	 <Comment>Digital or analog chopper input.</Comment>
+	 <FITS name="CHPACDC" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="ChopFunction" >
+         <Description> Chopper waveform function.</Description>
+         <Value representation="string">
+            <Example>'SQUARE' </Example>
+         </Value>
+         <Comment>Chop function</Comment>
+         <FITS name="CHPFUNC" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="ChopSettleTime" >
+         <Description> Applied chopper settling time. </Description>
+         <Value representation="general">
+	    <Units>millisec</Units>
+	    <Range type="interval"> 1.0, 100.0  </Range>
+            <Example> 2.04</Example>
+         </Value>
+         <Comment>Chop settle time</Comment>
+         <FITS name="CHPSETL" hdu="any" type="flt"/>
+	 <Source provider="MCCS" location="ta_sma.tcm_chopper_status.tcm_settling_time" />
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Nodding Keywords">
+      <Keyword title="NodDwellTime" >
+         <Description> Total time per nod position (dwell time) -- not including nod
+	 slew time and nod settle time (see NodSettleTime). </Description>
+         <Value representation="general">
+            <Units>s</Units>
+            <Example> 300.0</Example>
+         </Value>
+         <Comment>Nod time</Comment>
+         <FITS name="NODTIME" hdu="any" type="flt"/>
+         <Requirement phase="ES" condition="Nodding"/>
+      </Keyword>
+      <Keyword title="NodCycles" >
+         <Description> Number of nod cycles.</Description>
+         <Value representation="integer">
+            <Default> 1</Default>
+            <Example> 30</Example>
+         </Value>
+         <Comment>Nod cycles.</Comment>
+         <FITS name="NODN" hdu="any" type="int"/>
+         <Requirement phase="ES" condition="Nodding"/>
+      </Keyword>
+      <Keyword title="NodSettleTime" >
+         <Description>Time required for telescope to settle after nod slew is complete.
+	 Amount of time to wait between when telescope arrives at nod destination and
+	 when to begin integrating.</Description>
+         <Value representation="general">
+            <Units>s</Units>
+            <Example> 0.0556</Example>
+         </Value>
+         <Comment>Nod settle time</Comment>
+         <FITS name="NODSETL" hdu="any" type="flt"/>
+         <Requirement phase="ES" condition="Nodding"/>
+      </Keyword>
+      <Keyword title="NodAmplitude" >
+         <Description> Nod amplitude on sky.</Description>
+         <Value representation="general">
+            <Units>arcsec</Units>
+            <Example> 30.0</Example>
+         </Value>
+         <Comment>Nod amplitude on sky.</Comment>
+         <FITS name="NODAMP" hdu="any" type="flt"/>
+         <Requirement phase="ES" condition="Nodding"/>
+         <Source provider="MCCS" location="(e.g. nod.amplitude)" />
+      </Keyword>
+      <Keyword title="NodBeam" >
+	 <Description> Current nod beam position. </Description>
+	 <Value representation="string">
+	    <Example>'A' </Example>
+	 </Value>
+	 <Comment>Current nod beam position</Comment>
+	 <FITS name="NODBEAM" hdu="any" type="str"/>
+	 <Requirement phase="ES" condition="Nodding"/>
+	 <Source provider="MCCS" location="(e.g. nod.current)" />
+	</Keyword>
+      <Keyword title="NodPattern" >
+	 <Description> Pointing sequence pattern for one nod cycle (there could be many
+	 nod cycles in an observation).  Beam A is usually assumed to contain
+	 the object of interest. </Description>
+	 <Value representation="string">
+        <Range type="enum"> ABBA, AB, BA, CUSTOM </Range>
+	    <Example>'ABBA' </Example>
+	 </Value>
+	 <Comment>Nodding pattern, one cycle.</Comment>
+	 <FITS name="NODPATT" hdu="any" type="str"/>
+	 	 <Requirement phase="ES" condition="Nodding"/>
+      </Keyword>
+    <Keyword title="NodStyle" >
+	 <Description>Nodding style for coordinated chopping/nodding.  e.g. nod-matched-chop, nod-perpendicular-chop, etc...
+     </Description>
+	 <Value representation="string">
+     <Range type="enum">NMC, NPC, C2NC2, CUSTOM</Range>
+	    <Example>'NPC' </Example>
+	 </Value>
+	 <Comment>Chop/nod Style. </Comment>
+	 <FITS name="NODSTYLE" hdu="any" type="str"/>
+	 	 <Requirement phase="S3" condition="Nodding/Chopping"/>
+      </Keyword>
+      <Keyword title="NodCoordSys" >
+	 <Description> Coordinate system in which nod positions (NODPOSX,Y)
+	 and rotations are defined.</Description>
+	 <Value representation="string">
+	    <Range type="enum">ERF, ECRF, GALRF, TARF, FPIRF, FFIRF, WFIRF, SIRF, USER</Range>
+	    <Default>'ERF' </Default>
+	    <Example>'ERF' </Example>
+	 </Value>
+	 <Comment>Coordinate system for Nod angle</Comment>
+	 <FITS name="NODCRSYS" hdu="any" type="str"/>
+	 <Requirement phase="ES" condition="Nodding"/>
+	 <Source provider="MCCS" location="(e.g. nod.coord_sys)" />
+
+      </Keyword>
+      <Keyword title="NodPositionX" >
+         <Description>ES nod offset position X in the coordinate frame specified by
+	 NODCRSYS. Alternate specification to NODDIST when an ES nod offset
+	 position is required.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Example> 32.123467</Example>
+         </Value>
+         <Comment>Nod X position</Comment>
+         <FITS name="NODPOSX" hdu="any" type="flt"/>
+      </Keyword>
+      <Keyword title="NodPositionY" >
+         <Description>ES nod offset position Y in the coordinate frame specified
+	 by NODCRSYS. Alternate specification to NODDIST when an ES nod offset
+	 position is required.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Example> -22.9873</Example>
+         </Value>
+         <Comment>Nod Y position</Comment>
+         <FITS name="NODPOSY" hdu="any" type="flt"/>
+      </Keyword>
+      <Keyword title="NodAngle" >
+         <Description> Nod angle, clockwise from y axis defined by NODCRSYS.</Description>
+         <Value representation="general">
+            <Units>decimal degrees</Units>
+            <Range type="interval">-360,360</Range>
+            <Example> 45.0</Example>
+         </Value>
+         <Comment>Nod angle</Comment>
+         <FITS name="NODANGLE" hdu="any" type="flt"/>
+          <Requirement phase="ES" condition="Nodding"/>
+          <Source provider="MCCS" location="(e.g. nod.pos_angle)" />
+      </Keyword>
+   </KeywordList>
+   <KeywordList title="Dithering Keywords">
+      <Keyword title="DitherPattern" >
+         <Description> Approximate shape of dither pattern. </Description>
+         <Value representation="string">
+            <Range type="enum">3-POINT, 5-POINT, 9-POINT, CUSTOM </Range>
+            <Example>'9-POINT' </Example>
+         </Value>
+         <Comment>Dither pattern</Comment>
+         <FITS name="DTHPATT" hdu="any" type="str"/>
+         <Requirement phase="S3" condition="Dithering"/>
+      </Keyword>
+      <Keyword title="DitherPositions" >
+         <Description> Number of dither positions. </Description>
+         <Value representation="integer">
+            <Example> 9</Example>
+         </Value>
+         <Comment>Number of dither positions.</Comment>
+         <FITS name="DTHNPOS" hdu="any" type="int"/>
+         <Requirement phase="conditional" condition="Dithering"/>
+      </Keyword>
+      <Keyword title="DitherPositionIndex" >
+         <Description> Dither position index. </Description>
+         <Value representation="integer">
+            <Example> 5</Example>
+         </Value>
+         <Comment>Dither position index.</Comment>
+         <FITS name="DTHINDEX" hdu="any" type="int"/>
+         <Requirement phase="S3" condition="Dithering"/>
+      </Keyword>
+      <Keyword title="DitherOffset" >
+         <Description> Specified dither offset for each subsequent frame, in arcseconds.</Description>
+         <Value representation="float">
+            <Units>arcsec</Units>            
+            <Example> 2.5</Example>
+         </Value>
+         <Comment>Dither offset (arcseconds).</Comment>
+         <FITS name="DTHOFFS" hdu="any" type="flt"/>
+         <Requirement phase="S3" condition="Dithering"/>
+      </Keyword>
+
+   </KeywordList>
+   <KeywordList title="Mapping Keywords">
+      <Keyword title="MapCoordSys" >
+         <Description> Coordinate system in which ES map positions are defined.  OBSRA/DEC are assumed to describe position of Map Center.
+	 </Description>
+         <Value representation="string">
+            <Range type="enum">EQUATORIAL, GALACTIC, ECLIPTIC, USER</Range>
+            <Default>EQUATORIAL </Default>
+            <Example>'GALACTIC' </Example>
+         </Value>
+         <Comment>Coordinate system for mapping/scanning.</Comment>
+         <FITS name="MAPCRSYS" hdu="any" type="str"/>
+         <Requirement phase="ES" condition="Mapping"/>
+      </Keyword>
+      <Keyword title="MapPattern" >
+         <Description> Approximate map pattern shape.</Description>
+         <Value representation="string">
+            <Range type="enum">RASTER, SPIRAL, SWEEP, CUSTOM </Range>
+            <Example>'RASTER' </Example>
+         </Value>
+         <Comment>Map pattern</Comment>
+         <FITS name="MAPPATT" hdu="any" type="str"/>
+      </Keyword>
+      <Keyword title="MapPositionsX" >
+         <Description> Number of map positions in X coordinate as defined by MAPCRSYS.</Description>
+         <Value representation="integer">
+            <Example> 4</Example>
+         </Value>
+         <Comment>Number of map positions in X</Comment>
+         <FITS name="MAPNXPOS" hdu="any" type="int"/>
+         <Requirement phase="ES" condition="Mapping"/>
+      </Keyword>
+      <Keyword title="MapPositionsY" >
+         <Description> Number of map positions in Y coordinate as defined by MAPCRSYS.</Description>
+         <Value representation="integer">
+            <Example> 4</Example>
+         </Value>
+         <Comment>Number of map positions in Y</Comment>
+         <FITS name="MAPNYPOS" hdu="any" type="int"/>
+         <Requirement phase="ES" condition="Mapping"/>
+      </Keyword>
+      <Keyword title="MapIntervalX" >
+         <Description> Mapping step interval in X coordinate as defined by MAPCRSYS.  OBSRA/DEC are assumed to describe position of Map Center.</Description>
+         <Value representation="general">
+            <Units>arcmin</Units>
+            <Example> 8.5</Example>
+         </Value>
+         <Comment>Mapping step interval in X</Comment>
+         <FITS name="MAPINTX" hdu="primary" type="flt"/>
+         <Requirement phase="ES" condition="Mapping"/>
+      </Keyword>
+      <Keyword title="MapIntervalY" >
+         <Description> Mapping step interval in Y coordinate as defined by MAPCRSYS.  OBSRA/DEC are assumed to describe position of Map Center.</Description>
+         <Value representation="general">
+            <Units>arcmin</Units>
+            <Example> 8.5</Example>
+         </Value>
+         <Comment>Mapping step interval in Y</Comment>
+         <FITS name="MAPINTY" hdu="any" type="flt"/>
+         <Requirement phase="ES" condition="Mapping"/>
+      </Keyword>
+      </KeywordList>
+      <KeywordList title="Scanning Keywords (Constant Velocity)">
+      <Keyword title="ScanStartRA" >
+	 <Description>Start of scan - RA,  coordinate system specified in keyword comment filed and EQUINOX.</Description>
+	 <Value representation="general">
+            <Units>Hours</Units>
+            <Range type="interval">0,24</Range>
+        	<Example>9.0230</Example>
+         </Value>
+         <Value representation="hh:mm:ss.s">
+            <Units>Hours</Units>
+            <Range type="interval">0,24 </Range>
+            <Example>5:35:17.3</Example>
+         </Value>
+	 <Comment>Start of scan - RA.</Comment>
+	 <FITS name="SCNRA0" hdu="any" type="flt"/>
+	 <FITS name="SCNRA0" hdu="any" type="str"/>
+	 <Requirement phase="ES" condition="Scanning"/>
+      </Keyword>
+      <Keyword title="ScanStartDec" >
+	 <Description> Start of scan - Dec , coordinate system specified in keyword comment filed and EQUINOX.</Description>
+	 <Value representation="general">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>47.3465</Example>
+         </Value>
+         <Value representation="dd:mm:ss">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>-5:23:28</Example>
+         </Value>
+
+	 <Comment>Start of scan - Dec.</Comment>
+	 <FITS name="SCNDEC0" hdu="any" type="flt"/>
+	 <FITS name="SCNDEC0" hdu="any" type="str"/>
+	 <Requirement phase="ES" condition="Scanning"/>
+      </Keyword>
+      <Keyword title="ScanEndRA" >
+	 <Description>End of scan - RA, coordinate system specified in keyword comment filed and EQUINOX.</Description>
+	 <Value representation="general">
+            <Units>Hours</Units>
+            <Range type="interval">0,24</Range>
+        	<Example>9.0305</Example>
+         </Value>
+         <Value representation="hh:mm:ss.s">
+            <Units>Hours</Units>
+            <Range type="interval">0,24 </Range>
+            <Example>5:40:32.5</Example>
+         </Value>
+	 <Comment>End of scan - RA.</Comment>
+	 <FITS name="SCNRAF" hdu="any" type="flt"/>
+	 <FITS name="SCNRAF" hdu="any" type="str"/>
+	 <Requirement phase="ES" condition="Scanning"/>
+      </Keyword>
+      <Keyword title="ScanEndDec" >
+	 <Description> End of scan - Dec, coordinate system specified in keyword comment filed and EQUINOX.</Description>
+	 <Value representation="general">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>47.3465</Example>
+         </Value>
+         <Value representation="dd:mm:ss">
+            <Units>Degrees</Units>
+            <Range type="interval">-90,90</Range>
+            <Example>-5:23:28</Example>
+         </Value>
+	 <Comment>End of scan - Dec.</Comment>
+	 <FITS name="SCNDECF" hdu="any" type="flt"/>
+	 <FITS name="SCNDECF" hdu="any" type="str"/>
+	 <Requirement phase="ES" condition="Scanning"/>
+      </Keyword>
+      <Keyword title="ScanRate" >
+         <Description> Commanded slew rate in arcsec/sec along path.</Description>
+         <Value representation="general">
+            <Units>arcsec/s</Units>
+            <Example> 10.0</Example>
+         </Value>
+         <Comment>Scan rate</Comment>
+         <FITS name="SCNRATE" hdu="any" type="flt"/>
+	 <Requirement phase="ES" condition="Scanning"/>
+      </Keyword>
+      <Keyword title="ScanDirection" >
+	 <Description> Angle on sky in some coordinate system to scan from
+	 ScanStartRA/Dec, alternative specification to ScanEndRA/Dec. </Description>
+	 <Value representation="general">
+	    <Units>degrees</Units>
+	    <Example> -35.5</Example>
+	 </Value>
+	 <Comment>Scan direction</Comment>
+	 <FITS name="SCNDIR" hdu="any" type="flt"/>
+	 <Requirement phase="ES" condition="Scanning"/>
+      </Keyword>
+   </KeywordList>
+
+<!--
+   <KeywordList title="FORCAST Keywords">
+	<Keyword title="DATATYPE" >
+	 <Description> 0=source 1=dark 2=flat 3=calibrator </Description>
+	 <Value representation="integer">
+	    <Example/>
+	 </Value>
+	 <Comment>0=source 1=dark 2=flat 3=calibrator</Comment>
+	 <FITS name="DATATYPE" hdu="any" type="int"/>
+        </Keyword>
+        <Keyword title="DATATYPE" >
+<Description> 0=source 1=dark 2=flat 3=calibrator </Description>
+<Value representation="integer">
+<Example/>
+</Value>
+<Comment>0=source 1=dark 2=flat 3=calibrator</Comment>
+<FITS name="DATATYPE" hdu="any" type="int"/>
+        </Keyword>
+<Keyword title="COOLDOWN">
+<Keyword title="DEWARVER">
+<Keyword title="ELECVERS">
+<Keyword title="FPGACODE">
+<Keyword title="FPGAFILE">
+<Keyword title="SYSSWVER">
+<Keyword title="FLATFILE">
+<Keyword title="BADFILE">
+<Keyword title="SWCDET">
+<Keyword title="LWCDET">
+<Keyword title="DLEVELS">
+<Keyword title="FRAMETIM">
+<Keyword title="CHOPS">
+<Keyword title="BEAMS">
+<Keyword title="NSPINS">
+<Keyword title="CHPONOFF">
+<Keyword title="MULTICHP">
+<Keyword title="MPCRPOS1">
+<Keyword title="MPCDPOS1">
+<Keyword title="MPCRPOS2">
+<Keyword title="MPCDPOS2">
+<Keyword title="MPCRPOS3">
+<Keyword title="MPCDPOS3">
+<Keyword title="MPCRPOS4">
+<Keyword title="MPCDPOS4">
+<Keyword title="MPCRPOS5">
+<Keyword title="MPCDPOS5">
+<Keyword title="MPCRPOS6">
+<Keyword title="MPCDPOS6">
+<Keyword title="MPCRPOS7">
+<Keyword title="MPCDPOS7">
+<Keyword title="MPCRPOS8">
+<Keyword title="MPCDPOS8">
+<Keyword title="MPCRPOS9">
+<Keyword title="MPCDPOS9">
+<Keyword title="APERTURE">
+<Keyword title="PABANDW">
+<Keyword title="WELLSIZE">
+<Keyword title="DETBIAS">
+<Keyword title="PAGAIN">
+<Keyword title="EPERADU">
+<Keyword title="MUXCHANS">
+<Keyword title="UPRCNVT">
+<Keyword title="LWRCNVT">
+<Keyword title="CNVTDLY">
+   </KeywordList>
+-->
+
+</KeywordDictionary>

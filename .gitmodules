@@ -1,0 +1,3 @@
+[submodule "SOFIACruiseTools/qa-tools"]
+	path = SOFIACruiseTools/qa-tools
+	url = git@gitlab.sofia.usra.edu:dps/qa-tools.git

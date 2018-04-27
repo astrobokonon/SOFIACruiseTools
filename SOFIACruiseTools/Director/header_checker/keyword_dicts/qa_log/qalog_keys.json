@@ -1,0 +1,7 @@
+{"display": ["FILENUM", "AOR_ID", "OBJECT", "FILEGPID", 
+             "INSTCFG", "SKYMODE", "SPECTEL", "DICHROIC", "SLIT", "WAVECENT",
+             "MAX_WAVSHIFT", "BORESITE", "ALTITUDE", "ZA", "PIPEVERS", "PIPEMODE", 
+             "DATAQUAL", "WCSQUAL", "CALQUAL",
+             "GI COMMENTS", "ACTION", "TEAM COMMENTS/ACTIONS",
+             "TOTAL_FILES", "TOTAL_EXPTIME", "UNPROCESSED"]
+}
