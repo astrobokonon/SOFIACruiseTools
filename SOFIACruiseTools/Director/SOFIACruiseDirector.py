@@ -54,31 +54,32 @@ from . import directorLogDialog as dl
 
 try:
     from ..qa_tools.pyqatools.header_checker import file_checker as fc
-except ImportError as er:
+except ImportError as e:
     print('Initial qa_tools import error:')
     print(e.__class__.__name__)
     print(e)
     try:
         from .. qa_tools.pyqatools.header_checker import file_checker as fc
-    except ImportError as e:
+    except ImportError as er:
         print('Secondary qa_tools import error.')
-        print(e.__class__.__name__)
-        print(e)
+        print(er.__class__.__name__)
+        print(er)
         try:
             from SOFIACruiseTools.qa_tools.pyqatools.header_checker import file_checker as fc
-        except ImportError:
+        except ImportError as err:
             print('Tertiary qa_tools import error.')
-            print(e.__class__.__name__)
-            print(e)
+            print(err.__class__.__name__)
+            print(err)
             source = 'qa-tools'
             link_name = './SOFIACruiseTools/qa_tools'
             if not islink(link_name):
                 try:
                     symlink(source, link_name)
                     from ..qa_tools.pyqatools.header_checker import file_checker as fc
-                except (ImportError, OSError) as e:
+                except (ImportError, OSError) as erro:
                     print('Cannot find header checker code.')
-                    print('\nEncountered {0}: \n\t{1}\n'.format(e.__class__.__name__, e))
+                    print('\nEncountered {0}: '
+                          '\n\t{1}\n'.format(erro.__class__.__name__, erro))
                     print('Verify that the git submodule has been properly pulled.')
                     print('In the top directory, run:')
                     print('\tgit submodule update --init --recursive')
