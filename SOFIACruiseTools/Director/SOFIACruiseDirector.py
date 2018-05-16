@@ -33,7 +33,7 @@ import fnmatch
 import datetime
 import itertools
 from os import walk, symlink
-from os.path import join, basename, getmtime
+from os.path import join, basename, getmtime, islink
 from collections import OrderedDict
 import configobj as co
 import pytz
@@ -54,20 +54,35 @@ from . import directorLogDialog as dl
 
 try:
     from ..qa_tools.pyqatools.header_checker import file_checker as fc
-except ImportError:
+except ImportError as e:
+    print('Failed to import qa_tools')
+    print('\nEncountered {0}: '
+          '\n\t{1}\n'.format(e.__class__.__name__, e))
+    print('Checking the symbolic link')
     source = 'qa-tools'
     link_name = './SOFIACruiseTools/qa_tools'
-    try:
-        symlink(source, link_name)
-        from ..qa_tools.pyqatools.header_checker import file_checker as fc
-    except (ImportError, OSError):
-        print('Cannot find header checker code.')
-        print('Verify that the git submodule has been properly pulled.')
-        print('In the top directory, run:')
+    if not islink(link_name):
+        try:
+            symlink(source, link_name)
+            from ..qa_tools.pyqatools.header_checker import file_checker as fc
+        except (ImportError, OSError) as erro:
+            print('Cannot find header checker code.')
+            print('\nEncountered {0}: '
+                  '\n\t{1}\n'.format(erro.__class__.__name__, erro))
+            print('Verify that the git submodule has been properly pulled.')
+            print('In the top directory, run:')
+            print('\tgit submodule update --init --recursive')
+            print('\nTo avoid this error in the future, use '
+                  'the --recursive flag while cloning the repo')
+            sys.exit()
+    else:
+        print('Symbolic link connecting qa_tools to qa-tools already exists')
+        print('Unable to import qa_tools however')
+        print('Check the link is correct and qa-tools was '
+              'pulled correctly with:')
         print('\tgit submodule update --init --recursive')
-        print('\nTo avoid this error in the future, use '
-              'the --recursive flag while cloning the repo')
         sys.exit()
+
 
 
 class ConfigError(Exception):
@@ -429,35 +444,42 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.local_timezone = window.local_timezone
             self.localtz = pytz.timezone(self.local_timezone)
 
-    def choose_head_check_rules(self):
+    def choose_head_check_rules(self, data_file=None):
         """
         Selects the rules for checking header values.
         """
-        # Get a sample fits file from data directory
-        config = self.config['search'][self.instrument]
-        # Get the current list of FITS files in the location
-        if config['method'] == 'glob':
-            pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
-                                             config['extension'])
-            data_file = glob.glob(pattern)[0]
+        if not data_file:
+            # Get a sample fits file from data directory
+            config = self.config['search'][self.instrument]
+            # Get the current list of FITS files in the location
+            if config['method'] == 'glob':
+                pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
+                                                 config['extension'])
+                data_files = glob.glob(pattern)
+                if data_files:
+                    data_file = data_files[0]
+                else:
+                    self.checker_rules = None
+                    return
 
-        elif config['method'] == 'walk':
-            pattern = '*.{0:s}'.format(config['extension'])
-            current_data = []
-            for root, _, filenames in walk(str(self.data_log_dir)):
-                for filename in fnmatch.filter(filenames, pattern):
-                    data_file = join(root, filename)
+            elif config['method'] == 'walk':
+                pattern = '*.{0:s}'.format(config['extension'])
+                current_data = []
+                for root, _, filenames in walk(str(self.data_log_dir)):
+                    for filename in fnmatch.filter(filenames, pattern):
+                        data_file = join(root, filename)
+                        break
                     break
-                break
-        else:
-            # Unknown method
-            print('Unknown method {0:s} for instrument {1:s}'.format(
-                config['method'], self.instrument))
-            return
+            else:
+                # Unknown method
+                print('Unknown method {0:s} for instrument {1:s}'.format(
+                    config['method'], self.instrument))
+                self.checker_rules = None
+                return
 
         # Pass it to self.checker.choose_rules
         rule = self.checker.choose_rules(data_file)
-    
+
         # Set return value to self.checker_rules
         self.checker_rules = rule
 
@@ -973,6 +995,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         new_files = [join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
         for fname in new_files:
+            if not self.checker_rules:
+                self.choose_head_check_rules(data_file=fname)
             self.data.add_image(fname, self.headers, self.header_check_warnings,
                                 hdu=self.fits_hdu, rules=self.checker_rules)
             bname = basename(fname)
@@ -1494,7 +1518,7 @@ class FITSHeader(object):
         then the cells for that keyword for existing data will be
         empty. This method searches for blanks in header_vals
         for the FITS image infile. If any blanks are found, it will
-        attempt to fill them from the file's header. No changes are 
+        attempt to fill them from the file's header. No changes are
         made to the QtTableWidget.
         """
         # Read in file
