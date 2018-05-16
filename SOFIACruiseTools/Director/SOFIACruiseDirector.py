@@ -54,28 +54,44 @@ from . import directorLogDialog as dl
 
 try:
     from ..qa_tools.pyqatools.header_checker import file_checker as fc
-except ImportError:
-    source = 'qa-tools'
-    link_name = './SOFIACruiseTools/qa_tools'
-    if not islink(link_name):
+except ImportError as er:
+    print('Initial qa_tools import error:')
+    print(e.__class__.__name__)
+    print(e)
+    try:
+        from .. qa_tools.pyqatools.header_checker import file_checker as fc
+    except ImportError as e:
+        print('Secondary qa_tools import error.')
+        print(e.__class__.__name__)
+        print(e)
         try:
-            symlink(source, link_name)
-            from ..qa_tools.pyqatools.header_checker import file_checker as fc
-        except (ImportError, OSError) as e:
-            print('Cannot find header checker code.')
-            print('\nEncountered {0}: \n\t{1}\n'.format(e.__class__.__name__, e))
-            print('Verify that the git submodule has been properly pulled.')
-            print('In the top directory, run:')
-            print('\tgit submodule update --init --recursive')
-            print('\nTo avoid this error in the future, use '
-                  'the --recursive flag while cloning the repo')
-            sys.exit()
-    else:
-        print('Symbolic link connecting qa_tools to qa-tools already exists')
-        print('Unable to import qa_tools however')
-        print('Check the link is correct and qa-tools was '
-              'pulled correctly with:')
-        print('\tgit submodule update --init --recursive')
+            from SOFIACruiseTools.qa_tools.pyqatools.header_checker import file_checker as fc
+        except ImportError:
+            print('Tertiary qa_tools import error.')
+            print(e.__class__.__name__)
+            print(e)
+            source = 'qa-tools'
+            link_name = './SOFIACruiseTools/qa_tools'
+            if not islink(link_name):
+                try:
+                    symlink(source, link_name)
+                    from ..qa_tools.pyqatools.header_checker import file_checker as fc
+                except (ImportError, OSError) as e:
+                    print('Cannot find header checker code.')
+                    print('\nEncountered {0}: \n\t{1}\n'.format(e.__class__.__name__, e))
+                    print('Verify that the git submodule has been properly pulled.')
+                    print('In the top directory, run:')
+                    print('\tgit submodule update --init --recursive')
+                    print('\nTo avoid this error in the future, use '
+                          'the --recursive flag while cloning the repo')
+                    sys.exit()
+            else:
+                print('Symbolic link connecting qa_tools to qa-tools already exists')
+                print('Unable to import qa_tools however')
+                print('Check the link is correct and qa-tools was '
+                      'pulled correctly with:')
+                print('\tgit submodule update --init --recursive')
+                sys.exit()
 
 
 
