@@ -53,35 +53,38 @@ from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
 
 try:
-    from ..qa_tools.pyqatools.header_checker import file_checker as fc
+    from ..header_checker.hcheck import file_checker as fc
 except ImportError as e:
-    print('Failed to import qa_tools')
-    print('\nEncountered {0}: '
-          '\n\t{1}\n'.format(e.__class__.__name__, e))
-    print('Checking the symbolic link')
-    source = 'qa-tools'
-    link_name = './SOFIACruiseTools/qa_tools'
-    if not islink(link_name):
-        try:
-            symlink(source, link_name)
-            from ..qa_tools.pyqatools.header_checker import file_checker as fc
-        except (ImportError, OSError) as erro:
-            print('Cannot find header checker code.')
-            print('\nEncountered {0}: '
-                  '\n\t{1}\n'.format(erro.__class__.__name__, erro))
-            print('Verify that the git submodule has been properly pulled.')
-            print('In the top directory, run:')
+    try:
+        from ..qa_tools.pyqatools.header_checker import file_checker as fc
+    except ImportError as e:
+        print('Failed to import qa_tools')
+        print('\nEncountered {0}: '
+              '\n\t{1}\n'.format(e.__class__.__name__, e))
+        print('Checking the symbolic link')
+        source = 'qa-tools'
+        link_name = './SOFIACruiseTools/qa_tools'
+        if not islink(link_name):
+            try:
+                symlink(source, link_name)
+                from ..qa_tools.pyqatools.header_checker import file_checker as fc
+            except (ImportError, OSError) as erro:
+                print('Cannot find header checker code.')
+                print('\nEncountered {0}: '
+                      '\n\t{1}\n'.format(erro.__class__.__name__, erro))
+                print('Verify that the git submodule has been properly pulled.')
+                print('In the top directory, run:')
+                print('\tgit submodule update --init --recursive')
+                print('\nTo avoid this error in the future, use '
+                      'the --recursive flag while cloning the repo')
+                sys.exit()
+        else:
+            print('Symbolic link connecting qa_tools to qa-tools already exists')
+            print('Unable to import qa_tools however')
+            print('Check the link is correct and qa-tools was '
+                  'pulled correctly with:')
             print('\tgit submodule update --init --recursive')
-            print('\nTo avoid this error in the future, use '
-                  'the --recursive flag while cloning the repo')
             sys.exit()
-    else:
-        print('Symbolic link connecting qa_tools to qa-tools already exists')
-        print('Unable to import qa_tools however')
-        print('Check the link is correct and qa-tools was '
-              'pulled correctly with:')
-        print('\tgit submodule update --init --recursive')
-        sys.exit()
 
 
 
