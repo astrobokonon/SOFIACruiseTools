@@ -141,22 +141,15 @@ generated during this process, flag the file.
 contents of the log to file. 
 
 ###### Header Checker
-The header_checker code comes from the qa-tools repository, which is included
-in the Cruise Director repository as a git submodule in the SOFIACruiseTools
-directory. Importing the code is a bit tricky as the name of the repository
-has a hyphen in it and Python does not allow you to import a module that has 
-a hyphen in the name. This is invalid syntax. As the name of the repository 
-cannot be changed, the simplest solution is to make symbolic link to the 
-directory:
 
-`ln -s qa_tools qa-tools`
-    
-then import qa_tools. To avoid this in the future, don't put hyphens in the 
-names of repositories. 
+Due to an overhaul of the qa-tools repository, this section has changed.
+Originally the header checker code was located in the qa-tools repository, but
+that repo has been split up. Now the header checker code is in a seperate
+repository, named header_checker. 
 
 Working with git submodules is easy, but fraught with pitfalls. The biggest 
 of which is the fact that pulling the main repo (SOFIACruiseTools) to get 
-updates will *not* update the submodule (qa-tools). Also, when the main repo 
+updates will *not* update the submodule (header_checker). Also, when the main repo 
 is initially cloned, the submodule's code is not cloned as well. To pull the 
 submodule code independently use:
     
@@ -167,13 +160,13 @@ repo using the --recursive flag:
 
 `git clone --recursive git@gitlab.sofia.usra.edu:/dps/SOFIACruiseTools.git`
 
-The process for updating qa-tools to a new release is very similar to the 
+The process for updating header_checker to a new release is very similar to the 
 normal practice. There are two ways to do this, explicitly or passively. For 
 the explicit method, first move to the submodule directory. Then pull from 
 the desired branch, usually master:
 
 ```
-cd ./SOFIACruiseTools/qa-tools/
+cd ./SOFIACruiseTools/header_checker
 git pull origin master
 ```
 
@@ -202,6 +195,20 @@ The best resources for submodules are:
 - [Github's Guide] [1] , good for basics.
 - [Chrisophe Porteneuve's Guide] [2] for a lot more detail on 
 what's actually happening. 
+
+Old description of the qa-tools repository: 
+The header_checker code comes from the qa-tools repository, which is included
+in the Cruise Director repository as a git submodule in the SOFIACruiseTools
+directory. Importing the code is a bit tricky as the name of the repository
+has a hyphen in it and Python does not allow you to import a module that has 
+a hyphen in the name. This is invalid syntax. As the name of the repository 
+cannot be changed, the simplest solution is to make symbolic link to the 
+directory:
+
+`ln -s qa_tools qa-tools`
+    
+then import qa_tools. To avoid this in the future, don't put hyphens in the 
+names of repositories. 
 
 ###### Leg Timer
 The leg timer is handled by the LegTimerObj class. The specifics of how to 
