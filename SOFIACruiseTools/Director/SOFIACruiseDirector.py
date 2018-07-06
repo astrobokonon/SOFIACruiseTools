@@ -404,6 +404,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
 
             # Local timezone
+            # Do this first so the flight plan times are parsed
+            # with the correct timezone
             self.local_timezone = window.local_timezone
             self.localtz = pytz.timezone(self.local_timezone)
 
@@ -446,10 +448,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.update_table_cols()
             self.table_data_log.resizeColumnsToContents()
             self.table_data_log.resizeRowsToContents()
-
-            # Local timezone
-            self.local_timezone = window.local_timezone
-            self.localtz = pytz.timezone(self.local_timezone)
 
     def choose_head_check_rules(self, data_file=None):
         """
@@ -692,12 +690,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Starts MET and/or TTL timers
         """
-        print('Local tz: ',self.localtz)
+        #print('Local tz: ',self.localtz)
         if key in 'met both'.split():
             self.met_counting = True
             self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
             # Add tzinfo to this object to make it able to interact
-            print('Takeoff type: ',type(self.takeoff))
+            #print('Takeoff type: ',type(self.takeoff))
             self.takeoff = self.localtz.localize(self.takeoff)
             #self.takeoff = self.takeoff.replace(tzinfo=self.localtz)
         if key in 'ttl both'.split():
@@ -755,11 +753,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   The logic follows the same for each counter/timer.
         if self.met_counting is True:
             # Set the MET to show the time between now and takeoff
-            print('')
-            print('Local: ',self.local_now,
-                    type(self.local_now),self.local_now.tzinfo)
-            print('Takeoff: ',self.takeoff,type(self.takeoff),
-                    self.takeoff.tzinfo)
+            #print('')
+            #print('Local: ',self.local_now,
+            #        type(self.local_now),self.local_now.tzinfo)
+            #print('Takeoff: ',self.takeoff,type(self.takeoff),
+            #        self.takeoff.tzinfo)
             
             #print('Landing: ',self.landing,type(self.landing))
             local2 = self.local_now.replace(tzinfo=None)
@@ -767,15 +765,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             #self.met = local2 - takeoff2
             self.met = self.local_now - self.takeoff
             
-            print('Local2: ',local2, type(local2))
-            print('Takeoff2: ',takeoff2,type(takeoff2))
-            print('self.localtz: ',self.localtz,type(self.localtz))
-            print('self.local_timezone: ',
-                    self.local_timezone,type(self.local_timezone))
+            #print('Local2: ',local2, type(local2))
+            #print('Takeoff2: ',takeoff2,type(takeoff2))
+            #print('self.localtz: ',self.localtz,type(self.localtz))
+            #print('self.local_timezone: ',
+            #        self.local_timezone,type(self.local_timezone))
             #sys.exit()
-            #self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
-            self.met_str = '{0:s} MET'.format(str(self.met))
-            print(self.met_str)
+            self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
+            #print(self.met_str)
             self.txt_met.setText(self.met_str)
         if self.ttl_counting is True:
             # Only runs if "Start TTL" or "Start Both" button is pressed
