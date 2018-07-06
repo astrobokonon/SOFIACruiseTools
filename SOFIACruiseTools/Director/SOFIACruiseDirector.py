@@ -690,20 +690,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         Starts MET and/or TTL timers
         """
-        #print('Local tz: ',self.localtz)
         if key in 'met both'.split():
             self.met_counting = True
             self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
             # Add tzinfo to this object to make it able to interact
-            #print('Takeoff type: ',type(self.takeoff))
             self.takeoff = self.localtz.localize(self.takeoff)
-            #self.takeoff = self.takeoff.replace(tzinfo=self.localtz)
         if key in 'ttl both'.split():
             self.ttl_counting = True
             self.landing = self.landing_time.dateTime().toPyDateTime()
             # Add tzinfo to this object to make it able to interact
             self.landing = self.localtz.localize(self.landing)
-            #self.landing = self.landing.replace(tzinfo=self.localtz)
         if self.ttl_counting is False and self.met_counting is False:
             return
 
@@ -1214,13 +1210,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Then, take that time and update the DateTimeEdit box in the GUI
         """
         if key == 'takeoff':
-            #time = self.flight_info.takeoff.replace(tzinfo=pytz.utc)
             time = pytz.utc.localize(self.flight_info.takeoff)
         elif key == 'landing':
             time = self.flight_info.landing.replace(tzinfo=pytz.utc)
         else:
             return
-        #self.localtz.localize(flight_info
         time = time.astimezone(self.localtz)
         time_str = time.strftime('%m/%d/%Y %H:%M:%S')
         time_qt = QtCore.QDateTime.fromString(time_str, 'MM/dd/yyyy HH:mm:ss')
