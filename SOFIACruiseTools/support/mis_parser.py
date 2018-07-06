@@ -753,18 +753,19 @@ def parse_mis_file(filename):
 
 
 if __name__ == '__main__':
-    loc = '/home/jrvander/code/SOFIACruiseTools/inputs/'
+    #loc = '/home/jrvander/code/SOFIACruiseTools/inputs/'
+    loc = '/home/jrvander/'
     filenames = glob.glob(loc + '*mis')
     tags = ['Filename:', 'Flight', 'Leg', 'UTC', 'Comment:',
             '============================= ', 'Airport:']
     for fname in filenames:
-        fname = loc + '201604_HA_03_WX12.mis'
+        fname = loc + '201807_HA_IAGO_MOPS.mis'
 
         print('\n', fname.split('/')[-1])
         flight = FlightProfile()
         with open(fname, 'r') as f:
             data = f.read()
-        flight.hash = hashlib.sha1(data).hexdigest()
+        flight.hash = hashlib.sha1(data.encode('utf-8')).hexdigest()
         sections = re.split(r'\n{2}', data)
         for section in sections:
             flight.parse_section(section.strip())
