@@ -753,26 +753,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   The logic follows the same for each counter/timer.
         if self.met_counting is True:
             # Set the MET to show the time between now and takeoff
-            #print('')
-            #print('Local: ',self.local_now,
-            #        type(self.local_now),self.local_now.tzinfo)
-            #print('Takeoff: ',self.takeoff,type(self.takeoff),
-            #        self.takeoff.tzinfo)
-            
-            #print('Landing: ',self.landing,type(self.landing))
             local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
-            #self.met = local2 - takeoff2
-            self.met = self.local_now - self.takeoff
-            
-            #print('Local2: ',local2, type(local2))
-            #print('Takeoff2: ',takeoff2,type(takeoff2))
-            #print('self.localtz: ',self.localtz,type(self.localtz))
-            #print('self.local_timezone: ',
-            #        self.local_timezone,type(self.local_timezone))
-            #sys.exit()
+            self.met = local2 - takeoff2
+            #self.met = self.local_now - self.takeoff
             self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
-            #print(self.met_str)
             self.txt_met.setText(self.met_str)
         if self.ttl_counting is True:
             # Only runs if "Start TTL" or "Start Both" button is pressed
