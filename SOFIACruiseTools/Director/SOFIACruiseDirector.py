@@ -403,6 +403,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if not window.fname:
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
 
+            # Local timezone
+            # Do this first so the flight plan times are parsed
+            # with the correct timezone
+            self.local_timezone = window.local_timezone
+            self.localtz = pytz.timezone(self.local_timezone)
+
             # Parse the flight plan
             self.parse_flight_file(window.fname)
 
@@ -442,10 +448,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.update_table_cols()
             self.table_data_log.resizeColumnsToContents()
             self.table_data_log.resizeRowsToContents()
-
-            # Local timezone
-            self.local_timezone = window.local_timezone
-            self.localtz = pytz.timezone(self.local_timezone)
 
     def choose_head_check_rules(self, data_file=None):
         """
@@ -692,12 +694,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.met_counting = True
             self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
             # Add tzinfo to this object to make it able to interact
-            self.takeoff = self.takeoff.replace(tzinfo=self.localtz)
+            self.takeoff = self.localtz.localize(self.takeoff)
         if key in 'ttl both'.split():
             self.ttl_counting = True
             self.landing = self.landing_time.dateTime().toPyDateTime()
             # Add tzinfo to this object to make it able to interact
-            self.landing = self.landing.replace(tzinfo=self.localtz)
+            self.landing = self.localtz.localize(self.landing)
         if self.ttl_counting is False and self.met_counting is False:
             return
 
@@ -718,8 +720,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             '%m/%d/%Y %H:%M:%S $Z')
 
         # Safest way to sensibly go from UTC -> local timezone...?
-        self.local_now = self.utc_now.replace(
-            tzinfo=pytz.utc).astimezone(self.localtz)
+        utc = pytz.utc.localize(self.utc_now)
+        self.local_now = utc.astimezone(self.localtz)
+        #self.local_now = self.utc_now.replace(
+        #    tzinfo=pytz.utc).astimezone(self.localtz)
         self.local_now_str = self.local_now.strftime(' %H:%M:%S %Z')
         self.local_now_datetime_str = self.local_now.strftime(
             '%m/%d/%Y %H:%M:%S')
@@ -748,6 +752,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
+            #self.met = self.local_now - self.takeoff
             self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
             self.txt_met.setText(self.met_str)
         if self.ttl_counting is True:
@@ -1205,7 +1210,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Then, take that time and update the DateTimeEdit box in the GUI
         """
         if key == 'takeoff':
-            time = self.flight_info.takeoff.replace(tzinfo=pytz.utc)
+            time = pytz.utc.localize(self.flight_info.takeoff)
         elif key == 'landing':
             time = self.flight_info.landing.replace(tzinfo=pytz.utc)
         else:
