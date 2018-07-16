@@ -1646,10 +1646,12 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         self.local_timezone = str(self.timezoneSelect.currentText())
         self.instrument = str(self.instSelect.currentText())
-        if 'flight' in self.instrument.lower():
-            self.instrument = 'HAWCFLIGHT'
-        elif 'ground' in self.instrument.lower():
-            self.instrument = 'HAWCGROUND'
+        if 'hawc' in self.instrument.lower():
+            self.instrument = 'HAWC'
+#        if 'flight' in self.instrument.lower():
+#            self.instrument = 'HAWCFLIGHT'
+#        elif 'ground' in self.instrument.lower():
+#            self.instrument = 'HAWCGROUND'
         self.select_kw(default=1)
         self.dirlog_name = ''
         self.data_dir = ''
@@ -1670,10 +1672,11 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         # Read the instrument selection
         self.instrument = str(self.instSelect.currentText())
         if 'hawc' in self.instrument.lower():
-            if 'flight' in self.instrument.lower():
-                self.instrument = 'HAWCFLIGHT'
-            elif 'ground' in self.instrument.lower():
-                self.instrument = 'HAWCGROUND'
+            self.instrument = 'HAWC'
+#            if 'flight' in self.instrument.lower():
+#                self.instrument = 'HAWCFLIGHT'
+#            elif 'ground' in self.instrument.lower():
+#                self.instrument = 'HAWCGROUND'
         self.close()
 
     def load_flight(self):
@@ -1713,10 +1716,12 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Selects the instrument
         """
         self.instrument = str(self.instSelect.currentText())
-        if 'Flight' in self.instrument:
-            self.instrument = 'HAWCFLIGHT'
-        elif 'Ground' in self.instrument:
-            self.instrument = 'HAWCGROUND'
+        if 'hawc' in self.instrument.lower():
+            self.instrument = 'HAWC'
+#        if 'Flight' in self.instrument:
+#            self.instrument = 'HAWCFLIGHT'
+#        elif 'Ground' in self.instrument:
+#            self.instrument = 'HAWCGROUND'
 
     def select_local_timezone(self):
         """

@@ -228,7 +228,7 @@
         </rect>
        </property>
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -369,8 +369,6 @@ p, li { white-space: pre-wrap; }
              </widget>
             </item>
            </layout>
-           <zorder>show_post_line</zorder>
-           <zorder>open_director_log</zorder>
           </widget>
          </item>
          <item row="10" column="0" colspan="3">
@@ -483,7 +481,22 @@ p, li { white-space: pre-wrap; }
            </layout>
           </widget>
          </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="network_status">
+           <property name="text">
+            <string>Network Good</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
         </layout>
+       </widget>
+       <widget class="QWidget" name="flightMap">
+        <attribute name="title">
+         <string>Flight Map</string>
+        </attribute>
        </widget>
       </widget>
      </widget>

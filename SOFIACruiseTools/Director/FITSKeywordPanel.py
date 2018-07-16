@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'FITSKeywordPanel.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -19,7 +19,6 @@ class Ui_FITSKWDialog(object):
         self.widget_4 = QtWidgets.QWidget(FITSKWDialog)
         self.widget_4.setObjectName("widget_4")
         self.gridLayout_13 = QtWidgets.QGridLayout(self.widget_4)
-        self.gridLayout_13.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_13.setObjectName("gridLayout_13")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_13.addItem(spacerItem, 0, 0, 1, 1)
@@ -31,7 +30,6 @@ class Ui_FITSKWDialog(object):
         self.widget = QtWidgets.QWidget(FITSKWDialog)
         self.widget.setObjectName("widget")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.widget)
-        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.fitskw_hdu = QtWidgets.QSpinBox(self.widget)
         self.fitskw_hdu.setAlignment(QtCore.Qt.AlignCenter)

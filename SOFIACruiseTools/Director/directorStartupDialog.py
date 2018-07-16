@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'directorStartupDialog.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -96,7 +96,6 @@ class Ui_Dialog(object):
         self.instSelect.addItem("")
         self.instSelect.addItem("")
         self.instSelect.addItem("")
-        self.instSelect.addItem("")
         self.verticalLayout_2.addWidget(self.instSelect)
         self.logOutButton = QtWidgets.QPushButton(self.layoutWidget1)
         self.logOutButton.setObjectName("logOutButton")
@@ -144,11 +143,10 @@ class Ui_Dialog(object):
         self.fitskwLabelText.setText(_translate("Dialog", "FITS Keywords"))
         self.label.setText(_translate("Dialog", "Local Time Zone"))
         self.flightButton.setText(_translate("Dialog", "Select"))
-        self.instSelect.setItemText(0, _translate("Dialog", "HAWC+ (Flight)"))
-        self.instSelect.setItemText(1, _translate("Dialog", "HAWC+ (Ground)"))
-        self.instSelect.setItemText(2, _translate("Dialog", "FORCAST"))
-        self.instSelect.setItemText(3, _translate("Dialog", "FIFI-LS"))
-        self.instSelect.setItemText(4, _translate("Dialog", "EXES"))
+        self.instSelect.setItemText(0, _translate("Dialog", "HAWC+"))
+        self.instSelect.setItemText(1, _translate("Dialog", "FORCAST"))
+        self.instSelect.setItemText(2, _translate("Dialog", "FIFI-LS"))
+        self.instSelect.setItemText(3, _translate("Dialog", "EXES"))
         self.logOutButton.setText(_translate("Dialog", "Select "))
         self.datalogButton.setText(_translate("Dialog", "Select "))
         self.datalocButton.setText(_translate("Dialog", "Select "))

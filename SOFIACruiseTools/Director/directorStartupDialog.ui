@@ -213,12 +213,7 @@
      <widget class="QComboBox" name="instSelect">
       <item>
        <property name="text">
-        <string>HAWC+ (Flight)</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>HAWC+ (Ground)</string>
+        <string>HAWC+</string>
        </property>
       </item>
       <item>

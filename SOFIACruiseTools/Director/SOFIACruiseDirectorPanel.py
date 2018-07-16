@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'SOFIACruiseDirectorPanel.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -129,7 +129,7 @@ class Ui_MainWindow(object):
         self.groupBox_2.setObjectName("groupBox_2")
         self.tabWidget = QtWidgets.QTabWidget(self.groupBox_2)
         self.tabWidget.setGeometry(QtCore.QRect(15, 30, 1221, 344))
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
@@ -143,7 +143,6 @@ class Ui_MainWindow(object):
         self.directorLogTab = QtWidgets.QWidget()
         self.directorLogTab.setObjectName("directorLogTab")
         self.gridLayout_10 = QtWidgets.QGridLayout(self.directorLogTab)
-        self.gridLayout_10.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_10.setObjectName("gridLayout_10")
         self.log_on_heading = QtWidgets.QPushButton(self.directorLogTab)
         self.log_on_heading.setObjectName("log_on_heading")
@@ -193,17 +192,14 @@ class Ui_MainWindow(object):
         self.dataLogTab = QtWidgets.QWidget()
         self.dataLogTab.setObjectName("dataLogTab")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.dataLogTab)
-        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.log_data_widget = QtWidgets.QWidget(self.dataLogTab)
         self.log_data_widget.setObjectName("log_data_widget")
         self.gridLayout_13 = QtWidgets.QGridLayout(self.log_data_widget)
-        self.gridLayout_13.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_13.setObjectName("gridLayout_13")
         self.open_director_log = QtWidgets.QPushButton(self.log_data_widget)
         self.open_director_log.setObjectName("open_director_log")
         self.gridLayout_13.addWidget(self.open_director_log, 0, 0, 1, 1)
-        self.open_director_log.raise_()
         self.gridLayout_3.addWidget(self.log_data_widget, 0, 2, 1, 1)
         self.widget_6 = QtWidgets.QWidget(self.dataLogTab)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -214,7 +210,6 @@ class Ui_MainWindow(object):
         self.widget_6.setMaximumSize(QtCore.QSize(16777215, 75))
         self.widget_6.setObjectName("widget_6")
         self.gridLayout_14 = QtWidgets.QGridLayout(self.widget_6)
-        self.gridLayout_14.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_14.setObjectName("gridLayout_14")
         self.data_log_edit_keywords = QtWidgets.QPushButton(self.widget_6)
         self.data_log_edit_keywords.setObjectName("data_log_edit_keywords")
@@ -248,7 +243,6 @@ class Ui_MainWindow(object):
         self.widget_5 = QtWidgets.QWidget(self.dataLogTab)
         self.widget_5.setObjectName("widget_5")
         self.gridLayout_12 = QtWidgets.QGridLayout(self.widget_5)
-        self.gridLayout_12.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_12.setObjectName("gridLayout_12")
         self.data_log_update_interval = QtWidgets.QSpinBox(self.widget_5)
         self.data_log_update_interval.setAlignment(QtCore.Qt.AlignCenter)
@@ -266,6 +260,9 @@ class Ui_MainWindow(object):
         self.gridLayout_12.addWidget(self.data_log_autoupdate, 1, 0, 1, 1)
         self.gridLayout_3.addWidget(self.widget_5, 0, 0, 1, 1)
         self.tabWidget.addTab(self.dataLogTab, "")
+        self.flightMap = QtWidgets.QWidget()
+        self.flightMap.setObjectName("flightMap")
+        self.tabWidget.addTab(self.flightMap, "")
         self.gridLayout.addWidget(self.groupBox_2, 3, 0, 1, 9)
         self.TimesWorld = QtWidgets.QGroupBox(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -577,7 +574,6 @@ class Ui_MainWindow(object):
         self.widget = QtWidgets.QWidget(self.LegTimers)
         self.widget.setObjectName("widget")
         self.gridLayout_8 = QtWidgets.QGridLayout(self.widget)
-        self.gridLayout_8.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_8.setObjectName("gridLayout_8")
         self.leg_timer_stop = QtWidgets.QPushButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
@@ -608,7 +604,6 @@ class Ui_MainWindow(object):
         self.widget_2 = QtWidgets.QWidget(self.LegTimers)
         self.widget_2.setObjectName("widget_2")
         self.gridLayout_9 = QtWidgets.QGridLayout(self.widget_2)
-        self.gridLayout_9.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_9.setObjectName("gridLayout_9")
         self.time_select_remaining = QtWidgets.QRadioButton(self.widget_2)
         self.time_select_remaining.setChecked(True)
@@ -661,7 +656,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -701,6 +696,7 @@ class Ui_MainWindow(object):
         self.data_log_update_interval.setSuffix(_translate("MainWindow", " seconds"))
         self.data_log_autoupdate.setText(_translate("MainWindow", "Autoupdate every:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.dataLogTab), _translate("MainWindow", "Data Log"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.flightMap), _translate("MainWindow", "Flight Map"))
         self.TimesWorld.setTitle(_translate("MainWindow", "World Times "))
         self.txt_local_time.setText(_translate("MainWindow", "LOCAL"))
         self.txt_utc.setText(_translate("MainWindow", "UTC"))
