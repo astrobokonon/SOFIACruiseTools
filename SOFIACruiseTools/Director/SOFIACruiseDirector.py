@@ -34,9 +34,12 @@ import datetime
 import itertools
 from os import walk, symlink
 from os.path import join, basename, getmtime, islink
+from os.path import dirname, realpath, isdir
 from collections import OrderedDict
 import configobj as co
 import pytz
+from urllib.request import urlopen, URLError
+import socket
 
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -132,6 +135,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_timer = LegTimerObj()
         self.leg_timer.init_duration = None
 
+        self.good_connection = True
+
         self.cruise_log = []
         self.start_data_log = False
         self.data_current = []
@@ -182,6 +187,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.flight_info = None
         self.checker = fc.FileChecker()
         self.checker_rules = None
+        self.network_status = True
+        self.network_status_hold = False
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -199,6 +206,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         ####
         # Set up buttons
         ####
+
+        self.toggle_network.clicked.connect(self.manual_toggle_network)
 
         # Control buttons
         self.setup_button.clicked.connect(self.setup)
@@ -791,11 +800,70 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_utc.setText(self.utc_now_str)
         self.txt_local_time.setText(self.local_now_str)
 
+        # Update the network test flag
+        self.verify_network()
+        self.network_status_display_update()
+
         # If the program is set to look for data automatically and the time
-        # is a multiple of the update frequency
+        # is a multiple of the update frequency and network is good
         if self.start_data_log and self.data_log_autoupdate.isChecked():
             if self.utc_now.second % self.data_log_update_interval.value() == 0:
-                self.update_data()
+                if self.network_status:
+                    self.update_data()
+
+
+    def manual_toggle_network(self):
+        """ Test button to toggle network status. """
+        self.verify_network(testing=True)
+        self.network_status_display_update()
+        self.network_status_hold = not self.network_status_hold
+
+
+    def verify_network(self, host='8.8.8.8', port=53, 
+                       timeout=3, testing=False):
+        """ Tests the current status of the network.
+
+        Checks if Google can be pinged and if the data
+        directory is still available. If not, set 
+        good_conenction flag low to pause data collection.
+        """
+        google_ipaddr = '296.58.192.142'
+        address = f'https://{google_ipaddr}'
+        if testing:
+            self.network_status = not self.network_status
+        elif self.network_status_hold:
+            pass
+        else:
+            if isdir(self.data_log_dir):
+                try:
+                    socket.setdefaulttimeout(timeout)
+                    socket.socket(socket.AF_INET, 
+                                  socket.SOCK_STREAM).connect((host,port))
+                    #print('socket success')
+                    self.network_status = True
+                except Exception as ex:
+                    print(ex)
+                    self.network_status = False
+            else:
+                self.network_status = False
+#
+#            try:
+#                urlopen(address, timeout=1)
+#                return True
+#            except URLError as e:
+#                print(e)
+#                return False
+
+    def network_status_display_update(self):
+        """ Updates the GUI status with current network status """
+        style = 'QLabel {{color : {0:s}; }}'
+        if self.network_status:
+            self.network_status_display.setText('Network Good')
+            self.network_status_display.setStyleSheet(style.format('green'))
+        else:
+            self.network_status_display.setText('Network Bad')
+            self.network_status_display.setStyleSheet(style.format('red'))
+            
 
     def leg_timer_color(self, remaining_seconds):
         """
@@ -1633,6 +1701,9 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.fits_hdu = self.parentWidget().fits_hdu
         self.required_fields = self.parent().required_fields
 
+        # Testing button
+        self.test_config.clicked.connect(self.load_default)
+    
         self.flightButton.clicked.connect(self.load_flight)
         self.instSelect.activated.connect(self.select_instr)
         self.logOutButton.clicked.connect(self.select_log_file)
@@ -1662,6 +1733,21 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.success_parse = False
         self.headers = self.config['keywords'][self.instrument]
 
+    def load_default(self):
+        """ Loads default settings for faster testing. """
+        self.instrument = 'FIFI-LS'
+        self.local_timezone = 'US/Pacific'
+        code_dir = dirname(realpath(__file__))
+        flight_file = f'{code_dir}/../../inputs/201803_FI_DIANA_SCI.mis'
+        print(f'Loading flight plan: {flight_file}')
+        self.load_flight(fname = flight_file)
+        print(f'Successful Parse: {self.success_parse}')
+        timestamp = self.utc_now.strftime('%Y%m%d.txt')
+        self.dirlog_name = f'SILog_{timestamp}'
+        self.datalog_name = f'DataLog_{timestamp}'
+        self.data_dir = '/home/jrvander/mounts/preview/misc/JV_tmp/cruiseFiles/'
+        
+
     def start(self):
         """
         Closes this window and passes results to main program
@@ -1679,7 +1765,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 #                self.instrument = 'HAWCGROUND'
         self.close()
 
-    def load_flight(self):
+    def load_flight(self, fname=None):
         """
         Parses flight plan from .msi file.
 
@@ -1689,7 +1775,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         If unsuccessful, make the label text red and angry and give the
         user another chance
         """
-        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
+        if fname:
+            self.fname = fname
+        else:
+            self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flightText.setStyleSheet('QLabel { color : black; }')
@@ -1883,10 +1972,8 @@ class LegTimerObj(object):
         if mode == 'remaining':
             if self.remaining < datetime.timedelta(0):
                 return '-'+clock_string(-self.remaining)
-            else:
-                return clock_string(self.remaining)
-        else:
-            return clock_string(self.elapsed)
+            return clock_string(self.remaining)
+        return clock_string(self.elapsed)
 
 
 def clock_string(clock):
@@ -1915,6 +2002,7 @@ def total_sec_to_hms_str(obj):
     else:
         done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
     return done_str
+
 
 def main():
     """ Generate the gui and run """

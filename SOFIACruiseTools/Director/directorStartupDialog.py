@@ -120,6 +120,9 @@ class Ui_Dialog(object):
         self.timezoneSelect.addItem("")
         self.timezoneSelect.addItem("")
         self.verticalLayout_2.addWidget(self.timezoneSelect)
+        self.test_config = QtWidgets.QCheckBox(Dialog)
+        self.test_config.setGeometry(QtCore.QRect(60, 430, 85, 21))
+        self.test_config.setObjectName("test_config")
 
         self.retranslateUi(Dialog)
         self.buttonBox.accepted.connect(Dialog.accept)
@@ -159,4 +162,5 @@ class Ui_Dialog(object):
         self.timezoneSelect.setItemText(5, _translate("Dialog", "US/Mountain"))
         self.timezoneSelect.setItemText(6, _translate("Dialog", "UTC"))
         self.timezoneSelect.setItemText(7, _translate("Dialog", "Pacific/Auckland"))
+        self.test_config.setText(_translate("Dialog", "Testing"))
 
