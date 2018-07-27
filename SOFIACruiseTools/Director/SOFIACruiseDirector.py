@@ -40,6 +40,7 @@ import configobj as co
 import pytz
 from urllib.request import urlopen, URLError
 import socket
+from pandas import read_csv
 
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -426,6 +427,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.instrument_text.setText(self.instrument)
             #self.checker_rules = self.checker.choose_rules(self.instrument)
 
+            # Data headers
+            # Get the headers and set up the QtTableWidget
+            self.headers = window.headers
+            self.update_table_cols()
+            self.table_data_log.resizeColumnsToContents()
+            self.table_data_log.resizeRowsToContents()
+
             # Cruise Director Log filename
             # If this hasn't been set, change text to red as this
             # is required for the program to run
@@ -451,12 +459,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.txt_data_log_save_file.setText('{0:s}'.format(
                     basename(str(self.log_out_name))))
 
-            # Data headers
-            # Get the headers and set up the QtTableWidget
-            self.headers = window.headers
-            self.update_table_cols()
-            self.table_data_log.resizeColumnsToContents()
-            self.table_data_log.resizeRowsToContents()
+            # Log append flags
+            if window.append_data_log:
+                self.data.add_images_from_log(self.log_out_name, self.headers)
+                self.update_table(append_init=True)
+                #self.read_data_log()
+            if window.append_director_log:
+                self.read_director_log()
+            #self.append_data_log = window.append_data_log
+            #self.append_director_log = window.append_director_log
+        
 
     def choose_head_check_rules(self, data_file=None):
         """
@@ -612,6 +624,31 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             except IOError:
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
+    def read_director_log(self):
+        """
+        Reads in existing director log.
+
+        Called if the user wants to append an existing director log
+        to the new log. 
+        """
+        print('Reading director log')
+        # Read in current log
+        try:
+            with open(self.output_name,'r') as f:
+                existing_log = f.readlines()
+        except IOError:
+            print('Unable to read existing director log:')
+            print(f'\t{self.output_name}')
+            print('Quitting')
+            sys.exit()
+
+        print(f'Found {len(existing_log)} lines')
+        # Add to current log
+        for line in existing_log:
+            self.cruise_log.append(line)
+            self.log_display.append(line.strip())
+
+
     def mark_message(self, key):
         """
         Write a message to the director's log
@@ -658,6 +695,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.line_stamper(line)
         # Clear the line
         self.log_input_line.setText('')
+
+
+    def read_data_log(self):
+        """
+        Reads existing data log
+        """
+        
+        
+
+
 
     def count_direction(self, key):
         """
@@ -846,13 +893,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     self.network_status = False
             else:
                 self.network_status = False
-#
-#            try:
-#                urlopen(address, timeout=1)
-#                return True
-#            except URLError as e:
-#                print(e)
-#                return False
+
 
     def network_status_display_update(self):
         """ Updates the GUI status with current network status """
@@ -1107,7 +1148,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             print('Unknown file sorting method. Check config file, director.ini')
             sys.exit()
 
-    def update_table(self):
+    def update_table(self, append_init=False):
         """
         Updates the table widget to display newly found files
         """
@@ -1119,6 +1160,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.horizontalHeader().setDragDropMode(
             QtWidgets.QAbstractItemView.NoDragDrop)
         self.table_data_log.blockSignals(True)
+
+        if append_init:
+            self.new_files = self.data.header_vals.keys()
+            self.data_filenames = self.data.header_vals.keys()
 
         # Add the data to the table
         for file_key in self.new_files:
@@ -1586,6 +1631,23 @@ class FITSHeader(object):
         # Add to data structure with the filename as key
         self.header_vals[basename(infile)] = header
 
+    def add_images_from_log(self, logfile, hkeys):
+        """
+        Reads in log from disk
+        """
+        print('logfile = ',logfile)
+        data_log = read_csv(logfile)
+        data_log.fillna('',inplace=True)
+        data_log = data_log.to_dict('records')
+        print(type(data_log))
+        for dl in data_log:
+            header = OrderedDict()
+            for key in hkeys:
+                header[key] = dl[key]
+            self.header_vals[dl['FILENAME']] = header
+            
+        
+
     def fill_data_blank_cells(self, infile, hkeys, hdu=0):
         """
         Fills any blank cell in table
@@ -1714,6 +1776,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
         self.timezoneSelect.activated.connect(self.select_local_timezone)
+#        self.appendCheck.clicked.connect(self.append_options)
 
         self.local_timezone = str(self.timezoneSelect.currentText())
         self.instrument = str(self.instSelect.currentText())
@@ -1732,6 +1795,13 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.flight_info = None
         self.success_parse = False
         self.headers = self.config['keywords'][self.instrument]
+        self.append_data_log = False
+        self.append_director_log = False
+    
+    def append_options(self):
+        """ Flag to choose if logs should be appended to or overwritten """
+        self.append_option = True
+        
 
     def load_default(self):
         """ Loads default settings for faster testing. """
@@ -1754,6 +1824,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         # Read the timezone
         self.local_timezone = str(self.timezoneSelect.currentText())
+
+        # Check the append check
+        self.append_data_log = self.appendDataCheck.checkState()>0
+        self.append_director_log = self.appendLogCheck.checkState()>0
 
         # Read the instrument selection
         self.instrument = str(self.instSelect.currentText())
@@ -1845,9 +1919,16 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Selects where to store the data log
         """
         default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.csv'))
+        print('Selecting datalog name')
         self.datalog_name = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                   'Save File',
                                                                   default)[0]
+#        self.datalog_name = QtWidgets.QFileDialog.getOpenFileName(self,
+#                                                                  'Open File',
+#                                                                  default)[0]
+        with open(self.datalog_name,'r') as f:
+            print('Length of data log: ',len(f.readlines()))
+        print('Datalog Name: ',self.datalog_name)
         if self.datalog_name:
             self.datalogText.setText(
                 '{0:s}'.format(basename(str(self.datalog_name))))
