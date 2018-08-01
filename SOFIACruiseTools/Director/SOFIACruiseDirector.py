@@ -190,6 +190,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.checker_rules = None
         self.network_status = True
         self.network_status_hold = False
+        self.network_status_control = True
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -289,7 +290,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Verify that all sections are present
         required_sections = ['keywords', 'search', 'sort',
                              'ttl_timer_hour_warnings',
-                             'leg_timer_minute_warnings']
+                             'leg_timer_minute_warnings',
+                             'network_test']
         if len(required_sections) != len(self.config.keys()):
             raise ConfigError('Config missing keys')
         if set(required_sections) != set(self.config.keys()):
@@ -331,6 +333,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if first < second:
                 raise ConfigError('Config leg timer warnings error: '
                                   'Second longer than first')
+
+        # Check network test flags
+        try:
+            self.dns_check = int(self.config['network_test']['dns_check'])
+            self.file_check = int(self.config['network_test']['file_check'])
+        except ValueError:
+            raise ConfigError('Unable to parse network_test settings')
 
     def popout_director_log(self):
         """
@@ -848,22 +857,35 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_local_time.setText(self.local_now_str)
 
         # Update the network test flag
-        self.verify_network()
-        self.network_status_display_update()
+        if (self.dns_check or self.file_check) and self.network_status_control:
+            self.verify_network()
+            self.network_status_display_update()
+        else:
+            self.network_status_display_update(stop=True)
+            
 
         # If the program is set to look for data automatically and the time
         # is a multiple of the update frequency and network is good
         if self.start_data_log and self.data_log_autoupdate.isChecked():
             if self.utc_now.second % self.data_log_update_interval.value() == 0:
-                if self.network_status:
+                # If the network is good or if the user has turned off
+                # checking the network
+                if self.network_status or not self.network_status_control:
                     self.update_data()
 
 
     def manual_toggle_network(self):
         """ Test button to toggle network status. """
-        self.verify_network(testing=True)
-        self.network_status_display_update()
-        self.network_status_hold = not self.network_status_hold
+        #self.verify_network(testing=True)
+        print('Toggle button pressed')
+        print(f'network_status_control: {self.network_status_control}')
+        if self.network_status_control:
+            self.network_status_display_update()
+            self.network_status_control = not self.network_status_control
+        else: 
+            self.network_status_display_update(stop=True)
+            self.network_status_control = not self.network_status_control
+        #self.network_status_hold = not self.network_status_hold
 
 
     def verify_network(self, host='8.8.8.8', port=53, 
@@ -895,15 +917,20 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.network_status = False
 
 
-    def network_status_display_update(self):
+    def network_status_display_update(self, stop=False):
         """ Updates the GUI status with current network status """
         style = 'QLabel {{color : {0:s}; }}'
-        if self.network_status:
-            self.network_status_display.setText('Network Good')
-            self.network_status_display.setStyleSheet(style.format('green'))
+        if stop:
+            self.network_status_display.setText('Not testing network')
+            self.network_status_display.setStyleSheet(style.format('black'))
         else:
-            self.network_status_display.setText('Network Bad')
-            self.network_status_display.setStyleSheet(style.format('red'))
+            if self.network_status:
+                self.network_status_display.setText('Network Good')
+                self.network_status_display.setStyleSheet(style.format('green'))
+            else:
+                self.network_status_display.setText('Network Bad')
+                self.network_status_display.setStyleSheet(style.format('red'))
+            
             
 
     def leg_timer_color(self, remaining_seconds):
