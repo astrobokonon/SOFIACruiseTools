@@ -269,6 +269,9 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.dataLogTab, "")
         self.flightMap = QtWidgets.QWidget()
         self.flightMap.setObjectName("flightMap")
+        self.open_map = QtWidgets.QPushButton(self.flightMap)
+        self.open_map.setGeometry(QtCore.QRect(430, 82, 261, 121))
+        self.open_map.setObjectName("open_map")
         self.tabWidget.addTab(self.flightMap, "")
         self.gridLayout.addWidget(self.groupBox_2, 3, 0, 1, 9)
         self.TimesWorld = QtWidgets.QGroupBox(self.centralwidget)
@@ -663,7 +666,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -705,6 +708,7 @@ class Ui_MainWindow(object):
         self.data_log_force_update.setText(_translate("MainWindow", "Force Update"))
         self.toggle_network.setText(_translate("MainWindow", "Toggle Network"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.dataLogTab), _translate("MainWindow", "Data Log"))
+        self.open_map.setText(_translate("MainWindow", "Open the Map"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.flightMap), _translate("MainWindow", "Flight Map"))
         self.TimesWorld.setTitle(_translate("MainWindow", "World Times "))
         self.txt_local_time.setText(_translate("MainWindow", "LOCAL"))

@@ -246,7 +246,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>2</number>
        </property>
        <property name="movable">
         <bool>true</bool>
@@ -504,6 +504,19 @@ p, li { white-space: pre-wrap; }
         <attribute name="title">
          <string>Flight Map</string>
         </attribute>
+        <widget class="QPushButton" name="open_map">
+         <property name="geometry">
+          <rect>
+           <x>430</x>
+           <y>82</y>
+           <width>261</width>
+           <height>121</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Open the Map</string>
+         </property>
+        </widget>
        </widget>
       </widget>
      </widget>

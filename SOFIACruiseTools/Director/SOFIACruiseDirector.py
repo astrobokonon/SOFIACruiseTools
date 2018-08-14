@@ -50,11 +50,20 @@ try:
 except ImportError:
     import pyfits as pyf
 
+#import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('QT5Agg')
+#from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+#from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as \
+#    NavigationToolbar
+
 from .. support import mis_parser as fpmis
 from . import FITSKeywordPanel as fkwp
 from . import SOFIACruiseDirectorPanel as scdp
 from . import directorStartupDialog as ds
 from . import directorLogDialog as dl
+#import SOFIACruiseTools.Director.flightMapDialog as fm
+from SOFIACruiseTools.Director.flightMap import FlightMap
 
 try:
     from ..header_checker.hcheck import file_checker as fc
@@ -89,7 +98,6 @@ except ImportError as e:
                   'pulled correctly with:')
             print('\tgit submodule update --init --recursive')
             sys.exit()
-
 
 
 class ConfigError(Exception):
@@ -246,6 +254,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.log_input_line.returnPressed.connect(lambda: self.mark_message('post'))
         self.open_director_log.clicked.connect(self.popout_director_log)
 
+        self.open_map.clicked.connect(self.open_flight_map)
+
         self.log_fault_mccs.clicked.connect(lambda: self.mark_message('mccs'))
         self.log_fault_si.clicked.connect(lambda: self.mark_message('si'))
         self.log_landing.clicked.connect(lambda: self.mark_message('land'))
@@ -346,6 +356,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Pops open the director log in seperate window
         """
         DirectorLogDialog(self)
+
+    def open_flight_map(self):
+        """Pops open the flight map"""
+        FlightMap(self)
 
     def flag_file(self):
         """
@@ -647,11 +661,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 existing_log = f.readlines()
         except IOError:
             print('Unable to read existing director log:')
-            print(f'\t{self.output_name}')
+            #print(f'\t{self.output_name}')
+            print('\t{0:s}'.format(self.output_name))
             print('Quitting')
             sys.exit()
 
-        print(f'Found {len(existing_log)} lines')
+        #print(f'Found {len(existing_log)} lines')
         # Add to current log
         for line in existing_log:
             self.cruise_log.append(line)
@@ -877,8 +892,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def manual_toggle_network(self):
         """ Test button to toggle network status. """
         #self.verify_network(testing=True)
-        print('Toggle button pressed')
-        print(f'network_status_control: {self.network_status_control}')
         if self.network_status_control:
             self.network_status_display_update()
             self.network_status_control = not self.network_status_control
@@ -897,7 +910,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         good_conenction flag low to pause data collection.
         """
         google_ipaddr = '296.58.192.142'
-        address = f'https://{google_ipaddr}'
+        address = 'https://{0:s}'.format(google_ipaddr)
         if testing:
             self.network_status = not self.network_status
         elif self.network_status_hold:
@@ -1835,13 +1848,18 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.instrument = 'FIFI-LS'
         self.local_timezone = 'US/Pacific'
         code_dir = dirname(realpath(__file__))
-        flight_file = f'{code_dir}/../../inputs/201803_FI_DIANA_SCI.mis'
-        print(f'Loading flight plan: {flight_file}')
+        #flight_file = f'{code_dir}/../../inputs/201803_FI_DIANA_SCI.mis'
+        flight_file = '{0:s}/../../inputs/201803_FI_DIANA_SCI.mis'.format(code_dir)
+        #print(f'Loading flight plan: {flight_file}')
+        print('Loading flight plan: {0:s}'.format(flight_file))
         self.load_flight(fname = flight_file)
-        print(f'Successful Parse: {self.success_parse}')
+        #print(f'Successful Parse: {self.success_parse}')
+        print('Successful Parse: {}'.format(self.success_parse))
         timestamp = self.utc_now.strftime('%Y%m%d.txt')
-        self.dirlog_name = f'SILog_{timestamp}'
-        self.datalog_name = f'DataLog_{timestamp}'
+        #self.dirlog_name = f'SILog_{timestamp}'
+        #self.datalog_name = f'DataLog_{timestamp}'
+        self.dirlog_name = 'SILog_{0:s}'.format(timestamp)
+        self.datalog_name = 'DataLog_{0:s}'.format(timestamp)
         self.data_dir = '/home/jrvander/mounts/preview/misc/JV_tmp/cruiseFiles/'
         
 
@@ -2082,6 +2100,42 @@ class LegTimerObj(object):
                 return '-'+clock_string(-self.remaining)
             return clock_string(self.remaining)
         return clock_string(self.elapsed)
+
+
+#class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
+#    """Class for pop-out flight map"""
+#
+#    def __init__(self, parent):
+#        QtWidgets.QDialog.__init__(self, parent)
+#
+#        self.setupUi(self)
+#        self.setModal(0)
+#
+#        #self.figure = plt.figure()
+#        #self.canvas = FigureCanvas(self.figure)
+#
+#        #self.toolbar = NavigationToolbar(self.canvas, self)
+#
+#        self.plot_button.clicked.connect(self.plot)
+#        self.clear_button.clicked.connect(self.clear)
+#
+#        self.show()
+#
+#    def plot(self):
+#        """Plot test data"""
+#        print('Plotting data...')
+#        x = np.linspace(0, 10, 100)
+#        y = x**2
+##        self.figure.clear()
+##        ax = self.figure.add_subplot(111)
+        self.flightMap.canvas.ax.plot(x, y)
+        self.flightMap.canvas.draw()
+
+    def clear(self):
+        """Clears the plot"""
+        self.flightMap.canvas.ax.clear()
+        self.flightMap.canvas.draw()
+        #self.figure.clear()
 
 
 def clock_string(clock):

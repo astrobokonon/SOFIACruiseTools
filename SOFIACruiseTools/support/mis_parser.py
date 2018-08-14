@@ -123,18 +123,18 @@ class FlightProfile(object):
         self.fancy_name = ''
         # Attempted to parse from the filename
         self.instrument = ''
-        self.inst_dict = {"EX": "EXES",
-                          "FC": "FLITECAM",
-                          "FF": "FPI+",
-                          "FI": "FIFI-LS",
-                          "FO": "FORCAST",
-                          "FP": "FLIPO",
-                          "GR": "GREAT",
-                          "HA": "HAWC+",
-                          "HI": "HIPO",
-                          "HM": "HIRMES",
-                          "NA": "NotApplicable",
-                          "NO": "MassDummy"}
+        self.inst_dict = {'EX': 'EXES',
+                          'FC': 'FLITECAM',
+                          'FF': 'FPI+',
+                          'FI': 'FIFI-LS',
+                          'FO': 'FORCAST',
+                          'FP': 'FLIPO',
+                          'GR': 'GREAT',
+                          'HA': 'HAWC+',
+                          'HI': 'HIPO',
+                          'HM': 'HIRMES',
+                          'NA': 'NotApplicable',
+                          'NO': 'MassDummy'}
         # In a perfect world, I'd just make this be len(legs)
         self.num_legs = 0
         self.legs = []
@@ -253,7 +253,7 @@ class FlightProfile(object):
         Oversees the parsing of a section of the flight plan
 
         Identifies the type of leg then calls the correct parser.
-        Identification is based on the first word of the secition.
+        Identification is based on the first word of the section.
         """
         tag = section.split()[0].strip(':')
         if tag == 'Filename':
