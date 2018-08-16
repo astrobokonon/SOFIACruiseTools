@@ -1842,7 +1842,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """ Flag to choose if logs should be appended to or overwritten """
         self.append_option = True
         
-
     def load_default(self):
         """ Loads default settings for faster testing. """
         self.instrument = 'FIFI-LS'
@@ -1862,7 +1861,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.datalog_name = 'DataLog_{0:s}'.format(timestamp)
         self.data_dir = '/home/jrvander/mounts/preview/misc/JV_tmp/cruiseFiles/'
         
-
     def start(self):
         """
         Closes this window and passes results to main program

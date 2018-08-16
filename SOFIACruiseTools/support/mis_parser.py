@@ -6,6 +6,7 @@ import re
 import glob
 import hashlib
 from datetime import datetime, timedelta
+import numpy as np
 import itertools
 
 
@@ -137,8 +138,11 @@ class FlightProfile(object):
                           'NO': 'MassDummy'}
         # In a perfect world, I'd just make this be len(legs)
         self.num_legs = 0
-        self.legs = []
+        self.legs = list()
         self.review_comments = FlightComments()
+        self.steps = LegSteps()
+        self.leg_steps = list()
+        self.step_count = 0
 
     def __str__(self):
         s = 'Filename: {0:s}\t(Hash: {1:s})\n'.format(self.filename, self.hash)
@@ -203,7 +207,7 @@ class FlightProfile(object):
             str(self.flight_time), self.obs_time)
         txt_str += "Filename: %s" % self.filename
 
-        return txtStr
+        return txt_str
 
     def parse_mission(self, section, tag):
         """
@@ -264,6 +268,7 @@ class FlightProfile(object):
         elif tag == 'Flight' or tag == 'Airport':
             # Mission summary
             self.parse_mission(section, tag)
+            self.steps.start_date = self.takeoff.date()
         elif tag == 'Leg':
             # This section describes a leg
             # There are different legs:
@@ -281,6 +286,117 @@ class FlightProfile(object):
             else:
                 leg.parse_other_leg(section, self.size)
             self.legs.append(leg)
+        elif tag == 'UTC':
+            # Section contains 5-minute steps
+            self.step_count += 1
+            self.steps.parse_steps(section, self.step_count)
+
+
+class LegSteps(object):
+    """Holds details of 5-minute steps of all legs."""
+    def __init__(self):
+        """Initializes object"""
+        self.start_date = None
+        self.points = dict()
+        keys = ['leg_num', 'time', 'mag_heading', 'true_heading',
+                'latitude', 'longitude', 'wind', 'temperature',
+                'local_time', 'elevation', 'rof', 'rof_rate',
+                'loswv', 'sun_elevation', 'sun_hour_angle']
+        for key in keys:
+            self.points[key] = list()
+
+#        self.leg_num = list()
+#        self.time = list()
+#        self.mag_heading = list()
+#        self.true_heading = list()
+#        self.latitude = list()
+#        self.longitude = list()
+#        self.wind = list()
+#        self.temperature = list()
+#        self.local_time = list()
+#        self.elevation = list()
+#        self.rof = list()
+#        self.rof_rate = list()
+#        self.loswv = list()
+#        self.sun_elevation = list()
+#        self.sun_hour_angle = list()
+
+    def parse_steps(self, section, leg_num):
+        """Parses 5-minute steps in a leg
+
+        Parameters
+        ----------
+        section : basestring
+            Contains the section details
+        leg_num : int
+            The number this leg is in the flight
+
+        Returns
+        -------
+        None
+        """
+
+        lines = section.strip().split('\n')
+        header = lines[0]
+        # The fields present in the steps have changed over time. At some
+        # point they added a sun hour angle field. Check if it is present.
+        # If it isn't, then it is an old flight plan and don't try to add
+        # the hour angle field
+        if 'SunHA' in header:
+            new_style = True
+        else:
+            new_style = False
+        steps = lines[1:]
+        for line in steps:
+            if 'Potential' in line:
+                break
+            self.points['leg_num'].append(leg_num)
+            l = line.strip().split()
+
+            utc_time = datetime.strptime(l[0], '%H:%M:%S')
+            utc_time = utc_time.replace(year=self.start_date.year,
+                                        month=self.start_date.month,
+                                        day=self.start_date.day)
+            self.points['time'].append(utc_time)
+            self.points['mag_heading'].append(float(l[1]))
+            self.points['true_heading'].append(float(l[2]))
+            self.points['latitude'].append(lat_long_convert(l[3]+' '+l[4]))
+            self.points['longitude'].append(lat_long_convert(l[5]+' '+l[6]))
+            self.points['wind'].append(l[7])
+            self.points['temperature'].append(float(l[8]))
+            self.points['local_time'].append(l[9])
+
+            try:
+                value = float(l[10])
+            except ValueError:
+                value = np.nan
+            finally:
+                self.points['elevation'].append(value)
+
+            try:
+                value = float(l[11])
+            except ValueError:
+                value = np.nan
+            finally:
+                self.points['rof'].append(value)
+
+            try:
+                value = float(l[12])
+            except ValueError:
+                value = np.nan
+            finally:
+                self.points['rof_rate'].append(value)
+
+            try:
+                value = float(l[13])
+            except ValueError:
+                value = np.nan
+            finally:
+                self.points['loswv'].append(value)
+
+            self.points['sun_elevation'].append(float(l[14]))
+            if new_style:
+                self.points['sun_hour_angle'].append(value)
 
 
 class LegProfile(object):
@@ -694,6 +810,37 @@ class StepParameters(object):
         self.sun_elevation = []
 
 
+def lat_long_convert(coord):
+    """ Converts 'DD MM' to decimal
+
+    Parameters
+    ----------
+    coord : str
+        Coordinates to convert in a format like 'N37 30'
+
+    Returns
+    -------
+    point : float
+        Coordinates in a format like '37.5'
+
+    Examples
+    --------
+    >>> lat_long_convert('S43 36.3')
+    -43.605
+
+    >>>> lat_long_convert('E172 31.8')
+    172.53
+
+    """
+    direction = coord[0]
+    degrees = float(coord[1:].split()[0])
+    minutes = float(coord[1:].split()[1])
+    point = degrees + minutes/60.
+    if direction in ['W', 'S']:
+        point *= -1
+    return point
+
+
 def identify_leg_type(section):
     """
     Identifies the leg type.
@@ -775,4 +922,7 @@ if __name__ == '__main__':
             print(l)
             l.test_parse()
 
+        print('Number of legs: ',flight.num_legs)
+        print('Number of details found: ',len(flight.leg_steps))
+        print('Unique leg numbers: ',set(flight.steps.points['leg_num']))
         break

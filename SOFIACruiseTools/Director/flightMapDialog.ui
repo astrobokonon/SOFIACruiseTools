@@ -6,21 +6,27 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>731</width>
+    <width>897</width>
     <height>628</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="MplWidget" name="flightMap" native="true">
+  <widget class="MplWidget" name="flight_map_plot" native="true">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>60</y>
-     <width>551</width>
-     <height>471</height>
+     <x>10</x>
+     <y>10</y>
+     <width>711</width>
+     <height>521</height>
     </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
   </widget>
   <widget class="QPushButton" name="plot_button">
@@ -39,7 +45,7 @@
   <widget class="QPushButton" name="clear_button">
    <property name="geometry">
     <rect>
-     <x>420</x>
+     <x>520</x>
      <y>550</y>
      <width>131</width>
      <height>51</height>
@@ -47,6 +53,42 @@
    </property>
    <property name="text">
     <string>Clear</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="plot_flight_button">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>550</y>
+     <width>121</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Plot Flight</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="leg_selection_box">
+   <property name="geometry">
+    <rect>
+     <x>760</x>
+     <y>70</y>
+     <width>79</width>
+     <height>23</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>760</x>
+     <y>50</y>
+     <width>59</width>
+     <height>15</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Leg: </string>
    </property>
   </widget>
  </widget>
