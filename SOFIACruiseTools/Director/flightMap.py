@@ -21,10 +21,11 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         QtWidgets.QDialog.__init__(self, parent)
 
         self.setupUi(self)
-        self.setModal(1)
+        self.setModal(0)
 
         self.flight = self.parentWidget().flight_info
         self.width = self.parentWidget().map_width
+        self.current_time = self.parentWidget().utc_now
         leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
 
         self.location = None
@@ -122,9 +123,13 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
     def plot_current_location(self):
         """Plots a black x at the plane's current location"""
         # Loop through times to find the most recent one
-        now = self.time_selection.time().toPyTime()
-        now = datetime.datetime(2018, 3, 24, hour=now.hour, minute=now.minute,
-                                second=now.second)
+        if self.use_current.isChecked():
+            now = datetime.datetime.utcnow()
+        else:
+            now = self.time_selection.time().toPyTime()
+            now = datetime.datetime(2018, 3, 24, hour=now.hour, minute=now.minute,
+                                    second=now.second)
+        print('Time now: ',now)
         lat = None
         for i, time in enumerate(self.flight.steps.points['time']):
             if now < time:
