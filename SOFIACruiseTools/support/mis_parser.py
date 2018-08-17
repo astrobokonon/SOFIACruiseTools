@@ -357,7 +357,12 @@ class LegSteps(object):
             utc_time = utc_time.replace(year=self.start_date.year,
                                         month=self.start_date.month,
                                         day=self.start_date.day)
+            if self.points['time']:
+                if utc_time < self.points['time'][-1]:
+                    utc_time += datetime.timedelta(days=1)
             self.points['time'].append(utc_time)
+
+
             self.points['mag_heading'].append(float(l[1]))
             self.points['true_heading'].append(float(l[2]))
             self.points['latitude'].append(lat_long_convert(l[3]+' '+l[4]))
@@ -900,6 +905,7 @@ def parse_mis_file(filename):
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
     #loc = '/home/jrvander/code/SOFIACruiseTools/inputs/'
     loc = '/home/jrvander/'
     filenames = glob.glob(loc + '*mis')
@@ -925,4 +931,10 @@ if __name__ == '__main__':
         print('Number of legs: ',flight.num_legs)
         print('Number of details found: ',len(flight.leg_steps))
         print('Unique leg numbers: ',set(flight.steps.points['leg_num']))
+
+        fig,ax = plt.subplots(1,1,figsize=(10,10))
+        ax.plot(flight.steps.points['time'])
+        fig.savefig('time_points.png',bbox_inches='tight')
+        plt.close(fig)
+
         break

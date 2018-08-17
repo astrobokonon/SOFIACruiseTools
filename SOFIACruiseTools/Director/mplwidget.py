@@ -8,8 +8,7 @@ matplotlib.use('QT5Agg')
 
 class MplCanvas(Canvas):
     def __init__(self):
-        self.fig = Figure()
-        #self.ax = self.fig.add_subplot(111)
+        self.fig = Figure(figsize=(30,35), tight_layout=True)
         Canvas.__init__(self, self.fig)
         Canvas.setSizePolicy(self,
                              QtWidgets.QSizePolicy.Expanding,

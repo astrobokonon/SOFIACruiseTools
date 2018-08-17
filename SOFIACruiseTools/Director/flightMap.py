@@ -11,6 +11,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as \
 import os
 import numpy as np
 import cartopy
+import datetime
 
 
 class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
@@ -20,21 +21,19 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         QtWidgets.QDialog.__init__(self, parent)
 
         self.setupUi(self)
-        self.setModal(0)
+        self.setModal(1)
 
         self.flight = self.parentWidget().flight_info
         leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
 
+        self.location = None
 
         # Set up plot
         code_location = os.path.dirname(os.path.realpath(__file__))
         cartopy.config['pre_existing_data_dir'] = os.path.join(
             code_location, 'maps')
 
-        standard_parallels = np.arange(-90, 90, 5)
         standard_longitudes = np.arange(-180, 181, 5)
-        #med_lat = np.median(self.flight.steps.latitude)
-        #med_lon = np.median(self.flight.steps.longitude)
         med_lat = np.median(self.flight.steps.points['latitude'])
         med_lon = np.median(self.flight.steps.points['longitude'])
 
@@ -46,8 +45,10 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         ortho = cartopy.crs.Orthographic(central_latitude=med_lat,
                                               central_longitude=med_lon)
         self.flight_map_plot.canvas.figure.clf()
+        pos = [0.1, 0.1, 0.8, 0.8]    # left, bottom, width, height
         self.flight_map_plot.canvas.ax = self.flight_map_plot.canvas.figure.add_subplot(111,
-                                                                 projection=ortho)
+                                                                 projection=ortho,
+                                                                 position=pos)
         self.flight_map_plot.canvas.ax.set_extent(extent)
         self.flight_map_plot.canvas.ax.coastlines(resolution='110m')
         gl = self.flight_map_plot.canvas.ax.gridlines(color='k', linestyle='--')
@@ -68,18 +69,22 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         print(extent)
         self.flight_map_plot.canvas.ax.add_feature(states)
 
-         # Set up buttons
+        # Set up buttons
         self.plot_button.clicked.connect(self.plot)
         self.clear_button.clicked.connect(self.clear)
         self.plot_flight_button.clicked.connect(self.plot_full_flight)
-        self.leg_selection_box.addItems(leg_labels)
-        print('Current Index: ', self.leg_selection_box.currentIndex())
-        print('Current Value: ', self.leg_selection_box.currentText())
 
+        self.leg_selection_box.addItems(leg_labels)
+        self.time_selection.timeChanged.connect(self.plot_current_location)
         self.leg_selection_box.currentIndexChanged.connect(lambda: self.plot_leg(
             self.leg_selection_box.currentText()))
-        #self.selected_leg = int(self.leg_selection_box.currentText())
         self.flight_map_plot.canvas.ax.get_xaxis().set_ticks([])
+
+        self.plot_full_flight()
+
+        timer = QtCore.QTimer(self)
+        timer.timeout.connect(self.plot_current_location)
+        timer.start(1000)
 
         self.show()
 
@@ -96,10 +101,11 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
     def plot_full_flight(self):
         """Plots the legs of a flight."""
         self.flight_map_plot.canvas.ax.plot(self.flight.steps.points['longitude'],
-                                      self.flight.steps.points['latitude'],
-                                      color='blue',
-                                      transform=cartopy.crs.Geodetic())
+                                            self.flight.steps.points['latitude'],
+                                            color='blue',
+                                            transform=cartopy.crs.Geodetic())
         self.flight_map_plot.canvas.draw()
+        self.flight_map_plot.canvas.updateGeometry()
 
     def plot_leg(self, leg_num):
         """Plots a specific leg in red."""
@@ -112,6 +118,28 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             self.plot_full_flight()
             self.flight_map_plot.canvas.ax.plot(lons, lats, color='red',
                                                 transform=cartopy.crs.Geodetic())
+            self.flight_map_plot.canvas.draw()
+
+    def plot_current_location(self):
+        """Plots a black x at the plane's current location"""
+        # Loop through times to find the most recent one
+        now = self.time_selection.time().toPyTime()
+        now = datetime.datetime(2018, 3, 24, hour=now.hour, minute=now.minute,
+                                second=now.second)
+        lat = None
+        for i, time in enumerate(self.flight.steps.points['time']):
+            if now < time:
+                lat = self.flight.steps.points['latitude'][i]
+                lon = self.flight.steps.points['longitude'][i]
+                break
+        if lat:
+            if self.location:
+                self.location.remove()
+            self.location = self.flight_map_plot.canvas.ax.scatter(lon, lat,
+                                                                   s=10,
+                                                                   marker='x',
+                                                                   color='black',
+                                                                   transform=cartopy.crs.Geodetic())
             self.flight_map_plot.canvas.draw()
 
     def clear(self):
