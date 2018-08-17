@@ -66,8 +66,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                                      name=states_name,
                                                      scale='110m',
                                                      facecolor='none')
-        print(extent)
-        self.flight_map_plot.canvas.ax.add_feature(states)
+        self.flight_map_plot.canvas.ax.add_feature(states, edgecolor='gray')
 
         # Set up buttons
         self.plot_button.clicked.connect(self.plot)
