@@ -40,10 +40,14 @@ from os.path import dirname, realpath, isdir
 from collections import OrderedDict
 import configobj as co
 import pytz
-from urllib.request import urlopen, URLError
 import socket
 from pandas import read_csv
 
+try:
+    from urllib.request import urlopen, URLError
+except ImportError:
+    # When using Python2
+    from urllib2 import urlopen, URLError
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
 
@@ -357,13 +361,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Check map size setting
         try:
             self.map_width =  float(self.config['flight_map']['width'])
+            self.marker_size = float(self.config['flight_map']['marker_size'])
         except ValueError:
-            raise ConfigError('Flight map width must be a float')
-        
+            raise ConfigError('Unable to parse flight map settings.')
 
     def popout_director_log(self):
         """
-        Pops open the director log in seperate window
+        Pops open the director log in separate window
         """
         DirectorLogDialog(self)
 

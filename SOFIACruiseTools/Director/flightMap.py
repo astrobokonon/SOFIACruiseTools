@@ -26,6 +26,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight = self.parentWidget().flight_info
         self.width = self.parentWidget().map_width
         self.current_time = self.parentWidget().utc_now
+        self.marker_size = self.parentWidget().marker_size
         leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
 
         self.location = None
@@ -129,7 +130,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             now = self.time_selection.time().toPyTime()
             now = datetime.datetime(2018, 3, 24, hour=now.hour, minute=now.minute,
                                     second=now.second)
-        print('Time now: ',now)
         lat = None
         for i, time in enumerate(self.flight.steps.points['time']):
             if now < time:
@@ -140,7 +140,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             if self.location:
                 self.location.remove()
             self.location = self.flight_map_plot.canvas.ax.scatter(lon, lat,
-                                                                   s=10,
+                                                                   s=self.marker_size,
                                                                    marker='x',
                                                                    color='black',
                                                                    transform=cartopy.crs.Geodetic())
