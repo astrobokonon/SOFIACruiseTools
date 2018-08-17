@@ -24,6 +24,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.setModal(1)
 
         self.flight = self.parentWidget().flight_info
+        self.width = self.parentWidget().map_width
         leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
 
         self.location = None
@@ -38,9 +39,8 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         med_lon = np.median(self.flight.steps.points['longitude'])
 
         # Extra degrees to pad map
-        width = 20
-        extent = (med_lon-width, med_lon+width,
-                  med_lat-width, med_lat+width)
+        extent = (med_lon-self.width, med_lon+self.width,
+                  med_lat-self.width, med_lat+self.width)
 
         ortho = cartopy.crs.Orthographic(central_latitude=med_lat,
                                               central_longitude=med_lon)

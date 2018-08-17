@@ -301,7 +301,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         required_sections = ['keywords', 'search', 'sort',
                              'ttl_timer_hour_warnings',
                              'leg_timer_minute_warnings',
-                             'network_test']
+                             'network_test', 'flight_map']
         if len(required_sections) != len(self.config.keys()):
             raise ConfigError('Config missing keys')
         if set(required_sections) != set(self.config.keys()):
@@ -350,6 +350,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.file_check = int(self.config['network_test']['file_check'])
         except ValueError:
             raise ConfigError('Unable to parse network_test settings')
+
+        # Check map size setting
+        try:
+            self.map_width =  float(self.config['flight_map']['width'])
+        except ValueError:
+            raise ConfigError('Flight map width must be a float')
+        
 
     def popout_director_log(self):
         """
