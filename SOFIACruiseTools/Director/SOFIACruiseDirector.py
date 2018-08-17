@@ -26,6 +26,8 @@ loop, a function called showlcd connected to a QtTimer object.
 # Trying to ensure Python 2/3 coexistance ...
 from __future__ import division, print_function, absolute_import
 
+import matplotlib
+matplotlib.use('QT5Agg')
 import sys
 import csv
 import glob
@@ -68,6 +70,7 @@ from SOFIACruiseTools.Director.flightMap import FlightMap
 try:
     from ..header_checker.hcheck import file_checker as fc
 except ImportError as e:
+    print('Failed to import header_checker with {}'.format(e))
     try:
         from ..qa_tools.pyqatools.header_checker import file_checker as fc
     except ImportError as e:
