@@ -32,6 +32,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
 
         self.location = None
+        self.current_leg = None
 
         # Set up plot
         code_location = os.path.dirname(os.path.realpath(__file__))
@@ -53,12 +54,10 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_map_plot.canvas.ax = self.flight_map_plot.canvas.figure.add_subplot(111,
                                                                  projection=ortho,
                                                                  position=pos)
+        # Set limits
         self.flight_map_plot.canvas.ax.set_extent(extent)
+        # Turn on coastlines and other geographic features
         self.flight_map_plot.canvas.ax.coastlines(resolution='110m')
-        gl = self.flight_map_plot.canvas.ax.gridlines(color='k', linestyle='--')
-        gl.xlocation = matplotlib.ticker.FixedLocator(standard_longitudes)
-        gl.xformatter = cartopy.mpl.gridliner.LONGITUDE_FORMATTER
-        gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
         self.flight_map_plot.canvas.ax.add_feature(cartopy.feature.OCEAN)
         self.flight_map_plot.canvas.ax.add_feature(cartopy.feature.LAND)
         self.flight_map_plot.canvas.ax.add_feature(cartopy.feature.LAKES)
@@ -72,16 +71,24 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                                      facecolor='none')
         self.flight_map_plot.canvas.ax.add_feature(states, edgecolor='gray')
 
+        # Set up plot parameters
+        gl = self.flight_map_plot.canvas.ax.gridlines(color='k', linestyle='--',
+                                                      linewidth=0.2)
+        gl.xlocation = matplotlib.ticker.FixedLocator(standard_longitudes)
+        gl.xformatter = cartopy.mpl.gridliner.LONGITUDE_FORMATTER
+        gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
+
         # Set up buttons
-        self.plot_button.clicked.connect(self.plot)
-        self.clear_button.clicked.connect(self.clear)
-        self.plot_flight_button.clicked.connect(self.plot_full_flight)
+        #self.plot_button.clicked.connect(self.plot)
+        #self.clear_button.clicked.connect(self.clear)
+        #self.plot_flight_button.clicked.connect(self.plot_full_flight)
 
         self.leg_selection_box.addItems(leg_labels)
         self.time_selection.timeChanged.connect(self.plot_current_location)
         self.leg_selection_box.currentIndexChanged.connect(lambda: self.plot_leg(
             self.leg_selection_box.currentText()))
         self.flight_map_plot.canvas.ax.get_xaxis().set_ticks([])
+
 
         self.plot_full_flight()
 
@@ -106,6 +113,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_map_plot.canvas.ax.plot(self.flight.steps.points['longitude'],
                                             self.flight.steps.points['latitude'],
                                             color='blue',
+                                            linewidth=0.5,
                                             transform=cartopy.crs.Geodetic())
         self.flight_map_plot.canvas.draw()
         self.flight_map_plot.canvas.updateGeometry()
@@ -118,8 +126,10 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                 lats.append(self.flight.steps.points['latitude'][i])
                 lons.append(self.flight.steps.points['longitude'][i])
         if lats:
+            if self.current_leg:
+                self.current_leg.pop(0).remove()
             self.plot_full_flight()
-            self.flight_map_plot.canvas.ax.plot(lons, lats, color='red',
+            self.current_leg = self.flight_map_plot.canvas.ax.plot(lons, lats, color='red',
                                                 transform=cartopy.crs.Geodetic())
             self.flight_map_plot.canvas.draw()
 
