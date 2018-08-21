@@ -1,5 +1,6 @@
 
 import SOFIACruiseTools.Director.flightMapDialog as fm
+#import SOFIACruiseTools.Director.flightMapWidget as fm
 from PyQt5 import QtGui, QtCore, QtWidgets
 import matplotlib.pyplot as plt
 import matplotlib
@@ -15,6 +16,7 @@ import datetime
 
 
 class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
+#class FlightMap(QtCore.QForm, fm.Ui_Form):
     """Class for pop-out flight map"""
 
     def __init__(self, parent):
