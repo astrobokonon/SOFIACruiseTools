@@ -8,6 +8,7 @@ try:
 except ImportError:
     import pyfits as pyf
 
+
 class FITSHeader(object):
     """
     Oversees the data structure that holds FITS headers
@@ -70,8 +71,6 @@ class FITSHeader(object):
             for key in hkeys:
                 header[key] = dl[key]
             self.header_vals[dl['FILENAME']] = header
-
-
 
     def fill_data_blank_cells(self, infile, hkeys, hdu=0):
         """
