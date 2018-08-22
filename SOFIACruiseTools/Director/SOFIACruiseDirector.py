@@ -26,24 +26,17 @@ loop, a function called showlcd connected to a QtTimer object.
 # Trying to ensure Python 2/3 coexistance ...
 from __future__ import division, print_function, absolute_import
 
-import matplotlib
-matplotlib.use('QT5Agg')
 import sys
-import csv
 import glob
 import fnmatch
 import datetime
-import itertools
 import os
-#from os import walk, symlink
-#from os.path import join, basename, getmtime, islink
-#from os.path import dirname, realpath, isdir, isfile
-from collections import OrderedDict
+import matplotlib
+matplotlib.use('QT5Agg')
 import configobj as co
 import pytz
 import socket
 import subprocess
-from pandas import read_csv
 
 try:
     from urllib.request import urlopen, URLError
@@ -58,31 +51,14 @@ try:
 except ImportError:
     import pyfits as pyf
 
-#import matplotlib.pyplot as plt
-#import matplotlib
-#matplotlib.use('QT5Agg')
-#from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-#from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as \
-#    NavigationToolbar
-
-#from .. support import mis_parser as fpmis
-#from . import FITSKeywordPanel as fkwp
-#from . import SOFIACruiseDirectorPanel as scdp
-#from . import directorStartupDialog as ds
-#from . import directorLogDialog as dl
 import SOFIACruiseTools.support.mis_parser as fpmis
-import SOFIACruiseTools.Director.FITSKeywordPanel as fkwp
 import SOFIACruiseTools.Director.SOFIACruiseDirectorPanel as scdp
-import SOFIACruiseTools.Director.directorStartupDialog as ds
-import SOFIACruiseTools.Director.directorLogDialog as dl
 from SOFIACruiseTools.Director.flightMap import FlightMap
 from SOFIACruiseTools.Director.directorLog import DirectorLogDialog
 from SOFIACruiseTools.Director.startupApp import StartupApp
 from SOFIACruiseTools.Director.FITSKeyWordDialog import FITSKeyWordDialog
 from SOFIACruiseTools.Director.fitsHeader import FITSHeader
 from SOFIACruiseTools.Director.legTimer import LegTimerObj
-
-#import SOFIACruiseTools.Director.flightMapDialog as fm
 
 
 try:
