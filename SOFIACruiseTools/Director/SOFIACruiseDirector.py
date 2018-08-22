@@ -1137,10 +1137,18 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.new_files = []
         # Get the current list of FITS files in the location
         if config['method'] == 'glob':
-            pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
-                                             config['extension'])
+            if self.instrument.lower() == 'forcast':
+                # FORCAST has 2 channels, r and b. While not used at the
+                # same time, they are often used in the same flight. To prevent
+                # restarting Cruise Director every time, the data_log_dir
+                # is set to the parent directory and new files are pulled from
+                # both the r and b subdirectories.
+                pattern = '{0:s}/[rb]/*.{1:s}'.format(str(self.data_log_dir),
+                                                      config['extension'])
+            else:
+                pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
+                                                 config['extension'])
             self.data_current = glob.glob(pattern)
-
         elif config['method'] == 'walk':
             pattern = '*.{0:s}'.format(config['extension'])
             current_data = []
@@ -1148,7 +1156,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 for filename in fnmatch.filter(filenames, pattern):
                     current_data.append(os.path.join(root, filename))
             self.data_current = current_data
-
         else:
             # Unknown method
             print('Unknown method {0:s} for instrument {1:s}'.format(
@@ -1166,7 +1173,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Separate out the new files
         new_files = set(bncur) - set(bnpre)
-        new_files = [os.path.join(self.data_log_dir, i) for i in new_files]
+        if self.instrument.lower() == 'forcast':
+            new_files = [os.path.join(self.data_log_dir, i[0], i)
+                         for i in new_files]
+        else:
+            new_files = [os.path.join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
         for fname in new_files:
             if not self.checker_rules:

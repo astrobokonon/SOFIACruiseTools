@@ -27,10 +27,15 @@ set it
 - **Log Output**: This is where the comment log will be stored. The default naming
   convention is "SILog_<utc date stamp>.txt". This is the only required field. 
 - **Log Data Output**: This file will contain a csv version of the FITS  
-keywords parsed from observations during the flight.
+keywords parsed from observations during the flight. 
 - **Data Location**: Where observations will be read in from. FORCAST, EXES, and
   either HAWC settings will search for the corresponding file type in this
   directory only, while FIFI-LS searches for all FITS files in all subdirectories. 
+  FORCAST data is stored in two channels, r and b. To avoid having to set up 
+  separate runs of Cruise Director every time the channel being used is 
+  changed, Cruise Director instead always looks in both. For FORCAST 
+  observations, the *data location* should be set to the parent directory of 
+  the r and b directories. 
 - **FITS Keywords**: This opens a new dialog where the initial keywords to be
   monitored are defined. Each instrument has a default list, but this can be 
   customized.
