@@ -89,7 +89,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             self.leg_selection_box.currentText()))
         self.flight_map_plot.canvas.ax.get_xaxis().set_ticks([])
 
-        self.close_button.clicked.connect(self.close_map())
+        self.close_button.clicked.connect(self.close_map)
 
         self.plot_full_flight()
 
@@ -139,9 +139,10 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         # Loop through times to find the most recent one
         if self.use_current.isChecked():
             now = datetime.datetime.utcnow()
+            print('Current time: ',now)
         else:
             now = self.time_selection.time().toPyTime()
-            now = datetime.datetime(2018, 3, 24, hour=now.hour, minute=now.minute,
+            now = datetime.datetime(2018, 8, 21, hour=now.hour, minute=now.minute,
                                     second=now.second)
         lat = None
         for i, time in enumerate(self.flight.steps.points['time']):

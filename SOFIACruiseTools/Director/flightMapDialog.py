@@ -40,6 +40,9 @@ class Ui_Dialog(object):
         self.use_current = QtWidgets.QCheckBox(Dialog)
         self.use_current.setGeometry(QtCore.QRect(410, 680, 151, 20))
         self.use_current.setObjectName("use_current")
+        self.close_button = QtWidgets.QPushButton(Dialog)
+        self.close_button.setGeometry(QtCore.QRect(580, 680, 80, 23))
+        self.close_button.setObjectName("close_button")
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -50,5 +53,6 @@ class Ui_Dialog(object):
         self.leg_label.setText(_translate("Dialog", "Leg: "))
         self.time_label.setText(_translate("Dialog", "Time:"))
         self.use_current.setText(_translate("Dialog", "Use Current Time"))
+        self.close_button.setText(_translate("Dialog", "Close"))
 
 from mplwidget import MplWidget
