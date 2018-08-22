@@ -119,7 +119,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_map_plot.canvas.draw()
         self.flight_map_plot.canvas.updateGeometry()
 
-    def plot_leg(self, leg_num):
+    def plot_leg(self, leg_num, current=False):
         """Plots a specific leg in red."""
         lats, lons = list(), list()
         for i,leg in enumerate(self.flight.steps.points['leg_num']):
@@ -130,7 +130,15 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             if self.current_leg:
                 self.current_leg.pop(0).remove()
             self.plot_full_flight()
-            self.current_leg = self.flight_map_plot.canvas.ax.plot(lons, lats, color='red',
+            if current:
+                color = 'fuchsia'
+                linewidth = 0.5
+            else:
+                color = 'red'
+                linewidth = 0.75
+            self.current_leg = self.flight_map_plot.canvas.ax.plot(lons, lats,
+                                                                   color=color,
+                                                                   linewidth=linewidth,
                                                 transform=cartopy.crs.Geodetic())
             self.flight_map_plot.canvas.draw()
 
@@ -148,6 +156,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             if now < time:
                 lat = self.flight.steps.points['latitude'][i]
                 lon = self.flight.steps.points['longitude'][i]
+                leg = self.flight.steps.points['leg_num'][i]
                 break
         if lat:
             if self.location:
@@ -157,6 +166,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                                                    marker='x',
                                                                    color='black',
                                                                    transform=cartopy.crs.Geodetic())
+            self.plot_leg(leg, current=True)
             self.flight_map_plot.canvas.draw()
 
     def clear(self):
