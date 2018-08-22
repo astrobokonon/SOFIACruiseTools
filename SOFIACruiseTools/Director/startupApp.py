@@ -177,6 +177,14 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         dtxt = 'Select Data Directory'
         self.data_dir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt)
+        # If instrument is set to FORCAST, then check for r/b subdirectories
+        if self.instrument.lower() == 'forcast':
+            r_subdir = os.path.join(self.data_dir, 'r')
+            b_subdir = os.path.join(self.data_dir, 'b')
+            if not os.path.isdir(r_subdir) or not os.path.isdir(b_subdir):
+                print('WARNING: Data Location not properly configured '
+                      'for FORCAST! Need r and/or b subdirectories '
+                      'in the Data Location!')
         if self.data_dir:
             self.datalocText.setText(self.data_dir)
             self.datalocButton.setText('Change')

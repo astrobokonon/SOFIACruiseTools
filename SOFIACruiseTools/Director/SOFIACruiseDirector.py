@@ -1212,10 +1212,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             else:
                 print('Unknown file formatting for {0:s}'.format(self.instrument))
                 print('Cannot sort')
-                sys.exit()
+                return files
+                #sys.exit()
         else:
             print('Unknown file sorting method. Check config file, director.ini')
-            sys.exit()
+            return files
+            #sys.exit()
 
     def update_table(self, append_init=False):
         """
