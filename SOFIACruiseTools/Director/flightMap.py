@@ -89,6 +89,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             self.leg_selection_box.currentText()))
         self.flight_map_plot.canvas.ax.get_xaxis().set_ticks([])
 
+        self.close_button.clicked.connect(self.close_map())
 
         self.plot_full_flight()
 
@@ -163,3 +164,9 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flightMap.canvas.ax.clear()
         self.flightMap.canvas.draw()
         #self.figure.clear()
+
+
+    def close_map(self):
+        """ Closes the map."""
+        self.close()
+

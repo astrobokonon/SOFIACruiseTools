@@ -34,9 +34,10 @@ import glob
 import fnmatch
 import datetime
 import itertools
-from os import walk, symlink
-from os.path import join, basename, getmtime, islink
-from os.path import dirname, realpath, isdir
+import os
+#from os import walk, symlink
+#from os.path import join, basename, getmtime, islink
+#from os.path import dirname, realpath, isdir, isfile
 from collections import OrderedDict
 import configobj as co
 import pytz
@@ -63,48 +64,80 @@ except ImportError:
 #from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as \
 #    NavigationToolbar
 
-from .. support import mis_parser as fpmis
-from . import FITSKeywordPanel as fkwp
-from . import SOFIACruiseDirectorPanel as scdp
-from . import directorStartupDialog as ds
-from . import directorLogDialog as dl
-#import SOFIACruiseTools.Director.flightMapDialog as fm
+#from .. support import mis_parser as fpmis
+#from . import FITSKeywordPanel as fkwp
+#from . import SOFIACruiseDirectorPanel as scdp
+#from . import directorStartupDialog as ds
+#from . import directorLogDialog as dl
+import SOFIACruiseTools.support.mis_parser as fpmis
+import SOFIACruiseTools.Director.FITSKeywordPanel as fkwp
+import SOFIACruiseTools.Director.SOFIACruiseDirectorPanel as scdp
+import SOFIACruiseTools.Director.directorStartupDialog as ds
+import SOFIACruiseTools.Director.directorLogDialog as dl
 from SOFIACruiseTools.Director.flightMap import FlightMap
 
+#import SOFIACruiseTools.Director.flightMapDialog as fm
+
+
 try:
-    from ..header_checker.hcheck import file_checker as fc
+    from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
 except ImportError as e:
-    print('Failed to import header_checker with {}'.format(e))
-    try:
-        from ..qa_tools.pyqatools.header_checker import file_checker as fc
-    except ImportError as e:
-        print('Failed to import qa_tools')
-        print('\nEncountered {0}: '
-              '\n\t{1}\n'.format(e.__class__.__name__, e))
-        print('Checking the symbolic link')
-        source = 'qa-tools'
-        link_name = './SOFIACruiseTools/qa_tools'
-        if not islink(link_name):
-            try:
-                symlink(source, link_name)
-                from ..qa_tools.pyqatools.header_checker import file_checker as fc
-            except (ImportError, OSError) as erro:
-                print('Cannot find header checker code.')
-                print('\nEncountered {0}: '
-                      '\n\t{1}\n'.format(erro.__class__.__name__, erro))
-                print('Verify that the git submodule has been properly pulled.')
-                print('In the top directory, run:')
-                print('\tgit submodule update --init --recursive')
-                print('\nTo avoid this error in the future, use '
-                      'the --recursive flag while cloning the repo')
-                sys.exit()
+    print('\nEncountered {0} while importint header checker: '
+          '\n\t{1}\n'.format(e.__class__.__name__, e))
+    # Check that the directory is not empty
+    target = './SOFIACruiseTools/header_checker/hcheck/file_checker.py'
+    if os.path.isfile(target):
+        # File exists, but not imported.
+        # Check if __init__.py exists
+        target = './SOFIACruiseTools/header_checker/__init__.py'
+        if os.path.isfile(target):
+            # Dunder init exists, but isn't being imported for some reason
+            raise ImportError('Unable to import header_checker')
         else:
-            print('Symbolic link connecting qa_tools to qa-tools already exists')
-            print('Unable to import qa_tools however')
-            print('Check the link is correct and qa-tools was '
-                  'pulled correctly with:')
-            print('\tgit submodule update --init --recursive')
-            sys.exit()
+            # Dunder init is not there. Make it and try import again
+            sp.call('touch {0}'.format(target), shell=True)
+            try:
+                from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
+            except ImportError:
+                raise ImportError('Unable to import header_checker')
+    else:
+        raise ImportError('Header checker directory is empty.\n'
+                          'Run:\n\tgit submodule update --init --recursive')
+
+#try:
+#    from ..header_checker.hcheck import file_checker as fc
+#except ImportError as e:
+#    print('Failed to import header_checker with {}'.format(e))
+#    try:
+#        from ..qa_tools.pyqatools.header_checker import file_checker as fc
+#    except ImportError as e:
+#        print('Failed to import qa_tools')
+#        print('\nEncountered {0}: '
+#              '\n\t{1}\n'.format(e.__class__.__name__, e))
+#        print('Checking the symbolic link')
+#        source = 'qa-tools'
+#        link_name = './SOFIACruiseTools/qa_tools'
+#        if not islink(link_name):
+#            try:
+#                symlink(source, link_name)
+#                from ..qa_tools.pyqatools.header_checker import file_checker as fc
+#            except (ImportError, OSError) as erro:
+#                print('Cannot find header checker code.')
+#                print('\nEncountered {0}: '
+#                      '\n\t{1}\n'.format(erro.__class__.__name__, erro))
+#                print('Verify that the git submodule has been properly pulled.')
+#                print('In the top directory, run:')
+#                print('\tgit submodule update --init --recursive')
+#                print('\nTo avoid this error in the future, use '
+#                      'the --recursive flag while cloning the repo')
+#                sys.exit()
+#        else:
+#            print('Symbolic link connecting qa_tools to qa-tools already exists')
+#            print('Unable to import qa_tools however')
+#            print('Check the link is correct and qa-tools was '
+#                  'pulled correctly with:')
+#            print('\tgit submodule update --init --recursive')
+#            sys.exit()
 
 
 class ConfigError(Exception):
@@ -414,7 +447,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         during the flight and previous observations need to be updated.
         """
         for fname in self.data.header_vals:
-            filename = join(self.data_log_dir, fname)
+            filename = os.path.join(self.data_log_dir, fname)
             self.data.fill_data_blank_cells(filename, self.headers, self.fits_hdu)
         self.repopulate_data_log()
 
@@ -477,7 +510,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if window.dirlog_name:
                 self.output_name = window.dirlog_name
                 self.txt_log_output_name.setText('{0:s}'.format(
-                    basename(str(self.output_name))))
+                    os.path.basename(str(self.output_name))))
             else:
                 self.txt_log_output_name.setStyleSheet('QLabel { color : red; }')
                 return
@@ -494,7 +527,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if window.datalog_name:
                 self.log_out_name = window.datalog_name
                 self.txt_data_log_save_file.setText('{0:s}'.format(
-                    basename(str(self.log_out_name))))
+                    os.path.basename(str(self.log_out_name))))
 
             # Log append flags
             if window.append_data_log:
@@ -528,9 +561,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             elif config['method'] == 'walk':
                 pattern = '*.{0:s}'.format(config['extension'])
                 current_data = []
-                for root, _, filenames in walk(str(self.data_log_dir)):
+                for root, _, filenames in os.walk(str(self.data_log_dir)):
                     for filename in fnmatch.filter(filenames, pattern):
-                        data_file = join(root, filename)
+                        data_file = os.path.join(root, filename)
                         break
                     break
             else:
@@ -930,7 +963,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         elif self.network_status_hold:
             pass
         else:
-            if isdir(self.data_log_dir):
+            if os.path.isdir(self.data_log_dir):
                 try:
                     socket.setdefaulttimeout(timeout)
                     socket.socket(socket.AF_INET, 
@@ -1141,9 +1174,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         elif config['method'] == 'walk':
             pattern = '*.{0:s}'.format(config['extension'])
             current_data = []
-            for root, _, filenames in walk(str(self.data_log_dir)):
+            for root, _, filenames in os.walk(str(self.data_log_dir)):
                 for filename in fnmatch.filter(filenames, pattern):
-                    current_data.append(join(root, filename))
+                    current_data.append(os.path.join(root, filename))
             self.data_current = current_data
 
         else:
@@ -1155,22 +1188,22 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Correct the file listing to be ordered by modification time
         self.data_current = self.sort_files(self.data_current)
 
-        bncur = [basename(x) for x in self.data_current]
+        bncur = [os.path.basename(x) for x in self.data_current]
         if self.instrument == 'HAWCFlight':
-            bnpre = [basename(x)[:-4] + 'grabme' for x in self.data_filenames]
+            bnpre = [os.path.basename(x)[:-4] + 'grabme' for x in self.data_filenames]
         else:
-            bnpre = [basename(x) for x in self.data_filenames]
+            bnpre = [os.path.basename(x) for x in self.data_filenames]
 
         # Separate out the new files
         new_files = set(bncur) - set(bnpre)
-        new_files = [join(self.data_log_dir, i) for i in new_files]
+        new_files = [os.path.join(self.data_log_dir, i) for i in new_files]
         new_files = self.sort_files(new_files)
         for fname in new_files:
             if not self.checker_rules:
                 self.choose_head_check_rules(data_file=fname)
             self.data.add_image(fname, self.headers, self.header_check_warnings,
                                 hdu=self.fits_hdu, rules=self.checker_rules)
-            bname = basename(fname)
+            bname = os.path.basename(fname)
             self.data_filenames.append(bname)
             self.new_files.append(bname)
 
@@ -1189,7 +1222,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         are problems, exit.
         """
         if self.config['sort'][self.instrument] == 'time':
-            return sorted(files, key=getmtime)
+            return sorted(files, key=os.path.getmtime)
         elif self.config['sort'][self.instrument] == 'name':
             if self.instrument.lower() == 'forcast':
                 return sorted(files, key=lambda x:
@@ -1408,7 +1441,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flight_plan_filename.setStyleSheet('QLabel { color : black; }')
-        self.flight_plan_filename.setText(basename(str(self.fname)))
+        self.flight_plan_filename.setText(os.path.basename(str(self.fname)))
         try:
             # self.flight_info = fpmis.parseMIS(self.fname)
             self.flight_info = fpmis.parse_mis_file(self.fname)
@@ -1448,6 +1481,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         self.local_takeoff.clicked.connect(lambda: self.message('takeoff'))
         self.local_turning.clicked.connect(lambda: self.message('turn'))
         self.local_ignore.clicked.connect(lambda: self.message('ignore'))
+        self.close_button.clicked.connect(self.close_dialog())
 
         self.cruise_log = self.parentWidget().cruise_log
         self.output_name = self.parentWidget().output_name
@@ -1503,6 +1537,13 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         for line in self.cruise_log:
             self.parentWidget().log_display.append(line.strip())
 
+    def close_dialog(self):
+        """ Closes the dialog when the close button is pressed
+        Returns
+        -------
+
+        """
+        self.close()
 
 class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
     """
@@ -1683,7 +1724,7 @@ class FITSHeader(object):
                     header['HEADER_CHECK'] = 'Passed'
 
         # Add to data structure with the filename as key
-        self.header_vals[basename(infile)] = header
+        self.header_vals[os.path.basename(infile)] = header
 
     def add_images_from_log(self, logfile, hkeys):
         """
@@ -1721,7 +1762,7 @@ class FITSHeader(object):
             # Should never happen since the file was previously opened
             # Print to screen, but don't kill the program
             return
-        row = self.header_vals[basename(infile)]
+        row = self.header_vals[os.path.basename(infile)]
         for key in hkeys:
             try:
                 val = row[key]
@@ -1860,7 +1901,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """ Loads default settings for faster testing. """
         self.instrument = 'FIFI-LS'
         self.local_timezone = 'US/Pacific'
-        code_dir = dirname(realpath(__file__))
+        code_dir = os.path.dirname(os.path.realpath(__file__))
         #flight_file = f'{code_dir}/../../inputs/201803_FI_DIANA_SCI.mis'
         flight_file = '{0:s}/../../inputs/201803_FI_DIANA_SCI.mis'.format(code_dir)
         #print(f'Loading flight plan: {flight_file}')
@@ -1913,7 +1954,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flightText.setStyleSheet('QLabel { color : black; }')
-        self.flightText.setText(basename(str(self.fname)))
+        self.flightText.setText(os.path.basename(str(self.fname)))
         try:
             # self.flight_info = fpmis.parseMIS(self.fname)
             self.flight_info = fpmis.parse_mis_file(self.fname)
@@ -1926,7 +1967,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         except (IOError, IndexError, AttributeError):
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
-                            basename(self.fname))
+                            os.path.basename(self.fname))
             self.flightText.setStyleSheet('QLabel { color : red; }')
             self.flightText.setText(self.err_msg)
             self.success_parse = False
@@ -1958,7 +1999,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                                                                  'Save File',
                                                                  default)[0]
         if self.dirlog_name:
-            self.logOutText.setText('{0:s}'.format(basename(str(self.dirlog_name))))
+            self.logOutText.setText('{0:s}'.format(os.path.basename(
+                                                   str(self.dirlog_name))))
             self.logOutButton.setText('Change')
 
     def select_data_loc(self):
@@ -1988,7 +2030,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         print('Datalog Name: ',self.datalog_name)
         if self.datalog_name:
             self.datalogText.setText(
-                '{0:s}'.format(basename(str(self.datalog_name))))
+                '{0:s}'.format(os.path.basename(str(self.datalog_name))))
             self.logOutButton.setText('Change')
 
     def select_kw(self, default=None):
