@@ -139,7 +139,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         # Loop through times to find the most recent one
         if self.use_current.isChecked():
             now = datetime.datetime.utcnow()
-            print('Current time: ',now)
         else:
             now = self.time_selection.time().toPyTime()
             now = datetime.datetime(2018, 8, 21, hour=now.hour, minute=now.minute,
