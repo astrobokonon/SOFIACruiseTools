@@ -129,7 +129,7 @@ class Ui_MainWindow(object):
         self.groupBox_2.setObjectName("groupBox_2")
         self.tabWidget = QtWidgets.QTabWidget(self.groupBox_2)
         self.tabWidget.setGeometry(QtCore.QRect(15, 30, 1221, 344))
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
@@ -180,7 +180,7 @@ class Ui_MainWindow(object):
         self.log_input_line.setObjectName("log_input_line")
         self.gridLayout_10.addWidget(self.log_input_line, 2, 0, 1, 9)
         self.log_display = QtWidgets.QTextEdit(self.directorLogTab)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.log_display.sizePolicy().hasHeightForWidth())
@@ -190,6 +190,11 @@ class Ui_MainWindow(object):
         self.gridLayout_10.addWidget(self.log_display, 1, 0, 1, 10)
         self.tabWidget.addTab(self.directorLogTab, "")
         self.dataLogTab = QtWidgets.QWidget()
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.dataLogTab.sizePolicy().hasHeightForWidth())
+        self.dataLogTab.setSizePolicy(sizePolicy)
         self.dataLogTab.setObjectName("dataLogTab")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.dataLogTab)
         self.gridLayout_3.setObjectName("gridLayout_3")
@@ -666,7 +671,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

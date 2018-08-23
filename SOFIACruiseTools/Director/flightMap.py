@@ -95,7 +95,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.plot_current_location)
-        timer.start(1000)
+        timer.start(5000)
 
         self.show()
 

@@ -221,6 +221,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.network_status = True
         self.network_status_hold = False
         self.network_status_control = True
+        self.dns_check = 0
+        self.file_check = 1
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -936,16 +938,19 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         elif self.network_status_hold:
             pass
         else:
-            if os.path.isdir(self.data_log_dir):
-                try:
-                    socket.setdefaulttimeout(timeout)
-                    socket.socket(socket.AF_INET, 
-                                  socket.SOCK_STREAM).connect((host,port))
-                    #print('socket success')
+            if self.file_check:
+                if os.path.isdir(self.data_log_dir):
                     self.network_status = True
-                except Exception as ex:
-                    print(ex)
+                else:
                     self.network_status = False
+#                try:
+#                    socket.setdefaulttimeout(timeout)
+#                    socket.socket(socket.AF_INET,
+#                                  socket.SOCK_STREAM).connect((host,port))
+#                    #print('socket success')
+#                except Exception as ex:
+#                    print(ex)
+#                    self.network_status = False
             else:
                 self.network_status = False
 
