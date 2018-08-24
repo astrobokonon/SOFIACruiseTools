@@ -188,10 +188,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         try:
             self.config = co.ConfigObj('director.ini')
         except co.ConfigObjError:
-            print('Cannot parse config file director.ini')
-            print('Verify it is in the correct location '
-                  'and formatted correctly.')
-            sys.exit()
+#           print('Cannot parse config file director.ini')
+#           print('Verify it is in the correct location '
+#                  'and formatted correctly.'
+            message = ('Cannot parse config file director.ini\n'
+                      'Verify it is in the correct location '
+                      'and formatted correctly.')
+            raise co.ConfigObjError(message)
+
         self.verify_config()
 
         # Variables previously defined in function
@@ -690,11 +694,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             with open(self.output_name,'r') as f:
                 existing_log = f.readlines()
         except IOError:
-            print('Unable to read existing director log:')
-            #print(f'\t{self.output_name}')
-            print('\t{0:s}'.format(self.output_name))
-            print('Quitting')
-            sys.exit()
+            message = ('Unable to read existing director log:\n'
+                       '\t{0:s}'.format(self.output_name))
+            raise IOError(message)
 
         #print(f'Found {len(existing_log)} lines')
         # Add to current log

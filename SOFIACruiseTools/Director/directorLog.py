@@ -26,7 +26,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         self.local_takeoff.clicked.connect(lambda: self.message('takeoff'))
         self.local_turning.clicked.connect(lambda: self.message('turn'))
         self.local_ignore.clicked.connect(lambda: self.message('ignore'))
-        self.close_button.clicked.connect(self.close_dialog)
+        self.close_button.clicked.connect(self.close)
 
         self.cruise_log = self.parentWidget().cruise_log
         self.output_name = self.parentWidget().output_name
@@ -75,7 +75,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
             except IOError:
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
-    def closeEvent(self):
+    def closeEvent(self, QCloseEvent):
         """
         When window is closed, write the contents to the host director log
         """
