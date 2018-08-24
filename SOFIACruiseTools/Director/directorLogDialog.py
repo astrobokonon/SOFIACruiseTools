@@ -68,10 +68,11 @@ class Ui_Dialog(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.local_post.sizePolicy().hasHeightForWidth())
         self.local_post.setSizePolicy(sizePolicy)
-        self.local_post.setAutoDefault(False)
+        self.local_post.setAutoDefault(True)
         self.local_post.setObjectName("local_post")
         self.gridLayout.addWidget(self.local_post, 2, 6, 1, 1)
         self.close_button = QtWidgets.QPushButton(self.layoutWidget)
+        self.close_button.setAutoDefault(False)
         self.close_button.setObjectName("close_button")
         self.gridLayout.addWidget(self.close_button, 2, 7, 1, 1)
 

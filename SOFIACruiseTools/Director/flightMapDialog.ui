@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>677</width>
-    <height>747</height>
+    <height>778</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -35,83 +35,104 @@
     </sizepolicy>
    </property>
   </widget>
-  <widget class="QComboBox" name="leg_selection_box">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>680</y>
-     <width>79</width>
-     <height>23</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="leg_label">
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
      <x>30</x>
      <y>660</y>
-     <width>59</width>
-     <height>15</height>
+     <width>611</width>
+     <height>81</height>
     </rect>
    </property>
-   <property name="text">
-    <string>Leg: </string>
-   </property>
-  </widget>
-  <widget class="QTimeEdit" name="time_selection">
-   <property name="geometry">
-    <rect>
-     <x>210</x>
-     <y>680</y>
-     <width>118</width>
-     <height>24</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="time_label">
-   <property name="geometry">
-    <rect>
-     <x>210</x>
-     <y>660</y>
-     <width>59</width>
-     <height>15</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Time:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="use_current">
-   <property name="geometry">
-    <rect>
-     <x>410</x>
-     <y>680</y>
-     <width>151</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Use Current Time</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="close_button">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>580</x>
-     <y>680</y>
-     <width>80</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Close</string>
-   </property>
-   <property name="autoDefault">
-    <bool>false</bool>
-   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="5">
+     <widget class="QPushButton" name="close_button">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="text">
+       <string>Close</string>
+      </property>
+      <property name="autoDefault">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QCheckBox" name="use_current">
+      <property name="text">
+       <string>Use Current Time</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4">
+     <widget class="QLabel" name="leg_completion_label">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="4">
+     <widget class="QLabel" name="flight_completion_label">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="3">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Flight Completion</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Leg Completion:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="leg_label">
+      <property name="text">
+       <string>Leg: </string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QTimeEdit" name="time_selection"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QComboBox" name="leg_selection_box"/>
+    </item>
+    <item row="1" column="2">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Minimum</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="time_label">
+      <property name="text">
+       <string>Time:</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <customwidgets>
