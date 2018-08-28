@@ -165,9 +165,13 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Selects the output file for the director log
         """
         default = 'SILog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
+        if self.datalog_name:
+            directory = os.path.join(os.path.dirname(self.datalog_name), default)
+        else:
+            directory = default
         self.dirlog_name = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                  'Save File',
-                                                                 default)[0]
+                                                                 directory)[0]
         if self.dirlog_name:
             self.logOutText.setText('{0:s}'.format(os.path.basename(
                                                    str(self.dirlog_name))))
@@ -197,20 +201,28 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.csv'))
         print('Selecting datalog name')
+        if self.dirlog_name:
+            directory = os.path.join(os.path.dirname(self.dirlog_name), default)
+        else:
+            directory = default
         self.datalog_name = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                   'Save File',
-                                                                  default)[0]
+                                                                  directory,
+                                                                  #default,
+                                                                  #directory=directory
+                                                                  )[0]
 #        self.datalog_name = QtWidgets.QFileDialog.getOpenFileName(self,
 #                                                                  'Open File',
 #                                                                  default)[0]
-        if self.datalog_name:
+        if os.path.isfile(self.datalog_name):
             with open(self.datalog_name,'r') as f:
-                print('Length of data log: ',len(f.readlines()))
+                print('Length of existing data log: ',len(f.readlines()))
             print('Datalog Name: ',self.datalog_name)
-            if self.datalog_name:
-                self.datalogText.setText(
-                    '{0:s}'.format(os.path.basename(str(self.datalog_name))))
-                self.logOutButton.setText('Change')
+
+        if self.datalog_name:
+            self.datalogText.setText(
+                '{0:s}'.format(os.path.basename(str(self.datalog_name))))
+            self.logOutButton.setText('Change')
 
     def select_kw(self, default=None):
         """
