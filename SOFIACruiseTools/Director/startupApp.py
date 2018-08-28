@@ -50,14 +50,46 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 #        elif 'ground' in self.instrument.lower():
 #            self.instrument = 'HAWCGROUND'
         self.select_kw(default=1)
-        self.dirlog_name = ''
-        self.data_dir = ''
-        self.datalog_name = ''
-        self.fname = ''
+
+        if self.parentWidget().log_out_name:
+            self.dirlog_name = self.parentWidget().log_out_name
+            self.logOutText.setText(self.dirlog_name)
+        else:
+            self.dirlog_name = ''
+
+        if self.parentWidget().data_log_dir:
+            self.data_dir = self.parentWidget().data_log_dir
+            self.datalocText.setText(self.data_dir)
+        else:
+            self.data_dir = ''
+
+        if self.parentWidget().output_name:
+            self.datalog_name = self.parentWidget().output_name
+            self.datalogText.setText(self.datalog_name)
+        else:
+            self.datalog_name = ''
+
+        if self.parentWidget().fname:
+            self.fname = self.parentWidget().fname
+            self.flightText.setText(self.fname)
+        else:
+            self.fname = ''
+
+        if self.parentWidget().headers:
+            self.headers = self.parentWidget().headers
+        else:
+            self.headers = self.config['keywords'][self.instrument]
+
+        if self.parentWidget().local_timezone != 'US/Pacific':
+            self.local_timezone = self.parentWidget().local_timezone
+            tz_index = self.timezoneSelect.findText(self.local_timezone,
+                                                    QtCore.Qt.MatchFixedString)
+            if tz_index > 0:
+                self.timezoneSelect.setCurrentIndex(tz_index)
+
         self.err_msg = ''
         self.flight_info = None
         self.success_parse = False
-        self.headers = self.config['keywords'][self.instrument]
         self.append_data_log = False
         self.append_director_log = False
 
@@ -121,7 +153,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
             self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
         if self.fname:
             # Make sure the label text is black every time we start, and
-            #   cut out the path so we just have the filename instead of huge str
+            # cut out the path so we just have the filename instead of huge str
             self.flightText.setStyleSheet('QLabel { color : black; }')
             self.flightText.setText(os.path.basename(str(self.fname)))
             try:
