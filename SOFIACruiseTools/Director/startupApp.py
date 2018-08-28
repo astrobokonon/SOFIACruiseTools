@@ -113,32 +113,34 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         to parse the file as a SOFIA flight plan (.mis).
         If successful, set the various state parameters for further use.
         If unsuccessful, make the label text red and angry and give the
-        user another chance
+        user another chance.
         """
         if fname:
             self.fname = fname
         else:
             self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
-        # Make sure the label text is black every time we start, and
-        #   cut out the path so we just have the filename instead of huge str
-        self.flightText.setStyleSheet('QLabel { color : black; }')
-        self.flightText.setText(os.path.basename(str(self.fname)))
-        try:
-            # self.flight_info = fpmis.parseMIS(self.fname)
-            self.flight_info = fpmis.parse_mis_file(self.fname)
-            self.success_parse = True
-            self.flightButton.setText('Change')
-            inst_index = self.instSelect.findText(self.flight_info.instrument,
-                                                  QtCore.Qt.MatchFixedString)
-            if inst_index > 0:
-                self.instSelect.setCurrentIndex(inst_index)
-        except (IOError, IndexError, AttributeError):
-            self.flight_info = ''
-            self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
-                            os.path.basename(self.fname))
-            self.flightText.setStyleSheet('QLabel { color : red; }')
-            self.flightText.setText(self.err_msg)
-            self.success_parse = False
+        if self.fname:
+            # Make sure the label text is black every time we start, and
+            #   cut out the path so we just have the filename instead of huge str
+            self.flightText.setStyleSheet('QLabel { color : black; }')
+            self.flightText.setText(os.path.basename(str(self.fname)))
+            try:
+                # self.flight_info = fpmis.parseMIS(self.fname)
+                self.flight_info = fpmis.parse_mis_file(self.fname)
+                self.success_parse = True
+                self.flightButton.setText('Change')
+                inst_index = self.instSelect.findText(self.flight_info.instrument,
+                                                      QtCore.Qt.MatchFixedString)
+                if inst_index > 0:
+                    self.instSelect.setCurrentIndex(inst_index)
+            except (IOError, IndexError, AttributeError) as e:
+                print(e)
+                self.flight_info = ''
+                self.err_msg = 'ERROR: Failure Parsing {0:s}!'.format(
+                                os.path.basename(self.fname))
+                self.flightText.setStyleSheet('QLabel { color : red; }')
+                self.flightText.setText(self.err_msg)
+                self.success_parse = False
 
     def select_instr(self):
         """
@@ -178,14 +180,14 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         dtxt = 'Select Data Directory'
         self.data_dir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt)
         # If instrument is set to FORCAST, then check for r/b subdirectories
-        if self.instrument.lower() == 'forcast':
-            r_subdir = os.path.join(self.data_dir, 'r')
-            b_subdir = os.path.join(self.data_dir, 'b')
-            if not os.path.isdir(r_subdir) or not os.path.isdir(b_subdir):
-                print('WARNING: Data Location not properly configured '
-                      'for FORCAST! Need r and/or b subdirectories '
-                      'in the Data Location!')
         if self.data_dir:
+            if self.instrument.lower() == 'forcast':
+                r_subdir = os.path.join(self.data_dir, 'r')
+                b_subdir = os.path.join(self.data_dir, 'b')
+                if not os.path.isdir(r_subdir) or not os.path.isdir(b_subdir):
+                    print('WARNING: Data Location not properly configured '
+                          'for FORCAST! Need r and/or b subdirectories '
+                          'in the Data Location!')
             self.datalocText.setText(self.data_dir)
             self.datalocButton.setText('Change')
 
@@ -201,13 +203,14 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 #        self.datalog_name = QtWidgets.QFileDialog.getOpenFileName(self,
 #                                                                  'Open File',
 #                                                                  default)[0]
-        with open(self.datalog_name,'r') as f:
-            print('Length of data log: ',len(f.readlines()))
-        print('Datalog Name: ',self.datalog_name)
         if self.datalog_name:
-            self.datalogText.setText(
-                '{0:s}'.format(os.path.basename(str(self.datalog_name))))
-            self.logOutButton.setText('Change')
+            with open(self.datalog_name,'r') as f:
+                print('Length of data log: ',len(f.readlines()))
+            print('Datalog Name: ',self.datalog_name)
+            if self.datalog_name:
+                self.datalogText.setText(
+                    '{0:s}'.format(os.path.basename(str(self.datalog_name))))
+                self.logOutButton.setText('Change')
 
     def select_kw(self, default=None):
         """

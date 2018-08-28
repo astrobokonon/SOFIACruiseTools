@@ -10,150 +10,150 @@
     <height>275</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>11</x>
-     <y>11</y>
-     <width>728</width>
-     <height>252</height>
-    </rect>
-   </property>
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QPushButton" name="local_takeoff">
-      <property name="text">
-       <string>Takeoff</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QPushButton" name="local_on_heading">
-      <property name="text">
-       <string>On Heading</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="local_on_target">
-      <property name="text">
-       <string>On Target</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="local_turning">
-      <property name="text">
-       <string>Turning</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="4">
-     <widget class="QPushButton" name="local_fault_mccs">
-      <property name="text">
-       <string>MCCS Problem</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="5">
-     <widget class="QPushButton" name="local_fault_si">
-      <property name="text">
-       <string>SI Problem</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="6">
-     <widget class="QPushButton" name="local_landing">
-      <property name="text">
-       <string>Landing</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="7">
-     <widget class="QPushButton" name="local_ignore">
-      <property name="text">
-       <string>Ignore Last Line</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" colspan="8">
-     <widget class="QTextEdit" name="local_display">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-      <property name="html">
-       <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <widget class="QPushButton" name="local_takeoff">
+       <property name="text">
+        <string>Takeoff</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="local_on_heading">
+       <property name="text">
+        <string>On Heading</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="local_on_target">
+       <property name="text">
+        <string>On Target</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QPushButton" name="local_turning">
+       <property name="text">
+        <string>Turning</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QPushButton" name="local_fault_mccs">
+       <property name="text">
+        <string>MCCS Problem</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="5">
+      <widget class="QPushButton" name="local_fault_si">
+       <property name="text">
+        <string>SI Problem</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="6">
+      <widget class="QPushButton" name="local_landing">
+       <property name="text">
+        <string>Landing</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="7">
+      <widget class="QPushButton" name="local_ignore">
+       <property name="text">
+        <string>Ignore Last Line</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="8">
+      <widget class="QTextEdit" name="local_display">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+       <property name="html">
+        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'.Lucida Grande UI'; font-size:13pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0" colspan="6">
-     <widget class="QLineEdit" name="local_input_line"/>
-    </item>
-    <item row="2" column="6">
-     <widget class="QPushButton" name="local_post">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Post</string>
-      </property>
-      <property name="autoDefault">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="7">
-     <widget class="QPushButton" name="close_button">
-      <property name="text">
-       <string>Close</string>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="6">
+      <widget class="QLineEdit" name="local_input_line"/>
+     </item>
+     <item row="2" column="6">
+      <widget class="QPushButton" name="local_post">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Post</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="7">
+      <widget class="QPushButton" name="close_button">
+       <property name="text">
+        <string>Close</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

@@ -128,12 +128,16 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
     def plot_leg(self, leg_num, current=False):
         """Plots a specific leg in red."""
 
-        if leg_num == '-':
+        if not leg_num:
+            return
+        elif leg_num == '-':
             if self.current_leg:
                 self.current_leg.pop(0).remove()
         else:
             lats, lons = list(), list()
             for i, leg in enumerate(self.flight.steps.points['leg_num']):
+                print('Leg: ', leg, type(leg))
+                print('Leg_num: ', leg_num, type(leg_num))
                 if leg == int(leg_num):
                     lats.append(self.flight.steps.points['latitude'][i])
                     lons.append(self.flight.steps.points['longitude'][i])
@@ -162,10 +166,11 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             now = self.time_selection.time().toPyTime()
             now = datetime.datetime(2018, 8, 21, hour=now.hour, minute=now.minute,
                                     second=now.second)
-        leg, step_number = self.current_leg(now)
+        leg, step_number = self.get_current_leg(now)
         if step_number:
             lat = self.flight.steps.points['latitude'][step_number]
             lon = self.flight.steps.points['longitude'][step_number]
+            leg_number = self.flight.steps.points['leg_num'][step_number]
 
             if self.location:
                 self.location.remove()
@@ -174,11 +179,11 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                                                    marker='x',
                                                                    color='black',
                                                                    transform=cartopy.crs.Geodetic())
-            self.plot_leg(leg, current=True)
+            self.plot_leg(leg_number, current=True)
             self.plot_leg(self.leg_selection_box.currentText())
             self.flight_map_plot.canvas.draw()
 
-            self.flight_progress()
+            self.flight_progress(leg)
 
     def flight_progress(self, leg):
         """
@@ -193,13 +198,17 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         flight_duration = (self.flight.landing - self.flight.takeoff).total_seconds()
         flight_progress = current_flight_time / flight_duration
 
+        leg_diff = now - leg.start
+        print('now: ', now, type(now))
+        print('start: ', leg.start, type(leg.start))
+        print('leg_diff: ', leg_diff, type(leg_diff))
         current_leg_time = (now - leg.start).total_seconds()
         leg_progress = current_leg_time / leg.duration.total_seconds()
 
         self.leg_completion_label.setText('{0:.0%}'.format(leg_progress))
         self.flight_completion_label.setText('{0:.0%}'.format(flight_progress))
 
-    def current_leg(self, now):
+    def get_current_leg(self, now):
         """
         Determines the current leg.
 
