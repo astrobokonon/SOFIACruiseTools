@@ -895,7 +895,7 @@ def parse_mis_file(filename):
     returns a filled out FlightProfile
     """
     flight = FlightProfile()
-    with open(filename, 'rb') as f:
+    with open(filename, 'r') as f:
         data = f.read()
     flight.hash = hashlib.sha1(data.encode('utf-8')).hexdigest()
     sections = re.split(r'\n{2}', data)

@@ -87,6 +87,13 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
             if tz_index > 0:
                 self.timezoneSelect.setCurrentIndex(tz_index)
 
+        if self.parentWidget().instrument:
+            self.instrument = self.parentWidget().instrument
+            inst_index = self.instSelect.findText(self.instrument,
+                                                  QtCore.Qt.MatchFixedString)
+            if inst_index > 0:
+                self.instSelect.setCurrentIndex(inst_index)
+
         self.err_msg = ''
         self.flight_info = None
         self.success_parse = False
@@ -141,7 +148,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         Parses flight plan from .msi file.
 
-        Spawn the file chooser diaglog box and return the result, attempting
+        Spawn the file chooser dialog box and return the result, attempting
         to parse the file as a SOFIA flight plan (.mis).
         If successful, set the various state parameters for further use.
         If unsuccessful, make the label text red and angry and give the
@@ -197,8 +204,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Selects the output file for the director log
         """
         default = 'SILog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
-        if self.datalog_name:
-            directory = os.path.join(os.path.dirname(self.datalog_name), default)
+        if self.dirlog_name:
+            directory = os.path.join(os.path.dirname(self.dirlog_name), default)
         else:
             directory = default
         self.dirlog_name = QtWidgets.QFileDialog.getSaveFileName(self,
@@ -214,7 +221,12 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         Sets where to look for data files
         """
         dtxt = 'Select Data Directory'
-        self.data_dir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt)
+        if self.data_dir:
+            directory = self.data_dir
+        else:
+            directory = os.path.dirname(os.path.realpath(__file__))
+        self.data_dir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt,
+                                                                   directory=directory)
         # If instrument is set to FORCAST, then check for r/b subdirectories
         if self.data_dir:
             if self.instrument.lower() == 'forcast':
@@ -233,8 +245,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         """
         default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.csv'))
         print('Selecting datalog name')
-        if self.dirlog_name:
-            directory = os.path.join(os.path.dirname(self.dirlog_name), default)
+        if self.datalog_name:
+            directory = os.path.join(os.path.dirname(self.datalog_name), default)
         else:
             directory = default
         self.datalog_name = QtWidgets.QFileDialog.getSaveFileName(self,
