@@ -8,6 +8,7 @@ import hashlib
 from datetime import datetime, timedelta
 import numpy as np
 import itertools
+import pandas as pd
 
 
 def split_string_size(line, size):
@@ -289,37 +290,110 @@ class FlightProfile(object):
         elif tag == 'UTC':
             # Section contains 5-minute steps
             self.step_count += 1
-            self.steps.parse_steps(section, self.step_count)
+            self.steps.parse_steps_df(section, self.step_count)
+            #self.steps.parse_steps(section, self.step_count)
 
 
-class LegSteps(object):
+class LegSteps(FlightProfile):
     """Holds details of 5-minute steps of all legs."""
     def __init__(self):
         """Initializes object"""
         self.start_date = None
-        self.points = dict()
-        keys = ['leg_num', 'time', 'mag_heading', 'true_heading',
-                'latitude', 'longitude', 'wind', 'temperature',
-                'local_time', 'elevation', 'rof', 'rof_rate',
-                'loswv', 'sun_elevation', 'sun_hour_angle']
-        for key in keys:
-            self.points[key] = list()
+        self.keys = ['leg_num', 'time', 'mag_heading', 'true_heading',
+                     'latitude', 'longitude', 'wind', 'temperature',
+                     'local_time', 'elevation', 'rof', 'rof_rate',
+                     'loswv', 'sun_elevation', 'sun_hour_angle']
 
-#        self.leg_num = list()
-#        self.time = list()
-#        self.mag_heading = list()
-#        self.true_heading = list()
-#        self.latitude = list()
-#        self.longitude = list()
-#        self.wind = list()
-#        self.temperature = list()
-#        self.local_time = list()
-#        self.elevation = list()
-#        self.rof = list()
-#        self.rof_rate = list()
-#        self.loswv = list()
-#        self.sun_elevation = list()
-#        self.sun_hour_angle = list()
+        self.header = ['UTC', 'MHdg', 'THdg', 'Lat_deg', 'Lat_min', 'Lon_deg',
+                       'Lon_min', 'Wind_D/S', 'Temp LST', 'Elev', 'ROF', 'ROFrt',
+                       'LosWV', 'SunElev']
+
+        self.header = ['time', 'mag_heading', 'true_heading', 'lat_deg', 'lat_min',
+                       'lon_deg', 'lon_min', 'wind', 'temperature', 'local_time',
+                       'elevation', 'rof', 'rof_rate', 'loswv',
+                       'sun_elevation', 'leg_num']
+        self.header = ['utc', 'mag_heading', 'true_heading', 'lat_deg', 'lat_min',
+                       'lon_deg', 'lon_min', 'wind', 'temp', 'local_time',
+                       'elevation', 'rof', 'rof_rate', 'loswv', 'sun_elevation']
+        self.extra_field = 'sun_hour_angle'
+
+        self.points = None
+
+    def parse_steps_df(self, section, leg_num):
+        """Parses step using dataframes"""
+        bad_words = ['TURN', 'CLIMB', 'DESC']
+
+        # Split section into lines
+        section = section.strip().split('\n')
+
+        # leg = section.split()
+
+        # Section is a list of strings, each string being a step
+        for step in section:
+            # Step is a string with the details of a single step
+            step_split = list()
+            if 'SUA' in step:
+                break
+            elif 'UTC' in step:
+                continue
+            for bw in bad_words:
+                step = step.replace(bw, '')
+            step_split.append(step.strip().split())
+            try:
+                details = pd.DataFrame.from_records(step_split,
+                                                    columns=self.header)
+            except AssertionError as e:
+                print(e)
+                print(self.header)
+                print(step_split)
+                raise
+            details['leg_num'] = leg_num
+            if self.points is None:
+                self.points = details
+            else:
+                self.points = self.points.append(details, ignore_index=True)
+
+    def adjust_date(self, takeoff):
+        self.points['timestamp'] = self.points['utc'].apply(lambda x:
+                                                            datetime.strptime(x, '%H:%M:%S'))
+        self.points['timestamp'] = self.points['timestamp'].apply(lambda x:
+                                                      x.replace(year=takeoff.year,
+                                                                day=takeoff.day,
+                                                                month=takeoff.month))
+        if not self.points['timestamp'].is_monotonic:
+            # Date change happens somewhere
+            found = False
+            for i in range(1, len(self.points)):
+                if self.points['timestamp'].iloc[i] < self.points['timestamp'].iloc[i-1]:
+                    # This index is the first of the next day
+                    found = True
+                if found:
+                    self.points['timestamp'].iloc[i] += timedelta(days=1)
+
+    def clean_steps(self):
+
+        print('Cleaning')
+        # Lat/Lon
+        self.points.to_csv('test.csv')
+        self.points['latitude'] = self.points.apply(lambda x: coordinate_convert(x['lat_deg'],
+                                                                     x['lat_min']), axis=1)
+        self.points['longitude'] = self.points.apply(lambda x: coordinate_convert(x['lon_deg'],
+                                                                      x['lon_min']), axis=1)
+
+        # Replace the N/A associated with things like
+        # elevation while not observing with nan
+        self.points.replace('N/A', np.nan, inplace=True)
+
+        # Convert numeric columns to floats
+        number_cols = ['mag_heading', 'true_heading', 'temp', 'elevation',
+                       'rof', 'rof_rate', 'loswv', 'sun_elevation']
+        for nc in number_cols:
+            self.points[nc] = pd.to_numeric(self.points[nc], errors='ignore')
+
+        drop_cols = ['lat_deg', 'lat_min', 'lon_deg', 'lon_min']
+        for dc in drop_cols:
+            self.points.drop(dc, axis=1, inplace=True)
+        print('New Columns: ', self.points.columns)
 
     def parse_steps(self, section, leg_num):
         """Parses 5-minute steps in a leg
@@ -846,6 +920,16 @@ def lat_long_convert(coord):
     return point
 
 
+def coordinate_convert(degrees, minutes):
+    direction = degrees[0]
+    degrees = float(degrees[1:])
+    minutes = float(minutes)
+    point = degrees + minutes/60
+    if direction in ['W', 'E']:
+        point *= -1
+    return point
+
+
 def identify_leg_type(section):
     """
     Identifies the leg type.
@@ -901,6 +985,8 @@ def parse_mis_file(filename):
     sections = re.split(r'\n{2}', data)
     for section in sections:
         flight.parse_section(section.strip())
+    flight.steps.adjust_date(flight.takeoff)
+    flight.steps.clean_steps()
     return flight
 
 
@@ -915,6 +1001,10 @@ if __name__ == '__main__':
     for fname in filenames:
         #fname = loc + '201807_HA_IAGO_MOPS.mis'
         fname = loc + '201803_FI_DIANA_SCI.mis'
+        flight = parse_mis_file(fname)
+        flight.steps.points.to_csv('full_steps.csv', index=False)
+
+        break
         print('\n', fname.split('/')[-1])
         flight = FlightProfile()
         with open(fname, 'r') as f:
@@ -924,18 +1014,13 @@ if __name__ == '__main__':
         for section in sections:
             flight.parse_section(section.strip())
 
-        print(flight)
+#        print(flight)
         for i, l in enumerate(flight.legs):
-            print(l)
             l.test_parse()
 
         print('Number of legs: ', flight.num_legs)
         print('Number of details found: ', len(flight.leg_steps))
         print('Unique leg numbers: ', set(flight.steps.points['leg_num']))
 
-        fig, ax = plt.subplots(1,1,figsize=(10,10))
-        ax.plot(flight.steps.points['time'])
-        fig.savefig('time_points.png',bbox_inches='tight')
-        plt.close(fig)
 
         break
