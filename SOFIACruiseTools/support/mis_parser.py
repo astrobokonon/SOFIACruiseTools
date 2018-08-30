@@ -739,12 +739,16 @@ class LegProfile(object):
         description = ' '.join(l[2:start_ind])[1:-1].lower()
         # Start time
         t_string = datetime.strptime(l[start_ind+1].split()[-1], '%H:%M:%S')
-        start = timedelta(hours=t_string.hour, minutes=t_string.minute,
-                          seconds=t_string.second)
+        #start = timedelta(hours=t_string.hour, minutes=t_string.minute,
+        #                  seconds=t_string.second)
+        start = t_string
+
         # Duration
         t_string = datetime.strptime(l[dur_ind+1].split()[-1], '%H:%M:%S')
         duration = timedelta(hours=t_string.hour, minutes=t_string.minute,
                              seconds=t_string.second)
+
+
         # Altitude
         if l[-1] == 'ft':
             altitude = l[-2]

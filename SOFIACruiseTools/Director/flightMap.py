@@ -136,8 +136,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         else:
             lats, lons = list(), list()
             for i, leg in enumerate(self.flight.steps.points['leg_num']):
-                print('Leg: ', leg, type(leg))
-                print('Leg_num: ', leg_num, type(leg_num))
                 if leg == int(leg_num):
                     lats.append(self.flight.steps.points['latitude'][i])
                     lons.append(self.flight.steps.points['longitude'][i])
@@ -167,7 +165,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             now = datetime.datetime(2018, 8, 21, hour=now.hour, minute=now.minute,
                                     second=now.second)
         leg, step_number = self.get_current_leg(now)
-        if step_number:
+        if step_number and leg:
             lat = self.flight.steps.points['latitude'][step_number]
             lon = self.flight.steps.points['longitude'][step_number]
             leg_number = self.flight.steps.points['leg_num'][step_number]
@@ -227,13 +225,15 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         """
 
         leg, step_number, leg_num = None, None, None
-        for step_number, time in enumerate(self.flight.steps.points['time']):
+        for step_number, time in enumerate(self.flight.steps.points['timestamp']):
            if now < time:
                leg_num = self.flight.steps.points['leg_num'][step_number]
                break
 
         if leg_num:
             leg = self.flight.legs[leg_num-1]
+        else:
+            print('Cannot find leg for time {}'.format(now))
 
         return leg, step_number
 
