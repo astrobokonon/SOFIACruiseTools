@@ -224,6 +224,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.network_status_control = True
         self.dns_check = 0
         self.file_check = 1
+        self.sample_rate = 2
+        self.map_width = 15
+        self.marker_size = 10
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -380,6 +383,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         try:
             self.map_width =  float(self.config['flight_map']['width'])
             self.marker_size = float(self.config['flight_map']['marker_size'])
+            self.sample_rate = int(self.config['flight_map']['sample_rate'])
         except ValueError:
             raise ConfigError('Unable to parse flight map settings.')
 

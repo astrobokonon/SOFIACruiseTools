@@ -91,7 +91,14 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QTimeEdit" name="time_selection"/>
+      <widget class="QTimeEdit" name="time_selection">
+       <property name="wrapping">
+        <bool>true</bool>
+       </property>
+       <property name="displayFormat">
+        <string>HH:mm:ss</string>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QComboBox" name="leg_selection_box"/>
@@ -116,6 +123,20 @@
       <widget class="QLabel" name="time_label">
        <property name="text">
         <string>Time:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Leg:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QLabel" name="current_leg_label">
+       <property name="text">
+        <string>TextLabel</string>
        </property>
       </widget>
      </item>

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import itertools
 import pandas as pd
+pd.options.mode.chained_assignment = None
 
 
 def split_string_size(line, size):
@@ -286,6 +287,7 @@ class FlightProfile(object):
                 leg.parse_science_leg(section, self.size)
             else:
                 leg.parse_other_leg(section, self.size)
+            leg.adjust_date(self.takeoff)
             self.legs.append(leg)
         elif tag == 'UTC':
             # Section contains 5-minute steps
@@ -372,7 +374,6 @@ class LegSteps(FlightProfile):
 
     def clean_steps(self):
 
-        print('Cleaning')
         # Lat/Lon
         self.points.to_csv('test.csv')
         self.points['latitude'] = self.points.apply(lambda x: coordinate_convert(x['lat_deg'],
@@ -393,7 +394,6 @@ class LegSteps(FlightProfile):
         drop_cols = ['lat_deg', 'lat_min', 'lon_deg', 'lon_min']
         for dc in drop_cols:
             self.points.drop(dc, axis=1, inplace=True)
-        print('New Columns: ', self.points.columns)
 
     def parse_steps(self, section, leg_num):
         """Parses 5-minute steps in a leg
@@ -673,8 +673,9 @@ class LegProfile(object):
         # Start time
         start_string = l.split('Start:')[-1].split()[0]
         t_string = datetime.strptime(start_string, '%H:%M:%S')
-        self.start = timedelta(hours=t_string.hour, minutes=t_string.minute,
-                               seconds=t_string.second)
+        #self.start = timedelta(hours=t_string.hour, minutes=t_string.minute,
+                               #seconds=t_string.second)
+        self.start = t_string
         # Duration
         duration_string = l.split('Dur:')[-1].split()[0]
         t_string = datetime.strptime(duration_string, '%H:%M:%S')
@@ -778,6 +779,31 @@ class LegProfile(object):
             assert self.astro.target
             assert self.astro.ra
             assert self.astro.dec
+
+    def adjust_date(self, takeoff):
+        """
+        Adjusts the date of leg times
+
+        Parameters
+        ----------
+        takeoff : datetime
+            The date and time (UTC) of takeoff
+
+        Returns
+        -------
+        None
+
+        """
+
+        # Alter start
+        self.start = self.start.replace(year=takeoff.year,
+                                        month=takeoff.month,
+                                        day=takeoff.day)
+        if self.start.time() < takeoff.time():
+            self.start += timedelta(days=1)
+
+
+
 
 
 class AstroProfile(object):

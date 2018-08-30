@@ -54,6 +54,7 @@ class Ui_Dialog(object):
         self.leg_label.setObjectName("leg_label")
         self.gridLayout.addWidget(self.leg_label, 0, 0, 1, 1)
         self.time_selection = QtWidgets.QTimeEdit(Dialog)
+        self.time_selection.setWrapping(True)
         self.time_selection.setObjectName("time_selection")
         self.gridLayout.addWidget(self.time_selection, 1, 1, 1, 1)
         self.leg_selection_box = QtWidgets.QComboBox(Dialog)
@@ -64,6 +65,12 @@ class Ui_Dialog(object):
         self.time_label = QtWidgets.QLabel(Dialog)
         self.time_label.setObjectName("time_label")
         self.gridLayout.addWidget(self.time_label, 0, 1, 1, 1)
+        self.label_3 = QtWidgets.QLabel(Dialog)
+        self.label_3.setObjectName("label_3")
+        self.gridLayout.addWidget(self.label_3, 0, 3, 1, 1)
+        self.current_leg_label = QtWidgets.QLabel(Dialog)
+        self.current_leg_label.setObjectName("current_leg_label")
+        self.gridLayout.addWidget(self.current_leg_label, 0, 4, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 1, 0, 1, 1)
 
         self.retranslateUi(Dialog)
@@ -79,6 +86,9 @@ class Ui_Dialog(object):
         self.label_2.setText(_translate("Dialog", "Flight Completion"))
         self.label.setText(_translate("Dialog", "Leg Completion:"))
         self.leg_label.setText(_translate("Dialog", "Leg: "))
+        self.time_selection.setDisplayFormat(_translate("Dialog", "HH:mm:ss"))
         self.time_label.setText(_translate("Dialog", "Time:"))
+        self.label_3.setText(_translate("Dialog", "Leg:"))
+        self.current_leg_label.setText(_translate("Dialog", "TextLabel"))
 
 from mplwidget import MplWidget
