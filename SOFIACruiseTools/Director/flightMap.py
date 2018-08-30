@@ -105,6 +105,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         #self.leg_selection_box.currentIndexChanged.connect(lambda: self.plot_leg(
         #    self.leg_selection_box.currentText()))
         self.leg_selection_box.currentIndexChanged.connect(self.plot_selected_leg)
+        self.use_current.stateChanged.connect(self.plot_current_location)
 
         self.flight_map_plot.canvas.ax.get_xaxis().set_ticks([])
         self.close_button.clicked.connect(self.close)
@@ -116,7 +117,8 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.plot_current_location)
-        timer.start(5000)
+        update_freq = float(self.config['flight_map']['update_freq'])*1000
+        timer.start(update_freq)
 
         self.show()
 
@@ -130,35 +132,35 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_map_plot.canvas.draw()
         self.flight_map_plot.canvas.updateGeometry()
 
-    def plot_leg(self, leg_num, current=False):
-        """Plots a specific leg in red."""
-
-        if not leg_num:
-            return
-        elif leg_num == '-':
-            if self.current_leg:
-                self.current_leg.pop(0).remove()
-        else:
-            lats, lons = list(), list()
-            for i, leg in enumerate(self.flight.steps.points['leg_num']):
-                if leg == int(leg_num):
-                    lats.append(self.flight.steps.points['latitude'][i])
-                    lons.append(self.flight.steps.points['longitude'][i])
-            if lats:
-                if self.current_leg:
-                    self.current_leg.pop(0).remove()
-                self.plot_full_flight()
-                if current:
-                    color = 'green'
-                    linewidth = 0.5
-                else:
-                    color = 'red'
-                    linewidth = 0.75
-                self.current_leg = self.flight_map_plot.canvas.ax.plot(lons, lats,
-                                                                       color=color,
-                                                                       linewidth=linewidth,
-                                                    transform=cartopy.crs.Geodetic())
-        self.flight_map_plot.canvas.draw()
+#    def plot_leg(self, leg_num, current=False):
+#        """Plots a specific leg in red."""
+#
+#        if not leg_num:
+#            return
+#        elif leg_num == '-':
+#            if self.current_leg:
+#                self.current_leg.pop(0).remove()
+#        else:
+#            lats, lons = list(), list()
+#            for i, leg in enumerate(self.flight.steps.points['leg_num']):
+#                if leg == int(leg_num):
+#                    lats.append(self.flight.steps.points['latitude'][i])
+#                    lons.append(self.flight.steps.points['longitude'][i])
+#            if lats:
+#                if self.current_leg:
+#                    self.current_leg.pop(0).remove()
+#                self.plot_full_flight()
+#                if current:
+#                    color = 'green'
+#                    linewidth = 0.5
+#                else:
+#                    color = 'red'
+#                    linewidth = 0.75
+#                self.current_leg = self.flight_map_plot.canvas.ax.plot(lons, lats,
+#                                                                       color=color,
+#                                                                       linewidth=linewidth,
+#                                                    transform=cartopy.crs.Geodetic())
+#        self.flight_map_plot.canvas.draw()
 
     def plot_selected_leg(self):
         """Plots leg selected by user"""
