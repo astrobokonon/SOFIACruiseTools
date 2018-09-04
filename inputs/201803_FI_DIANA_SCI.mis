@@ -4,9 +4,9 @@ Filename: 201803_FI_DIANA_SCI.mis  Saved: 2018-Mar-02 00:43:16 UTC
 
 Flight Plan ID: 201803_FI_DIANA
 Airport: KPMD       Runway: 25          Legs: 12            Mach: 0.85          
-Takeoff: 2018-Aug-30 04:55:00 UTC       
+Takeoff: 2018-Sep-04 04:55:00 UTC       
 Obs Time: 06:05:00  Flt Time: 08:46:35  
-Landing: 2018-Aug-31 00:41:35 UTC       Airport: KPMD (Approach via ETHER)
+Landing: 2018-Sep-05 00:41:35 UTC       Airport: KPMD (Approach via ETHER)
 Sunset: 02:06:30    Sunset Az: 272      Sunrise: 13:50:18   Sunrise Az: 88      
 
 
@@ -54,7 +54,7 @@ UTC      MHdg  THdg  Latitude Longitude Wind_D/S Temp LST      Elev  ROF   ROFrt
 05:51:57 241.6 255.1 N37 20.7 W122 45.2 282/041  -57  09:47:35 N/A   N/A   N/A   N/A     -38.7   
 
 
-Leg 5 (Antennae)    Start: 05:52:29     Leg Dur: 01:20:00   Alt.: 41000 ft                          
+Leg 5 (Antennae)    Start: 15:52:29     Leg Dur: 01:20:00   Alt.: 41000 ft                          
 ObspID: 70_0608     Blk: OB_70_0608_03  Priority:           Obs Dur: 01:10:00   
 Target: Antennae    RA: 12h01m53.30s    Dec: -18d52m37.0s   Equinox: J2000.0    
 Elev: [25.3, 34.3]  ROF: [333.5, 338.4] rate: [+0.04, +0.08] deg/min  FPI: 0

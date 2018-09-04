@@ -90,8 +90,9 @@ class LegTimerObj(object):
         try:
             self.elapsed = now - self.timer_start
             self.remaining = self.duration - self.elapsed
-        except TypeError:
+        except TypeError as e:
             print('\n\nTypeError in timer_string:')
+            print(e)
             print(type(self.elapsed), type(now), type(self.timer_start))
             print(type(self.remaining), type(self.duration), type(self.elapsed))
             self.print_state()

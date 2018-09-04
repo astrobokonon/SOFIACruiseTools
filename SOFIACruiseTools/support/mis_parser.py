@@ -803,9 +803,6 @@ class LegProfile(object):
             self.start += timedelta(days=1)
 
 
-
-
-
 class AstroProfile(object):
     """
     Class to describe astronomy related parameters

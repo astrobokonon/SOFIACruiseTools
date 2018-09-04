@@ -272,12 +272,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                              self.leg_timer.control_timer('start'))
         self.leg_timer_stop.clicked.connect(lambda:
                                             self.leg_timer.control_timer('stop'))
+        #self.leg_timer_reset.clicked.connect(lambda:
+        #                                     self.leg_timer.control_timer('reset'))
         self.leg_timer_reset.clicked.connect(lambda:
-                                             self.leg_timer.control_timer('reset'))
+                                             self.update_duration(reset=True))
         self.add_minute.clicked.connect(lambda:
                                         self.leg_timer.minute_adjust('add'))
         self.sub_minute.clicked.connect(lambda:
                                         self.leg_timer.minute_adjust('sub'))
+        self.leg_timer_update.clicked.connect(self.update_duration)
+        #self.leg_duration.timeChanged(self.update_duration())
 
         # Text log stuff
         self.log_input_line.returnPressed.connect(lambda: self.mark_message('post'))
@@ -849,6 +853,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         we ditch the tzinfo to make everything naive to subtract easier.
         """
 
+        print('Leg duration time: ', self.leg_duration.time().toPyTime())
+
         # Update the current local/utc times before computing timedeltas
         self.update_times()
 
@@ -1417,6 +1423,29 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.landing_time.setDateTime(time_qt)
 
+    def update_duration(self, reset=False):
+        """Updates the duration of the current leg.
+
+        """
+        if reset:
+            # Reset the duration to the current leg to
+            # the duration from flight plan
+            orig_duration = self.flight_info.legs[self.leg_pos].duration
+            orig_duration = timedelta_to_time(orig_duration)
+            #self.leg_timer.duration = orig_duration
+            #self.leg_timer.init_duration = orig_duration
+            self.leg_timer.control_timer('reset')
+            self.leg_duration.setTime(orig_duration)
+            self.txt_leg_duration.setText('Leg Duration')
+        else:
+            new_duration = self.leg_duration.time().toPyTime()
+            new_duration = datetime.timedelta(hours=new_duration.hour,
+                                              minutes=new_duration.minute,
+                                              seconds=new_duration.second)
+            self.leg_timer.duration = new_duration
+            self.txt_leg_duration.setText('Leg Duration (Changed)')
+            #self.leg_timer.init_duration = new_duration
+
     def parse_flight_file(self, from_gui=None):
         """
         Parses flight plan from .msi file.
@@ -1472,6 +1501,18 @@ def total_sec_to_hms_str(obj):
     else:
         done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
     return done_str
+
+
+def timedelta_to_time(delta):
+    """Converts a timedelta object to a time object"""
+    hours = delta.seconds/3600.
+    ihours = np.int(hours)
+    minutes = (hours - ihours) *60
+    iminutes = np.int(minutes)
+    seconds = (minutes - iminutes) * 60.
+    iseconds = np.int(seconds)
+    t = datetime.time(hour=ihours, minute=iminutes, second=iseconds)
+    return t
 
 
 def main():

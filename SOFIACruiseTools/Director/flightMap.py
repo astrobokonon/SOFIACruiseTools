@@ -252,7 +252,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         flight_duration = (self.flight.landing - self.flight.takeoff).total_seconds()
         flight_progress = current_flight_time / flight_duration
 
-        leg_diff = self.now - leg.start
         current_leg_time = (self.now - leg.start).total_seconds()
         leg_progress = current_leg_time / leg.duration.total_seconds()
 
