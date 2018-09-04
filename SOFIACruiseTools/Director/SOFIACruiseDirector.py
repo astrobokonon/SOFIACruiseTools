@@ -485,7 +485,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.localtz = pytz.timezone(self.local_timezone)
 
             # Parse the flight plan
-            self.parse_flight_file(window.fname)
+            #self.parse_flight_file(window.fname)
+            self.flight_info = window.flight_info
 
             # Instrument
             self.instrument = window.instrument
@@ -852,8 +853,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Since the times were converted to local elsewhere,
         we ditch the tzinfo to make everything naive to subtract easier.
         """
-
-        print('Leg duration time: ', self.leg_duration.time().toPyTime())
 
         # Update the current local/utc times before computing timedeltas
         self.update_times()

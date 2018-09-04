@@ -129,6 +129,20 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                             color='blue',
                                             linewidth=0.5,
                                             transform=cartopy.crs.Geodetic())
+
+        # Put labels on each leg
+        for leg_num in self.flight.steps.points['leg_num'].unique():
+            index = self.flight.steps.points['leg_num']==leg_num
+            lat = self.flight.steps.points[index]['latitude'].mean()
+            lon = self.flight.steps.points[index]['longitude'].mean()
+            print(leg_num, lon, lat)
+
+            self.flight_map_plot.canvas.ax.annotate('{}'.format(leg_num),
+                                                    (lon, lat),
+                                                    xycoords='data',
+                                                    transform=cartopy.crs.Geodetic(),
+                                                    fontsize=10)
+
         self.flight_map_plot.canvas.draw()
         self.flight_map_plot.canvas.updateGeometry()
 
