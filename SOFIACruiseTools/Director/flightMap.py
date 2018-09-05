@@ -207,12 +207,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         lon = self.flight_steps.iloc[index]['longitude']
         leg_num = int(self.flight_steps.iloc[index]['leg_num'])
         leg = self.flight.legs[leg_num-1]
-        #leg, step_number = self.get_current_leg()
-        #if step_number and leg:
-
-        #lat = self.flight.steps.points['latitude'][step_number]
-        #lon = self.flight.steps.points['longitude'][step_number]
-        #leg_number = self.flight.steps.points['leg_num'][step_number]
 
         if self.location:
             self.location.remove()
@@ -221,7 +215,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                                                marker='x',
                                                                color='black',
                                                                transform=cartopy.crs.Geodetic())
-        #self.plot_leg(self.leg_selection_box.currentText())
 
         # Highlight the current leg
         index = self.flight_steps['leg_num']==leg_num

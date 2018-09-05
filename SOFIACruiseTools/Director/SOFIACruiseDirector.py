@@ -35,7 +35,8 @@ import matplotlib
 matplotlib.use('QT5Agg')
 import configobj as co
 import pytz
-import socket
+import logging
+import logging.config
 import subprocess
 
 try:
@@ -86,41 +87,6 @@ except ImportError as e:
         raise ImportError('Header checker directory is empty.\n'
                           'Run:\n\tgit submodule update --init --recursive')
 
-#try:
-#    from ..header_checker.hcheck import file_checker as fc
-#except ImportError as e:
-#    print('Failed to import header_checker with {}'.format(e))
-#    try:
-#        from ..qa_tools.pyqatools.header_checker import file_checker as fc
-#    except ImportError as e:
-#        print('Failed to import qa_tools')
-#        print('\nEncountered {0}: '
-#              '\n\t{1}\n'.format(e.__class__.__name__, e))
-#        print('Checking the symbolic link')
-#        source = 'qa-tools'
-#        link_name = './SOFIACruiseTools/qa_tools'
-#        if not islink(link_name):
-#            try:
-#                symlink(source, link_name)
-#                from ..qa_tools.pyqatools.header_checker import file_checker as fc
-#            except (ImportError, OSError) as erro:
-#                print('Cannot find header checker code.')
-#                print('\nEncountered {0}: '
-#                      '\n\t{1}\n'.format(erro.__class__.__name__, erro))
-#                print('Verify that the git submodule has been properly pulled.')
-#                print('In the top directory, run:')
-#                print('\tgit submodule update --init --recursive')
-#                print('\nTo avoid this error in the future, use '
-#                      'the --recursive flag while cloning the repo')
-#                sys.exit()
-#        else:
-#            print('Symbolic link connecting qa_tools to qa-tools already exists')
-#            print('Unable to import qa_tools however')
-#            print('Check the link is correct and qa-tools was '
-#                  'pulled correctly with:')
-#            print('\tgit submodule update --init --recursive')
-#            sys.exit()
-
 
 class ConfigError(Exception):
     """ Exception for errors in the config file """
@@ -141,6 +107,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   It sets up layout and widgets that are defined
 
         self.setupUi(self)
+
+        logging.config.fileConfig('log.conf')
+        logger = logging.getLogger('default')
+
+        logger.info('Read in log default')
 
         # Some constants/tracking variables and various defaults
         self.leg_pos = 0
@@ -245,6 +216,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         ####
         # Set up buttons
         ####
+        loggger.info('Starting button setup')
 
         self.toggle_network.clicked.connect(self.manual_toggle_network)
 
@@ -311,9 +283,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_takeoff_landing.hide()
 
         # Run the setup prompt
+        logger.info('Running setup prompt')
         self.update_times()
         self.setup()
 
+        logger.info('Starting loop')
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         # Set up the time to run self.showlcd() every 500 ms
