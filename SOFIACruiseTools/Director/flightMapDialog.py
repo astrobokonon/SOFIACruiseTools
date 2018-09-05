@@ -29,11 +29,6 @@ class Ui_Dialog(object):
         self.gridLayout_2.addWidget(self.flight_map_plot, 0, 0, 1, 1)
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
-        self.close_button = QtWidgets.QPushButton(Dialog)
-        self.close_button.setEnabled(True)
-        self.close_button.setAutoDefault(False)
-        self.close_button.setObjectName("close_button")
-        self.gridLayout.addWidget(self.close_button, 1, 5, 1, 1)
         self.use_current = QtWidgets.QCheckBox(Dialog)
         self.use_current.setChecked(True)
         self.use_current.setObjectName("use_current")
@@ -71,6 +66,14 @@ class Ui_Dialog(object):
         self.current_leg_label = QtWidgets.QLabel(Dialog)
         self.current_leg_label.setObjectName("current_leg_label")
         self.gridLayout.addWidget(self.current_leg_label, 0, 4, 1, 1)
+        self.show_leg_labels = QtWidgets.QCheckBox(Dialog)
+        self.show_leg_labels.setObjectName("show_leg_labels")
+        self.gridLayout.addWidget(self.show_leg_labels, 2, 0, 1, 1)
+        self.close_button = QtWidgets.QPushButton(Dialog)
+        self.close_button.setEnabled(True)
+        self.close_button.setAutoDefault(False)
+        self.close_button.setObjectName("close_button")
+        self.gridLayout.addWidget(self.close_button, 2, 5, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 1, 0, 1, 1)
 
         self.retranslateUi(Dialog)
@@ -79,7 +82,6 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.close_button.setText(_translate("Dialog", "Close"))
         self.use_current.setText(_translate("Dialog", "Use Current Time"))
         self.leg_completion_label.setText(_translate("Dialog", "TextLabel"))
         self.flight_completion_label.setText(_translate("Dialog", "TextLabel"))
@@ -90,5 +92,7 @@ class Ui_Dialog(object):
         self.time_label.setText(_translate("Dialog", "Time:"))
         self.label_3.setText(_translate("Dialog", "Leg:"))
         self.current_leg_label.setText(_translate("Dialog", "TextLabel"))
+        self.show_leg_labels.setText(_translate("Dialog", "Show Labels"))
+        self.close_button.setText(_translate("Dialog", "Close"))
 
 from mplwidget import MplWidget
