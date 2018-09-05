@@ -236,34 +236,32 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         # Put labels on each leg
         if self.show_leg_labels.isChecked():
-            transform = cartopy.crs.Geodetic()._as_mpl_transform(
-                self.flight_map_plot.canvas.ax)
-            self.leg_plot_labels = list()
-            for leg_num in self.flight.steps.points['leg_num'].unique():
-                index = self.flight.steps.points['leg_num']==leg_num
+            if not self.leg_plot_labels:
+                transform = cartopy.crs.Geodetic()._as_mpl_transform(
+                    self.flight_map_plot.canvas.ax)
+                self.leg_plot_labels = list()
+                for leg_num in self.flight.steps.points['leg_num'].unique():
+                    index = self.flight.steps.points['leg_num']==leg_num
 
-                lat = self.flight.steps.points[index]['latitude'].mean()
-                lon = self.flight.steps.points[index]['longitude'].mean()
+                    lat = self.flight.steps.points[index]['latitude'].mean()
+                    lon = self.flight.steps.points[index]['longitude'].mean()
 
-                label = '{0:d}'.format(leg_num)
-                line = self.flight_map_plot.canvas.ax.annotate(label,
-                                                        xy=(lon, lat),
-                                                        xycoords=transform,
-                                                        ha='right',
-                                                        va='center',
-                                                        #transform=transform,
-                                                        fontsize=5)
-                self.leg_plot_labels.append(line)
+                    label = '{0:d}'.format(leg_num)
+                    line = self.flight_map_plot.canvas.ax.annotate(label,
+                                                                   xy=(lon, lat),
+                                                                   xycoords=transform,
+                                                                   ha='right',
+                                                                   va='center',
+                                                                   fontsize=4,
+                                                                   alpha=0.5)
+                    self.leg_plot_labels.append(line)
         else:
             if self.leg_plot_labels:
                 for i, label in enumerate(self.leg_plot_labels):
-                    print(label)
                     label.remove()
                 self.leg_plot_labels = list()
 
-        #self.plot_leg(leg_num, current=True)
         self.flight_map_plot.canvas.draw()
-
         self.flight_progress(leg)
 
     def flight_progress(self, leg):
@@ -274,7 +272,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         -------
 
         """
-
         current_leg = '{0:d} / {1:d}'.format(leg.leg_num, self.flight.num_legs)
         self.current_leg_label.setText(current_leg)
 
@@ -293,11 +290,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         """
         Determines the current leg.
 
-        Parameters
-        ----------
-        now : datetime
-            The current timestamp in UTC
-
         Returns
         -------
         leg : LegProfile
@@ -309,9 +301,9 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         leg, step_number, leg_num = None, None, None
         for step_number, time in enumerate(self.flight.steps.points['timestamp']):
-           if self.now < time:
-               leg_num = self.flight.steps.points['leg_num'][step_number]
-               break
+            if self.now < time:
+                leg_num = self.flight.steps.points['leg_num'][step_number]
+                break
 
         if leg_num:
             leg = self.flight.legs[leg_num-1]
