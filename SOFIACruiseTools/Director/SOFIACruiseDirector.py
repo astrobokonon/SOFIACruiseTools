@@ -108,10 +108,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.setupUi(self)
 
-        logging.config.fileConfig('log.conf')
-        logger = logging.getLogger('default')
+        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                                   'log.conf')
+        logging.config.fileConfig(config_file)
+        self.logger = logging.getLogger('default')
 
-        logger.info('Read in log default')
+        self.logger.info('Read in log default')
 
         # Some constants/tracking variables and various defaults
         self.leg_pos = 0
@@ -216,7 +218,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         ####
         # Set up buttons
         ####
-        loggger.info('Starting button setup')
+        self.logger.info('Starting button setup')
 
         self.toggle_network.clicked.connect(self.manual_toggle_network)
 
@@ -283,11 +285,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_takeoff_landing.hide()
 
         # Run the setup prompt
-        logger.info('Running setup prompt')
+        self.logger.info('Running setup prompt')
         self.update_times()
         self.setup()
 
-        logger.info('Starting loop')
+        self.logger.info('Starting loop')
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
         # Set up the time to run self.showlcd() every 500 ms
@@ -296,10 +298,18 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.show_lcd()
 
     def verify_config(self):
+        """Checks the config file director.ini
+
+        The config file is read in during __init__, this verifies
+        the correct formatting of the file. If new keys or values are
+        added, this method needs to be updated.
+
+        Raises
+        ------
+        ConfigError
+            If any rules are violated
         """
-        Checks the config file director.ini
-        Raises Config Error if there are inconsistencies
-        """
+        self.logger.info('Verifying config file')
         # Verify config is not empty
         if not self.config:
             raise ConfigError('Config empty. Verify director.ini'
@@ -367,19 +377,21 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         except ValueError:
             raise ConfigError('Unable to parse flight map settings.')
 
+        self.logger.info('Configuration file passes')
+
     def popout_director_log(self):
-        """
-        Pops open the director log in separate window
-        """
+        """Open the director log in separate window."""
+        self.logger.info('Opened director log in popout window')
         DirectorLogDialog(self)
 
     def open_flight_map(self):
-        """Pops open the flight map"""
+        """Open the flight map in popout window."""
+        self.logger.info('Opened the flight map')
         FlightMap(self)
 
     def flag_file(self):
         """
-        Updates "BADCAL" flag for the selected row
+        Update "BADCAL" flag for the selected row.
 
         When the "Flag File" on the Data Log tab is pressed, the "BADCAL" value
         for the selected row is set to "FLAG" in both the table and the
@@ -387,6 +399,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
         row = self.table_data_log.currentRow()
         fname = self.data_filenames[row]
+        self.logger.debug('Flagging bad calibration for %s' % fname)
         flag_text = 'FLAG'
         flag_col = 'BADCAL'
         if self.data.header_vals[fname][flag_col]:
@@ -448,6 +461,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         result = window.exec_()
 
         if result:
+            self.logger.info('Successful setup pane')
+            self.logger.info('Flight plan: %s' % window.fname)
             # Parse the results of the dialog.
             if not window.fname:
                 self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
@@ -529,7 +544,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
             elif config['method'] == 'walk':
                 pattern = '*.{0:s}'.format(config['extension'])
-                current_data = []
                 for root, _, filenames in os.walk(str(self.data_log_dir)):
                     for filename in fnmatch.filter(filenames, pattern):
                         data_file = os.path.join(root, filename)
@@ -542,8 +556,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.checker_rules = None
                 return
 
+        self.logger.debug('Selecting header checking rules for {}'.format(data_file))
         # Pass it to self.checker.choose_rules
         rule = self.checker.choose_rules(data_file)
+        self.logger.debug('Selected {}'.format(rule))
 
         # Set return value to self.checker_rules
         self.checker_rules = rule
@@ -557,6 +573,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         output has been set up properly
         """
         if self.output_name:
+            self.logger.info('Starting full operations')
             # Start collecting data
             self.start_data_log = True
             # Start MET and TTL timers
@@ -578,10 +595,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                 QtWidgets.QMessageBox.Yes |
                                                 QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
+            self.logger.info('Ending program, begin writing logs')
             # Write the data log and director log one last time
             self.data.write_to_file(self.log_out_name, self.headers)
+            self.logger.info('Data log written')
             self.write_director_log()
+            self.logger.info('Director log written')
             # Close the app
+            self.logger.info('Closing Cruise Director')
             self.close()
 
     def spawn_kw_window(self):
@@ -591,6 +612,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Called when the 'Edit Keywords...' button on the Data Log tab
         is pressed.
         """
+        self.logger.debug('Opening keyword selector')
         window = FITSKeyWordDialog(self)
         # Open the FITS keyword dialog. The result is one if
         # the window is closed by pushing the okay button and
@@ -609,14 +631,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.repopulate_data_log(rescan=True)
 
     def update_table_cols(self):
-        """
-        Updates the columns in the QTable Widget in the Data Log tab.
+        """Updates the columns in the QTable Widget in the Data Log tab.
 
         Called initially when the window is first opened and again if the
         FITS keywords are changed. Due to the weird way the QtTableWidget
         works, the best way is to completely clear the table then remake it.
         """
 
+        self.logger.debug('Updating data table columns in widget')
         # Clear the table
         self.table_data_log.setColumnCount(0)
         self.table_data_log.setRowCount(0)
@@ -628,18 +650,25 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
     def line_stamper(self, line):
-        """
-        Updates the Cruise Director Log
+        """Update the Cruise Director Log
 
         Appends a string given by line to the Director Log after
         it has been properly formatted by adding the UTC time and data
         stamp to the beginning. The line is added to both the GUI Log
         and the background list.
+
+        Parameters
+        ----------
+        line : str
+            The line to append to the log.
         """
+        self.logger.debug('Appending to director log: {}'.format(line))
+
         # Format log line
         time_stamp = datetime.datetime.utcnow()
         time_stamp = time_stamp.replace(microsecond=0)
         stamped_line = '{0:s}> {1:s}'.format(time_stamp.isoformat(), line)
+
         # Write the log line to the cruise_log and log_display
         # cruise_log is a list
         # log_display is a QtWidgets.QTextEdit object
@@ -648,29 +677,35 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.write_director_log()
 
     def write_director_log(self):
-        """
-        Writes the cruise_log to file
+        """Write the cruise_log to file.
 
         Dumps the contents of the background list, cruise_log, to
         the file specified by output_name. If any error occurs,
         change the name of the output file on the GUI to an error
         message.
         """
+        self.logger.debug('Writing director log to file')
         if self.output_name:
             try:
                 with open(self.output_name, 'w') as f:
                     f.writelines(self.cruise_log)
-            except IOError:
+            except IOError as e:
+                self.logger.error('Cannot write director log to file:\n\t{}'.format(
+                                  e))
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
     def read_director_log(self):
-        """
-        Reads in existing director log.
+        """Read in existing director log.
 
         Called if the user wants to append an existing director log
-        to the new log. 
+        to the new log.
+
+        Raises
+        ------
+        IOError
+            Raised if the existing log cannot be read in.
         """
-        print('Reading director log')
+        self.logger.info('Reading existing director log {}'.format(self.output_name))
         # Read in current log
         try:
             with open(self.output_name,'r') as f:
@@ -680,24 +715,32 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                        '\t{0:s}'.format(self.output_name))
             raise IOError(message)
 
-        #print(f'Found {len(existing_log)} lines')
+        self.logger.info('Read in {} lines from exisiting director log'.format(
+                         len(existing_log)))
         # Add to current log
         for line in existing_log:
             self.cruise_log.append(line)
             self.log_display.append(line.strip())
 
     def mark_message(self, key):
-        """
-        Write a message to the director's log
+        """Write a message to the director's log with timestamp.
 
-        Accepts a key which determines what the message will be.
-        The key sent is determined by which quick-log button is
-        pressed. If no key is sent, do nothing.
-        Regardless of the contents of the  message, sent it to
-        line_stamper for the addition of the time stamp and for
-        it to be added to the actual logs.
+        Parameters
+        ----------
+        key ; str
+            Keyword to select which message will be posted. Options are:
+             - mccs : notes a MCCS fault
+             - si : notes a SI fault
+             - land : landing
+             - head : notes TO taking over
+             - target : notes SI taking over
+             - takeoff : takeoff
+             - turn : notes turn off target
+             - ignore : ignore last message
+             - post : writes text user put in text box
         """
 
+        self.logger.debug('Writing to director log with {} key'.format(key))
         messages = {'mccs': 'MCCS fault encountered',
                     'si': 'SI fault encountered',
                     'land': 'End of flight, packing up and sitting down',
@@ -716,22 +759,22 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             return
 
-    def post_log_line(self):
-        """
-        Writes a custom line to the Cruise Director Log.
-
-        Records whatever is in the text box at the bottom of the
-        Cruise Director Log tab to the log file when the 'Post'
-        Button is pressed.
-        """
-        line = self.log_input_line.text()
-        # If this line is empty, try to pull from the text field
-        # on the Data Log tab
-        if not line:
-            line = self.log_line_director.text()
-        self.line_stamper(line)
-        # Clear the line
-        self.log_input_line.setText('')
+#    def post_log_line(self):
+#        """
+#        Writes a custom line to the Cruise Director Log.
+#
+#        Records whatever is in the text box at the bottom of the
+#        Cruise Director Log tab to the log file when the 'Post'
+#        Button is pressed.
+#        """
+#        line = self.log_input_line.text()
+#        # If this line is empty, try to pull from the text field
+#        # on the Data Log tab
+#        if not line:
+#            line = self.log_line_director.text()
+#        self.line_stamper(line)
+#        # Clear the line
+#        self.log_input_line.setText('')
 
     def read_data_log(self):
         """
@@ -739,12 +782,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         """
 
     def count_direction(self, key):
-        """
-        Sets the direction the leg timer counts
+        """Set the direction the leg timer counts.
 
-        Accepts a key that's determined by which button is pressed
-        in the Leg Timer panel of the main UI.
+        Parameters
+        ----------
+        key : ['remain', 'elapse']
+            Sets the leg timer to show remaining/elapsed time
         """
+        self.logger.debug('Changing leg timer counting direction to {}'.format(key))
         if key == 'remain':
             # self.do_leg_count_elapsed = False
             self.leg_count_remaining = True
@@ -755,13 +800,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             return
 
     def set_date_time_edit_boxes(self):
-        """
-        Initializes the takeoff/landing fields.
+        """Initialize the takeoff/landing fields.
 
         Initially sets the fields to the current time, so we don't have
         to type in as much. The fields will be overwritten if a flight
         plan is read in.
         """
+        self.logger.debug('Initializing takeoff/landing time displays')
         # Get the current time(s)
         self.update_times()
         # Get the actual displayed formatting string (set in the UI file)
@@ -775,9 +820,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.landing_time.setDateTime(cur)
 
     def flight_timer(self, key):
+        """Start MET and/or TTL timers.
+
+        Parameters
+        ----------
+        key : ['met', 'ttl', 'both']
+            Specifies which timer to start.
         """
-        Starts MET and/or TTL timers
-        """
+        self.logger.info('Starting flight timers.')
         if key in 'met both'.split():
             self.met_counting = True
             self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
@@ -792,33 +842,27 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             return
 
     def update_times(self):
-        """
-        Determines the UTC/local time and fills the display strings.
+        """Determines the UTC/local time and fills the display strings.
 
-        We need to throw away microseconds so everything will count
+        The  microseconds are zeroed outso everything will count
         together, otherwise it'll be out of sync due to microsecond
-        delay between triggers/button presses.
-        Called during initialization of the app and at the beginning
-        of every show_lcd loop.
+        delay between triggers/button presses. Called during
+        initialization of the app and at the beginning of every show_lcd loop.
         """
+        self.logger.debug('Updating time')
         self.utc_now = datetime.datetime.utcnow()
         self.utc_now = self.utc_now.replace(microsecond=0)
         self.utc_now_str = self.utc_now.strftime(' %H:%M:%S UTC')
-        self.utc_now_datetime_str = self.utc_now.strftime(
-            '%m/%d/%Y %H:%M:%S $Z')
+        self.utc_now_datetime_str = self.utc_now.strftime('%m/%d/%Y %H:%M:%S $Z')
 
         # Safest way to sensibly go from UTC -> local timezone...?
         utc = pytz.utc.localize(self.utc_now)
         self.local_now = utc.astimezone(self.localtz)
-        #self.local_now = self.utc_now.replace(
-        #    tzinfo=pytz.utc).astimezone(self.localtz)
         self.local_now_str = self.local_now.strftime(' %H:%M:%S %Z')
-        self.local_now_datetime_str = self.local_now.strftime(
-            '%m/%d/%Y %H:%M:%S')
+        self.local_now_datetime_str = self.local_now.strftime('%m/%d/%Y %H:%M:%S')
 
     def show_lcd(self):
-        """
-        The main loop for the code.
+        """The main loop for the code.
 
         Contains the clock logic code for all the various timers.
         MET: Mission Elapsed Time
@@ -835,18 +879,16 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         #   current time is in local as well. So ditch the tzinfo because
         #   timezones suck and it's a big pain in the ass otherwise.
         #   The logic follows the same for each counter/timer.
-        if self.met_counting is True:
+        if self.met_counting:
+            self.logger.debug('Updating MET')
             # Set the MET to show the time between now and takeoff
             local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
-            #self.met = self.local_now - self.takeoff
             self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
             self.txt_met.setText(self.met_str)
-        if self.ttl_counting is True:
-            # Only runs if "Start TTL" or "Start Both" button is pressed
-            # Sets the TTL to show the teim between landing and now
-            # The timer is color-coded based on how long this time is
+        if self.ttl_counting:
+            self.logger.debug('Updating TTL')
             local2 = self.local_now.replace(tzinfo=None)
             landing2 = self.landing.replace(tzinfo=None)
             self.ttl = landing2 - local2
@@ -865,6 +907,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.txt_ttl.setStyleSheet('QLabel { color : red; }')
 
         if self.leg_timer.status == 'running':
+            self.logger.debug('Update leg timers')
             # Addresses the timer in the "Leg Timer" panel.
             # Only runs if the "Start" button in the "Leg Timer"
             # panel is pressed
@@ -885,7 +928,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.network_status_display_update()
         else:
             self.network_status_display_update(stop=True)
-            
 
         # If the program is set to look for data automatically and the time
         # is a multiple of the update frequency and network is good
@@ -894,29 +936,28 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 # If the network is good or if the user has turned off
                 # checking the network
                 if self.network_status or not self.network_status_control:
+                    self.logger.debug('Check for data')
                     self.update_data()
 
     def manual_toggle_network(self):
-        """ Test button to toggle network status. """
-        #self.verify_network(testing=True)
+        """Test button to toggle network status."""
+        self.logger.info('Toggling test for network health.')
         if self.network_status_control:
             self.network_status_display_update()
             self.network_status_control = not self.network_status_control
         else: 
             self.network_status_display_update(stop=True)
             self.network_status_control = not self.network_status_control
-        #self.network_status_hold = not self.network_status_hold
 
     def verify_network(self, host='8.8.8.8', port=53, 
                        timeout=3, testing=False):
-        """ Tests the current status of the network.
+        """Test the current status of the network.
 
         Checks if Google can be pinged and if the data
         directory is still available. If not, set 
-        good_conenction flag low to pause data collection.
+        good_connection flag low to pause data collection.
         """
-        google_ipaddr = '296.58.192.142'
-        address = 'https://{0:s}'.format(google_ipaddr)
+        self.logger.debug('Testing network')
         if testing:
             self.network_status = not self.network_status
         elif self.network_status_hold:
@@ -927,19 +968,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     self.network_status = True
                 else:
                     self.network_status = False
-#                try:
-#                    socket.setdefaulttimeout(timeout)
-#                    socket.socket(socket.AF_INET,
-#                                  socket.SOCK_STREAM).connect((host,port))
-#                    #print('socket success')
-#                except Exception as ex:
-#                    print(ex)
-#                    self.network_status = False
             else:
                 self.network_status = False
 
     def network_status_display_update(self, stop=False):
-        """ Updates the GUI status with current network status """
+        """Updates the GUI status with current network status."""
         style = 'QLabel {{color : {0:s}; }}'
         if stop:
             self.network_status_display.setText('Not testing network')
@@ -953,13 +986,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.network_status_display.setStyleSheet(style.format('red'))
 
     def leg_timer_color(self, remaining_seconds):
-        """
-        Sets the color of the leg timer
+        """Set the color of the leg timer.
 
-        Limits of when different colors are applied come from
-        the config file.
+        Parameters
+        ----------
+        remaining_seconds : int
+            Number of seconds left in the leg.
         """
-
         timer_warnings = self.config['leg_timer_minute_warnings']
         first_warning = float(timer_warnings['first'])*60
         second_warning = float(timer_warnings['second'])*60
@@ -974,12 +1007,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
 
     def add_data_log_row(self):
-        """
-        Adds a blank row to the Data Log
+        """Add a blank row to the Data Log.
 
-        Called when the 'Add Blank Row' button in the Data Log tab is pressed.
+        Called when the 'Add Blank Row' button in the Data
+        Log tab is pressed.
         """
 
+        self.logger.debug('Adding blank row to data log')
         # Add the blank row to the data structure
         self.data.add_blank_row(self.headers)
 
@@ -995,12 +1029,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.blockSignals(False)
 
     def del_data_log_row(self):
-        """
-        Removes a row from the Data Log
+        """Removes a row from the Data Log.
 
-        Called when the 'Remove Highlighted Row' button in the Data Log
-        tab is pressed.
+        Called when the 'Remove Highlighted Row' button in
+        the Data Log tab is pressed.
         """
+        self.logger.info('Removing row from data log')
         bad = self.table_data_log.currentRow()
         # -1 means we didn't select anything
         if bad != -1:
@@ -1015,12 +1049,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.table_data_log.blockSignals(False)
 
     def repopulate_data_log(self, rescan=False):
-        """
-        Recreates the data log table after keyword changes.
+        """Recreate the data log table after keyword changes.
 
         This is called after changing keywords, blanks are filled,
         or a file has been flagged.
         """
+        self.logger.info('Recreate data log')
         # Disable fun stuff while we update
         self.table_data_log.setSortingEnabled(False)
         self.table_data_log.horizontalHeader().setSectionsMovable(False)
@@ -1082,9 +1116,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.resizeColumnsToContents()
         self.table_data_log.resizeRowsToContents()
 
-        # Seems to be more trouble than it's worth, so keep this commented
-        #        self.table_datalog.setSortingEnabled(True)
-
         # Re-enable fun stuff
         self.table_data_log.horizontalHeader().setSectionsMovable(True)
         self.table_data_log.horizontalHeader().setDragEnabled(True)
@@ -1098,27 +1129,42 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.scrollToBottom()
 
     def fill_space_from_header(self, n, hkey):
-        """
-        Attempts to fill an empty cell in the QtTableWidget
+        """Attempt to fill an empty cell in the QtTableWidget.
 
         If a cell in the data_log is empty after a change in
         keyword headers, read through the file headers again
         to see if the keyword is there.
+
+        Parameters
+        ----------
+        n : int
+            Index count of the file to process
+        hkey : str
+            Header keyword to fill in
+
+        Returns
+        -------
+        val : str
+            Value stored in the header ``hkey`` in selected file. If ``hkey``
+            is not in the header, val is an empty string.
         """
         fname = self.data_filenames[n]
+
         try:
             val = '{0}'.format(self.data.header_vals[fname][hkey])
         except KeyError:
             val = ''
+        self.logger.info('Filled missing value for key {0} in file {1} '
+                         'with {2}'.format(hkey, fname, val))
         return val
 
     def update_data(self):
-        """
-        Looks for new observations
+        """Look for new observations.
 
         Reads in new FITS files and adds them to the header_vals
         """
 
+        self.logger.debug('Looking for new data')
         # Each instrument can store their data in a different way.
         # Read in the correct method to use from the
         # director.ini config file
@@ -1147,8 +1193,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.data_current = current_data
         else:
             # Unknown method
-            print('Unknown method {0:s} for instrument {1:s}'.format(
-                config['method'], self.instrument))
+            message = ('Unknown method {0:s} for instrument {1:s}'.format(
+                       config['method'], self.instrument))
+            self.logger.warning(message)
             return
 
         # Correct the file listing to be ordered by modification time
@@ -1162,6 +1209,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Separate out the new files
         new_files = set(bncur) - set(bnpre)
+        self.logger.debug('Found {} new files'.format(len(new_files)))
         if self.instrument.lower() == 'forcast':
             new_files = [os.path.join(self.data_log_dir, i[0], i)
                          for i in new_files]
@@ -1185,11 +1233,21 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.data.write_to_file(self.log_out_name, self.headers)
 
     def sort_files(self, files):
-        """
-        Sort files based on method in config
+        """Sort files based on method in config.
 
         Takes in the a list of files and sorts them. If there
-        are problems, exit.
+        are problems return the unsorted list.
+
+        Parameters
+        ----------
+        files : list
+            List of files to be sorted.
+
+        Returns
+        -------
+        files : list
+            Same files but sorted according to config settings for
+            the current instrument.
         """
         if self.config['sort'][self.instrument] == 'time':
             return sorted(files, key=os.path.getmtime)
@@ -1199,19 +1257,18 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                         int(os.path.basename(x).split('_')[-1].split('.')[0]))
                         #int(x.split(os.path.sep)[-1].split('_')[1].split('.')[0]))
             else:
-                print('Unknown file formatting for {0:s}'.format(self.instrument))
-                print('Cannot sort')
+                message = ('Unknown file formatting for {0:s} ',
+                           'Cannot sort'.format(self.instrument))
+                self.logger.warning(message)
                 return files
-                #sys.exit()
         else:
-            print('Unknown file sorting method. Check config file, director.ini')
+            message = ('Unknown file sorting method. Check config file, '
+                       'director.ini')
+            self.logger.warning(message)
             return files
-            #sys.exit()
 
     def update_table(self, append_init=False):
-        """
-        Updates the table widget to display newly found files
-        """
+        """Update the table widget to display newly found files."""
 
         # Disable table features during alteration
         self.table_data_log.setSortingEnabled(False)
