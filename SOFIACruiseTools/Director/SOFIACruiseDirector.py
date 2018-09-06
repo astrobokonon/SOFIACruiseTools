@@ -97,6 +97,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     """
     Main class for the Cruise Director
     """
+    #def __init__(self,logger):
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
@@ -108,11 +109,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.setupUi(self)
 
-        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                                   'log.conf')
-        logging.config.fileConfig(config_file)
-        self.logger = logging.getLogger('default')
+        #config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+        #                                                           'log.conf')
+        #logging.config.fileConfig(config_file)
+        #self.logger = logging.getLogger('default')
 
+        self.logger = logging.getLogger('default')
         self.logger.info('Read in log default')
 
         # Some constants/tracking variables and various defaults
@@ -1270,6 +1272,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def update_table(self, append_init=False):
         """Update the table widget to display newly found files."""
 
+        self.logger.debug('Updating table widget')
         # Disable table features during alteration
         self.table_data_log.setSortingEnabled(False)
         self.table_data_log.horizontalHeader().setSectionsMovable(False)
@@ -1279,10 +1282,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.blockSignals(True)
 
         if append_init:
+            self.logger.info('Updating table widget with data log '
+                             'from a previous run')
             self.new_files = list(self.data.header_vals.keys())
             self.data_filenames = list(self.data.header_vals.keys())
 
         # Add the data to the table
+        self.logger.debug('Added {} new files to table widget'.format(len(
+                           self.new_files)))
         for file_key in self.new_files:
             row_count = self.table_data_log.rowCount()
             self.table_data_log.insertRow(row_count)
@@ -1309,17 +1316,24 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.blockSignals(False)
 
         self.table_data_log.scrollToBottom()
+        self.logger.debug('Done updated table widget')
 
     def leg_param_labels(self, key):
-        """
-        Toggle the visibility of the leg parameter labels
+        """Toggle the visibility of the leg parameter labels.
+
+        Parameters
+        ----------
+        key : ['on', 'off']
+            Determines if the labels should be on or off
         """
         if key == 'on':
+            self.logger.debug('Turn leg parameter labels on')
             self.txt_elevation.setVisible(True)
             self.txt_obs_plan.setVisible(True)
             self.txt_rof.setVisible(True)
             self.txt_target.setVisible(True)
         elif key == 'off':
+            self.logger.debug('Turn leg parameter labels off')
             self.txt_elevation.setVisible(False)
             self.txt_obs_plan.setVisible(False)
             self.txt_rof.setVisible(False)
@@ -1328,11 +1342,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             return
 
     def toggle_leg_param_values_off(self):
-        """
-        Clears the leg parameter values.
+        """Clear the leg parameter values.
 
         Useful for dead/departure/arrival legs
         """
+        self.logger.debug('Turning off leg parameters')
         self.leg_elevation.setText('')
         self.leg_obs_block.setText('')
         self.leg_rof_rof_rate.setText('')
@@ -1545,11 +1559,13 @@ def timedelta_to_time(delta):
     return t
 
 
+#def main(logger):
 def main():
     """ Generate the gui and run """
     app = QtWidgets.QApplication(sys.argv)
     font = './SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf'
     QtGui.QFontDatabase.addApplicationFont(font)
+    #form = SOFIACruiseDirectorApp(logger)
     form = SOFIACruiseDirectorApp()
     form.show()  # Show the form
     app.exec_()  # and execute the app

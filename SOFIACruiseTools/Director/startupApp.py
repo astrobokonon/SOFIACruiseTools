@@ -1,5 +1,6 @@
 
 import os
+import logging
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
 
@@ -17,6 +18,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         super(StartupApp, self).__init__(parent)
 
+        self.logger = logging.getLogger('default')
         self.setupUi(self)
 
         self.config = self.parentWidget().config
@@ -105,28 +107,24 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.append_option = True
 
     def load_default(self):
-        """ Loads default settings for faster testing. """
+        """Load default settings for faster testing."""
+        self.logger.info('Loading test settings')
         self.instrument = 'FIFI-LS'
         self.local_timezone = 'US/Pacific'
+
         code_dir = os.path.dirname(os.path.realpath(__file__))
-        #flight_file = f'{code_dir}/../../inputs/201803_FI_DIANA_SCI.mis'
         flight_file = '{0:s}/../../inputs/201803_FI_DIANA_SCI.mis'.format(code_dir)
-        #print(f'Loading flight plan: {flight_file}')
-        print('Loading flight plan: {0:s}'.format(flight_file))
         self.load_flight(fname = flight_file)
-        #print(f'Successful Parse: {self.success_parse}')
-        print('Successful Parse: {}'.format(self.success_parse))
+
         timestamp = self.utc_now.strftime('%Y%m%d.txt')
-        #self.dirlog_name = f'SILog_{timestamp}'
-        #self.datalog_name = f'DataLog_{timestamp}'
         self.dirlog_name = 'SILog_{0:s}'.format(timestamp)
         self.datalog_name = 'DataLog_{0:s}'.format(timestamp)
         self.data_dir = '/home/jrvander/mounts/preview/misc/JV_tmp/cruiseFiles/'
 
     def start(self):
-        """
-        Closes this window and passes results to main program
-        """
+        """Close this window and passes results to main program."""
+
+        self.logger.info('Closing startup pane')
         # Read the timezone
         self.local_timezone = str(self.timezoneSelect.currentText())
 
@@ -145,19 +143,24 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.close()
 
     def load_flight(self, fname=None):
-        """
-        Parses flight plan from .msi file.
+        """Parse flight plan from .msi file.
 
         Spawn the file chooser dialog box and return the result, attempting
         to parse the file as a SOFIA flight plan (.mis).
         If successful, set the various state parameters for further use.
         If unsuccessful, make the label text red and angry and give the
         user another chance.
+
+        Parameters
+        ----------
+        fname : str, optional
+            Filename of flight plan, defaults to None
         """
         if fname:
             self.fname = fname
         else:
             self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
+        self.logger.info('Loading flight plan: {}'.format(self.fname))
         if self.fname:
             # Make sure the label text is black every time we start, and
             # cut out the path so we just have the filename instead of huge str
@@ -180,29 +183,27 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                 self.flightText.setStyleSheet('QLabel { color : red; }')
                 self.flightText.setText(self.err_msg)
                 self.success_parse = False
+                self.logger.warning(self.err_msg)
 
     def select_instr(self):
-        """
-        Selects the instrument
-        """
+        """Select the instrument."""
         self.instrument = str(self.instSelect.currentText())
         if 'hawc' in self.instrument.lower():
             self.instrument = 'HAWC'
+        self.logger.info('Set instrument to {}'.format(self.instrument))
 #        if 'Flight' in self.instrument:
 #            self.instrument = 'HAWCFLIGHT'
 #        elif 'Ground' in self.instrument:
 #            self.instrument = 'HAWCGROUND'
 
     def select_local_timezone(self):
-        """
-        Sets the local timezone
-        """
+        """Set the local timezone."""
         self.local_timezone = str(self.timezoneSelect.currentText())
+        self.logger.info('Setting local time zone to {}'.format(
+            self.local_timezone))
 
     def select_log_file(self):
-        """
-        Selects the output file for the director log
-        """
+        """Select the output file for the director log."""
         default = 'SILog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.txt'))
         if self.dirlog_name:
             directory = os.path.join(os.path.dirname(self.dirlog_name), default)
@@ -215,11 +216,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
             self.logOutText.setText('{0:s}'.format(os.path.basename(
                                                    str(self.dirlog_name))))
             self.logOutButton.setText('Change')
+        self.logger.info('Saving director log to {}'.format(self.dirlog_name))
 
     def select_data_loc(self):
-        """
-        Sets where to look for data files
-        """
+        """Sets where to look for data files."""
         dtxt = 'Select Data Directory'
         if self.data_dir:
             directory = self.data_dir
@@ -238,11 +238,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
                           'in the Data Location!')
             self.datalocText.setText(self.data_dir)
             self.datalocButton.setText('Change')
+        self.logger.info('Data location: {}'.format(self.data_dir))
 
     def select_data_log(self):
-        """
-        Selects where to store the data log
-        """
+        """Select where to store the data log."""
         default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.csv'))
         print('Selecting datalog name')
         if self.datalog_name:
@@ -252,25 +251,23 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.datalog_name = QtWidgets.QFileDialog.getSaveFileName(self,
                                                                   'Save File',
                                                                   directory,
-                                                                  #default,
-                                                                  #directory=directory
                                                                   )[0]
-#        self.datalog_name = QtWidgets.QFileDialog.getOpenFileName(self,
-#                                                                  'Open File',
-#                                                                  default)[0]
         if os.path.isfile(self.datalog_name):
             with open(self.datalog_name,'r') as f:
                 print('Length of existing data log: ',len(f.readlines()))
-            print('Datalog Name: ',self.datalog_name)
 
         if self.datalog_name:
             self.datalogText.setText(
                 '{0:s}'.format(os.path.basename(str(self.datalog_name))))
             self.logOutButton.setText('Change')
+            self.logger.info('Data log: {}'.format(self.datalog_name))
 
     def select_kw(self, default=None):
-        """
-        Selects what FITS keywords to use
+        """Select what FITS keywords to use.
+
+        Parameters
+        ----------
+
         """
 
         # Read the default keywords for each instrument

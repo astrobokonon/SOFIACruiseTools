@@ -2,7 +2,14 @@
 
 from __future__ import absolute_import, division, print_function
 
+import logging
+import logging.config
 import SOFIACruiseTools.Director.SOFIACruiseDirector as cruise
 
 if __name__=='__main__':
+    logging.config.fileConfig('log.conf')
+    #logger = logging.getLogger('default')
+    #logger.info('Starting Cruise Director')
+
+    #cruise.main(logger)
     cruise.main()

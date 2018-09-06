@@ -337,6 +337,8 @@ class LegSteps(FlightProfile):
             if 'SUA' in step:
                 break
             elif 'UTC' in step:
+                if 'SunHA' in step and self.extra_field not in self.header:
+                    self.header.append(self.extra_field)
                 continue
             for bw in bad_words:
                 step = step.replace(bw, '')
@@ -346,7 +348,8 @@ class LegSteps(FlightProfile):
                                                     columns=self.header)
             except AssertionError as e:
                 print(e)
-                print(self.header)
+                print('leg_num: ', leg_num)
+                print('header: ', self.header)
                 print(step_split)
                 raise
             details['leg_num'] = leg_num
@@ -952,7 +955,7 @@ def coordinate_convert(degrees, minutes):
     degrees = float(degrees[1:])
     minutes = float(minutes)
     point = degrees + minutes/60
-    if direction in ['W', 'E']:
+    if direction in ['W', 'S']:
         point *= -1
     return point
 
@@ -1019,19 +1022,22 @@ def parse_mis_file(filename):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    loc = '/home/jrvander/repos/SOFIACruiseTools/inputs/'
-    #loc = '/home/jrvander/'
+    #loc = '/home/jrvander/repos/SOFIACruiseTools/inputs/'
+    loc = '/home/jrvander/'
+    loc = '/home/jrvander/Downloads/flightplans/FINAL/'
     filenames = glob.glob(loc + '*mis')
     tags = ['Filename:', 'Flight', 'Leg', 'UTC', 'Comment:',
             '============================= ', 'Airport:']
     print(loc)
     for fname in filenames:
         #fname = loc + '201807_HA_IAGO_MOPS.mis'
-        fname = loc + '201803_FI_DIANA_SCI.mis'
+        #fname = loc + '201803_FI_DIANA_SCI.mis'
+
+        print(fname)
         flight = parse_mis_file(fname)
         flight.steps.points.to_csv('full_steps.csv', index=False)
 
-        break
+        continue
         print('\n', fname.split('/')[-1])
         flight = FlightProfile()
         with open(fname, 'r') as f:
@@ -1050,4 +1056,3 @@ if __name__ == '__main__':
         print('Unique leg numbers: ', set(flight.steps.points['leg_num']))
 
 
-        break

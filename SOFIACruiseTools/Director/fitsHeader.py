@@ -61,9 +61,9 @@ class FITSHeader(object):
         """
         Reads in log from disk
         """
-        print('logfile = ',logfile)
+        print('logfile = ', logfile)
         data_log = read_csv(logfile)
-        data_log.fillna('',inplace=True)
+        data_log.fillna('', inplace=True)
         data_log = data_log.to_dict('records')
         print(type(data_log))
         for dl in data_log:
