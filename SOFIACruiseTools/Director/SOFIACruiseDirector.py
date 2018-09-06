@@ -1279,8 +1279,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.table_data_log.blockSignals(True)
 
         if append_init:
-            self.new_files = self.data.header_vals.keys()
-            self.data_filenames = self.data.header_vals.keys()
+            self.new_files = list(self.data.header_vals.keys())
+            self.data_filenames = list(self.data.header_vals.keys())
 
         # Add the data to the table
         for file_key in self.new_files:
