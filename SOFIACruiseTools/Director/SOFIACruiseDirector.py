@@ -159,17 +159,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # The addition of the notes column happens in here
         self.update_table_cols()
 
-        # Read config file
-        try:
-            self.config = co.ConfigObj('director.ini')
-        except co.ConfigObjError:
-            message = ('Cannot parse config file director.ini\n'
-                       'Verify it is in the correct location '
-                       'and formatted correctly.')
-            raise co.ConfigObjError(message)
-
-        self.verify_config()
-
         # Variables previously defined in function
         self.data_log_dir = ''
         self.takeoff = None
@@ -203,6 +192,17 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.map_width = 15
         self.marker_size = 10
         self.update_freq = 5
+
+        # Read config file
+        try:
+            self.config = co.ConfigObj('director.ini')
+        except co.ConfigObjError:
+            message = ('Cannot parse config file director.ini\n'
+                       'Verify it is in the correct location '
+                       'and formatted correctly.')
+            raise co.ConfigObjError(message)
+
+        self.verify_config()
 
         # Looks prettier with this stuff
         self.table_data_log.resizeColumnsToContents()
@@ -372,13 +372,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Check map size setting
         try:
-            self.map_width =  float(self.config['flight_map']['width'])
+            self.map_width = float(self.config['flight_map']['width'])
             self.marker_size = float(self.config['flight_map']['marker_size'])
             self.sample_rate = int(self.config['flight_map']['sample_rate'])
             self.update_freq = float(self.config['flight_map']['update_freq'])
         except ValueError:
             raise ConfigError('Unable to parse flight map settings.')
 
+        print('Config map_width = ', self.map_width)
         self.logger.info('Configuration file passes')
 
     def popout_director_log(self):
@@ -476,8 +477,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.localtz = pytz.timezone(self.local_timezone)
 
             # Parse the flight plan
-            #self.parse_flight_file(window.fname)
-            self.flight_info = window.flight_info
+            self.parse_flight_file(window.fname)
+            #self.flight_info = window.flight_info
 
             # Instrument
             self.instrument = window.instrument

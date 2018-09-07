@@ -61,10 +61,17 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         extent = (med_lon-self.width, med_lon+self.width,
                   med_lat-self.width, med_lat+self.width)
 
+        print('Plot width = ', self.width)
+        print('Parent width = ', self.parentWidget().map_width)
+        extent = (np.min(self.flight.steps.points['longitude'])-self.width,
+                  np.max(self.flight.steps.points['longitude'])+self.width,
+                  np.min(self.flight.steps.points['latitude'])-self.width,
+                  np.max(self.flight.steps.points['latitude'])+self.width)
+
         ortho = cartopy.crs.Orthographic(central_latitude=med_lat,
                                          central_longitude=med_lon)
         self.flight_map_plot.canvas.figure.clf()
-        pos = [0.1, 0.1, 0.8, 0.8]    # left, bottom, width, height
+        pos = [0.01, 0.01, 0.98, 0.98]    # left, bottom, width, height
         self.flight_map_plot.canvas.ax = self.flight_map_plot.canvas.figure.add_subplot(111,
                                                                  projection=ortho,
                                                                  position=pos)
