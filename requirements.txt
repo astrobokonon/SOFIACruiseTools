@@ -1,0 +1,12 @@
+openpyxl>=2.5.3
+numpy>=1.14.3
+pytz>=2018.4
+astropy>=3.0.2
+pandas>=0.23.0
+setuptools>=39.1.0
+xmltodict>=0.11.0
+Cartopy>=0.16.0
+matplotlib>=2.2.2
+PyQt5>=5.11.2
+configobj>=5.0.6
+pyfits>=3.5
