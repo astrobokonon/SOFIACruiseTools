@@ -379,7 +379,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         except ValueError:
             raise ConfigError('Unable to parse flight map settings.')
 
-        print('Config map_width = ', self.map_width)
         self.logger.info('Configuration file passes')
 
     def popout_director_log(self):

@@ -61,8 +61,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         extent = (med_lon-self.width, med_lon+self.width,
                   med_lat-self.width, med_lat+self.width)
 
-        print('Plot width = ', self.width)
-        print('Parent width = ', self.parentWidget().map_width)
         extent = (np.min(self.flight.steps.points['longitude'])-self.width,
                   np.max(self.flight.steps.points['longitude'])+self.width,
                   np.min(self.flight.steps.points['latitude'])-self.width,
