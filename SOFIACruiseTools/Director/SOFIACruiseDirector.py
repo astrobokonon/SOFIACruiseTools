@@ -116,6 +116,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.logger = logging.getLogger('default')
         self.logger.info('Read in log default')
 
+        self.pass_style = 'QLabel { color : black; }'
+        self.warn_style = 'QLabel { color : orange; }'
+        self.fail_style = 'QLabel { color : red; }'
+
         # Some constants/tracking variables and various defaults
         self.leg_pos = 0
         self.success_parse = False
@@ -466,7 +470,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.logger.info('Flight plan: %s' % window.fname)
             # Parse the results of the dialog.
             if not window.fname:
-                self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
+                self.flight_plan_filename.setStyleSheet(self.warn_style)
 
             # Local timezone
             # Do this first so the flight plan times are parsed
@@ -497,8 +501,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.output_name = window.dirlog_name
                 self.txt_log_output_name.setText('{0:s}'.format(
                     os.path.basename(str(self.output_name))))
+                self.txt_log_output_name.setStyleSheet(self.pass_style)
             else:
-                self.txt_log_output_name.setStyleSheet('QLabel { color : red; }')
+                self.txt_log_output_name.setStyleSheet(self.fail_style)
                 return
 
             # Location of data
@@ -514,17 +519,35 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.log_out_name = window.datalog_name
                 self.txt_data_log_save_file.setText('{0:s}'.format(
                     os.path.basename(str(self.log_out_name))))
+                self.txt_data_log_save_file.setStyleSheet(self.pass_style)
 
             # Log append flags
             if window.append_data_log:
-                self.data.add_images_from_log(self.log_out_name, self.headers)
-                self.update_table(append_init=True)
-                #self.read_data_log()
+                # Check file exists
+                if os.path.isfile(self.log_out_name):
+                    self.data.add_images_from_log(self.log_out_name, self.headers)
+                    self.update_table(append_init=True)
+                    self.txt_data_log_save_file.setStyleSheet(self.pass_style)
+                else:
+                    self.logger.error('Data Log {} does not exist! Cannot '
+                                      'append'.format(self.log_out_name))
+                    self.txt_data_log_save_file.setText('{} does not '
+                                                        'exist'.format(
+                                                         self.log_out_name))
+                    self.txt_data_log_save_file.setStyleSheet(self.fail_style)
             if window.append_director_log:
-                self.read_director_log()
-            #self.append_data_log = window.append_data_log
-            #self.append_director_log = window.append_director_log
-        
+                # Check that file exists:
+                if os.path.isfile(self.output_name):
+                    self.read_director_log()
+                    self.txt_log_output_name.setStyleSheet(self.pass_style)
+                else:
+                    self.logger.error('Director Log {} does not exist! Cannot '
+                                      'append'.format(self.output_name))
+                    self.txt_log_output_name.setText('{} does not '
+                                                     'exist'.format(
+                                                      self.output_name))
+                    self.txt_log_output_name.setStyleSheet(self.fail_style)
+
     def choose_head_check_rules(self, data_file=None):
         """
         Selects the rules for checking header values.
@@ -581,7 +604,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.flight_timer('both')
             self.instrument_text.setText(self.instrument)
         else:
-            self.txt_log_output_name.setStyleSheet('QLabel { color : red; }')
+            self.txt_log_output_name.setStyleSheet(self.fail_style)
 
     def end_run(self):
         """
@@ -901,11 +924,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             first_warning = float(timer_warnings['first'])*3600.
             second_warning = float(timer_warnings['second'])*3600.
             if self.ttl.total_seconds() >= first_warning:
-                self.txt_ttl.setStyleSheet('QLabel { color : black; }')
+                self.txt_ttl.setStyleSheet(self.pass_style)
             elif self.ttl.total_seconds() >= second_warning:
-                self.txt_ttl.setStyleSheet('QLabel { color : darkyellow; }')
+                self.txt_ttl.setStyleSheet(self.warn_style)
             else:
-                self.txt_ttl.setStyleSheet('QLabel { color : red; }')
+                self.txt_ttl.setStyleSheet(self.fail_style)
 
         if self.leg_timer.status == 'running':
             self.logger.debug('Update leg timers')
@@ -1000,12 +1023,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Visual indicators setup
         if remaining_seconds >= first_warning:
-            self.txt_leg_timer.setStyleSheet('QLabel { color : black; }')
+            self.txt_leg_timer.setStyleSheet(self.pass_style)
         elif remaining_seconds >= second_warning:
-            self.txt_leg_timer.setStyleSheet(
-                'QLabel { color : orange; }')
+            # Used to be orange. Maybe go back to this?
+            self.txt_leg_timer.setStyleSheet(self.warn_style)
         else:
-            self.txt_leg_timer.setStyleSheet('QLabel { color : red; }')
+            self.txt_leg_timer.setStyleSheet(self.fail_style)
 
     def add_data_log_row(self):
         """Add a blank row to the Data Log.
@@ -1506,7 +1529,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.fname = from_gui
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
-        self.flight_plan_filename.setStyleSheet('QLabel { color : black; }')
+        self.flight_plan_filename.setStyleSheet(self.pass_style)
         self.flight_plan_filename.setText(os.path.basename(str(self.fname)))
         try:
             # self.flight_info = fpmis.parseMIS(self.fname)
@@ -1521,7 +1544,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         except IOError:
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing File!'
-            self.flight_plan_filename.setStyleSheet('QLabel { color : red; }')
+            self.flight_plan_filename.setStyleSheet(self.fail_style)
             self.flight_plan_filename.setText(self.err_msg)
             self.success_parse = False
 

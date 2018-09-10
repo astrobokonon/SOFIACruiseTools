@@ -520,6 +520,7 @@ class Ui_MainWindow(object):
         font.setKerning(True)
         self.flight_plan_filename.setFont(font)
         self.flight_plan_filename.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.flight_plan_filename.setWordWrap(True)
         self.flight_plan_filename.setObjectName("flight_plan_filename")
         self.verticalLayout_3.addWidget(self.flight_plan_filename)
         self.label_2 = QtWidgets.QLabel(self.setup_info)
@@ -563,6 +564,7 @@ class Ui_MainWindow(object):
         font.setItalic(False)
         self.txt_data_log_dir.setFont(font)
         self.txt_data_log_dir.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.txt_data_log_dir.setWordWrap(True)
         self.txt_data_log_dir.setObjectName("txt_data_log_dir")
         self.verticalLayout_3.addWidget(self.txt_data_log_dir)
         self.instrument_label = QtWidgets.QLabel(self.setup_info)
@@ -685,7 +687,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

@@ -101,6 +101,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.success_parse = False
         self.append_data_log = False
         self.append_director_log = False
+        self.append_option = False
 
     def append_options(self):
         """ Flag to choose if logs should be appended to or overwritten """
@@ -114,12 +115,14 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         code_dir = os.path.dirname(os.path.realpath(__file__))
         flight_file = '{0:s}/../../inputs/201803_FI_DIANA_SCI.mis'.format(code_dir)
-        self.load_flight(fname = flight_file)
+        self.load_flight(fname=flight_file)
 
         timestamp = self.utc_now.strftime('%Y%m%d.txt')
         self.dirlog_name = 'SILog_{0:s}'.format(timestamp)
         self.datalog_name = 'DataLog_{0:s}'.format(timestamp)
         self.data_dir = '/home/jrvander/mounts/preview/misc/JV_tmp/cruiseFiles/'
+        self.appendDataCheck.setCheckState(0)
+        self.appendLogCheck.setCheckState(0)
 
     def start(self):
         """Close this window and passes results to main program."""
