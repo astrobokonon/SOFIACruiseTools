@@ -125,9 +125,11 @@ class Ui_Dialog(object):
         self.test_config.setObjectName("test_config")
         self.appendLogCheck = QtWidgets.QCheckBox(Dialog)
         self.appendLogCheck.setGeometry(QtCore.QRect(60, 430, 181, 21))
+        self.appendLogCheck.setChecked(True)
         self.appendLogCheck.setObjectName("appendLogCheck")
         self.appendDataCheck = QtWidgets.QCheckBox(Dialog)
         self.appendDataCheck.setGeometry(QtCore.QRect(60, 460, 191, 21))
+        self.appendDataCheck.setChecked(True)
         self.appendDataCheck.setObjectName("appendDataCheck")
 
         self.retranslateUi(Dialog)

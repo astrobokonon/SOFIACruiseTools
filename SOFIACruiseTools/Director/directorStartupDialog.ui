@@ -332,6 +332,9 @@
    <property name="text">
     <string>Append to existing log</string>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QCheckBox" name="appendDataCheck">
    <property name="geometry">
@@ -344,6 +347,9 @@
    </property>
    <property name="text">
     <string>Append to existing data log</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

@@ -29,7 +29,10 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         self.close_button.clicked.connect(self.close)
 
         self.cruise_log = self.parentWidget().cruise_log
+        self.initial_log_size = len(self.cruise_log)
         self.output_name = self.parentWidget().output_name
+        for line in self.cruise_log:
+            self.local_display.append(line.strip())
 
         self.show()
 
@@ -79,7 +82,10 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         """
         When window is closed, write the contents to the host director log
         """
-        for line in self.cruise_log:
+        #for line in self.cruise_log:
+        #updates = slice(self.initial_log_size, :)
+        #for line in self.cruise_log[updates]:
+        for line in self.cruise_log[self.initial_log_size:]:
             self.parentWidget().log_display.append(line.strip())
 
     def close_dialog(self):

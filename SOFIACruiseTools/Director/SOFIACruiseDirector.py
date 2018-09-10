@@ -97,7 +97,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     """
     Main class for the Cruise Director
     """
-    #def __init__(self,logger):
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
