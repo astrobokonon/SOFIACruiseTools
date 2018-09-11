@@ -130,7 +130,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.plot_current_location)
         update_freq = float(self.config['flight_map']['update_freq'])*1000
-        timer.start(update_freq)
+        timer.start(int(update_freq))
 
         self.show()
 
@@ -174,9 +174,9 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
             now = self.time_selection.time().toPyTime()
             utc = datetime.datetime.utcnow()
             self.now = datetime.datetime(year=utc.year, month=utc.month, day=utc.day,
-                                    hour=now.hour,
-                                    minute=now.minute,
-                                    second=now.second)
+                                         hour=now.hour,
+                                         minute=now.minute,
+                                         second=now.second)
 
         index = self.flight_steps.index.get_loc(self.now, method='nearest')
         lat = self.flight_steps.iloc[index]['latitude']

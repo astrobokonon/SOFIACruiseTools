@@ -1509,7 +1509,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         if reset:
             # Reset the duration to the current leg to
             # the duration from flight plan
-            self.logger.debug('Reseting custom duration of leg number {} to '
+            self.logger.debug('Resetting custom duration of leg number {} to '
                               'original value'.format(self.leg_pos))
             orig_duration = self.flight_info.legs[self.leg_pos].duration
             orig_duration = timedelta_to_time(orig_duration)
@@ -1518,7 +1518,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.txt_leg_duration.setText('Leg Duration')
         else:
             self.logger.debug('Changing duration of leg number {}'.format(
-                self.log_pos))
+                self.leg_pos))
             new_duration = self.leg_duration.time().toPyTime()
             new_duration = datetime.timedelta(hours=new_duration.hour,
                                               minutes=new_duration.minute,

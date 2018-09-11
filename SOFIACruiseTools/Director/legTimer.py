@@ -1,7 +1,7 @@
 
 import datetime
 import sys
-
+import logging
 
 class LegTimerObj(object):
     """
@@ -12,9 +12,9 @@ class LegTimerObj(object):
     """
 
     def __init__(self):
-        """
-        Initializes the leg timer
-        """
+        """Initialize the leg timer."""
+        self.logger = logging.getLogger('default')
+        self.logger.info('Leg timer object initialized')
         self.status = 'stopped'
         self.duration = None
         self.init_duration = None
@@ -24,15 +24,23 @@ class LegTimerObj(object):
         self.flight_parsed = False
 
     def minute_adjust(self, key):
-        """ Adds or subtracts one minute from timer """
         adjustment = datetime.timedelta(minutes=1)
+        """Add or subtract one minute from timer. 
+        
+        Parameters
+        ----------
+        key : ['add', 'sub']
+            Determines if one minutes will be added or subtracted.
+        """
         if key == 'add':
+            self.logger.info('Add one minute to current leg duration')
             self.duration += adjustment
         elif key == 'sub':
+            self.logger.info('Subtract one minute from current leg duration')
             self.duration -= adjustment
 
     def print_state(self):
-        """ Prints status of class variables to screen """
+        """Print status of class variables to screen."""
         print('\nTimer Stats:')
         print('\tStatus = ', self.status)
         print('\tDuration = ', self.duration, ' (', type(self.duration), ')')
@@ -40,17 +48,18 @@ class LegTimerObj(object):
         print('\tElapsed = ', self.elapsed, ' (', type(self.elapsed), ')')
 
     def control_timer(self, key):
-        """
-        Starts, stops, or resets the leg control
-        """
+        """Start, stop, or reset the leg control."""
         # Check if a flight plan has been successfully loaded
         if not self.flight_parsed:
             # Leg_dur_from_mis is only set if a flight plan
             # is successfully parsed. If it is still an empty string,
             # don't do anything
-            print('No flight plan loaded, cannot start leg timer')
+            message = 'No flight plan loaded, cannot start leg timer'
+            self.logger.warning(message)
+            print(message)
             return
 
+        message = 'Changing state of timer from {}'.format(self.status)
         if key == 'start':
             # Start button is pushed
             if self.status == 'running':
@@ -77,20 +86,26 @@ class LegTimerObj(object):
             # Invalid key
             print('Invalid key for leg control = {0:s}'.format(key))
             return
+        self.logger.debug(message + 'to {}'.format(self.status))
 
     def timer_string(self, mode):
-        """
-        Calculates elapsed and remaining time.
+        """Calculate elapsed and remaining time.
 
         Returns the desired time format, specified by mode
         (either 'remaining' or 'elapsed') in a nicely formatted
         string.
+
+        Parameters
+        ----------
+        mode : ['remaining', 'elapsed']
+            Sets if the remaining time or elapsed time is returned.
         """
         now = datetime.datetime.utcnow().replace(microsecond=0)
         try:
             self.elapsed = now - self.timer_start
             self.remaining = self.duration - self.elapsed
         except TypeError as e:
+            self.logger.exception('Exception while calculating time differences')
             print('\n\nTypeError in timer_string:')
             print(e)
             print(type(self.elapsed), type(now), type(self.timer_start))
@@ -105,7 +120,7 @@ class LegTimerObj(object):
 
 
 def clock_string(clock):
-    """ Formats timedelta into HH:MM:SS """
+    """ Format timedelta into HH:MM:SS """
     hours = clock.seconds//3600
     minutes = clock.seconds//60 % 60
     seconds = clock.seconds % 60
