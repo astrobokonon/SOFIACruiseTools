@@ -1,6 +1,7 @@
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 import datetime
+import logging
 
 import SOFIACruiseTools.Director.directorLogDialog as dl
 
@@ -14,6 +15,9 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
 
         self.setupUi(self)
         self.setModal(0)
+
+        self.logger = logging.getLogger('default')
+        self.logger.info('Director log has been moved to separate window.')
 
         # Text log stuff
         self.local_input_line.returnPressed.connect(lambda:
@@ -31,14 +35,21 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         self.cruise_log = self.parentWidget().cruise_log
         self.initial_log_size = len(self.cruise_log)
         self.output_name = self.parentWidget().output_name
+        self.logger.debug('Read in current director log')
         for line in self.cruise_log:
             self.local_display.append(line.strip())
 
         self.show()
 
     def message(self, key):
-        """ Write a message to the director's log """
+        """ Write a message to the director's log.
 
+        Parameters
+        ----------
+        key : ['mccs', 'si', 'land', 'takeoff', 'head', 'target', 'turn ',
+        'ignore', 'post']
+            Determines type of message to write to director log.
+        """
         messages = {'mccs': 'MCCS fault encountered',
                     'si': 'SI fault encountered',
                     'land': 'End of flight, packing up and sitting down',
@@ -47,6 +58,7 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
                     'takeoff': 'Beginning of flight, getting set up',
                     'turn': 'Turning off target',
                     'ignore': 'Ignore the previous message'}
+        self.logger.debug('Writing to director log with key {}'.format(key))
         if key in messages.keys():
             self.line_stamper(messages[key])
         elif key == 'post':
@@ -56,7 +68,14 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
             return
 
     def line_stamper(self, line):
-        """ Updates the Cruise Director Log """
+        """Add time stamp to new log entry and append to log.
+
+        Parameters
+        ----------
+        line : str
+            New entry to be added to log.
+        """
+        self.logger.debug('Adding to director log: {}'.format(line))
         # Format log line
         time_stamp = datetime.datetime.utcnow()
         time_stamp = time_stamp.replace(microsecond=0)
@@ -70,29 +89,19 @@ class DirectorLogDialog(QtWidgets.QDialog, dl.Ui_Dialog):
         self.write_director_log()
 
     def write_director_log(self):
-        """ Writes the cruise_log to file """
+        """Write the cruise_log to file."""
         if self.output_name:
             try:
                 with open(self.output_name, 'w') as f:
                     f.writelines(self.cruise_log)
+                self.logger.debug('Successfully wrote director log to file')
             except IOError:
                 self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
+                self.logger.exception('Failed to write director log to file.')
 
     def closeEvent(self, QCloseEvent):
-        """
-        When window is closed, write the contents to the host director log
-        """
-        #for line in self.cruise_log:
-        #updates = slice(self.initial_log_size, :)
-        #for line in self.cruise_log[updates]:
+        """When window is closed, write the contents to the host director log."""
+        self.logger.info('Closing separate director log.')
         for line in self.cruise_log[self.initial_log_size:]:
             self.parentWidget().log_display.append(line.strip())
 
-    def close_dialog(self):
-        """ Closes the dialog when the close button is pressed
-        Returns
-        -------
-
-        """
-        pass
-        #self.close()

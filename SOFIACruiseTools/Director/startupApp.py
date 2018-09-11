@@ -41,18 +41,14 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
         self.timezoneSelect.activated.connect(self.select_local_timezone)
-#        self.appendCheck.clicked.connect(self.append_options)
 
         self.local_timezone = str(self.timezoneSelect.currentText())
         self.instrument = str(self.instSelect.currentText())
         if 'hawc' in self.instrument.lower():
             self.instrument = 'HAWC'
-#        if 'flight' in self.instrument.lower():
-#            self.instrument = 'HAWCFLIGHT'
-#        elif 'ground' in self.instrument.lower():
-#            self.instrument = 'HAWCGROUND'
         self.select_kw(default=1)
 
+        # If settings have already been configured, reflect that
         if self.parentWidget().log_out_name:
             self.dirlog_name = self.parentWidget().log_out_name
             self.logOutText.setText(self.dirlog_name)
@@ -103,13 +99,9 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.append_director_log = False
         self.append_option = False
 
-    def append_options(self):
-        """ Flag to choose if logs should be appended to or overwritten """
-        self.append_option = True
-
     def load_default(self):
         """Load default settings for faster testing."""
-        self.logger.info('Loading test settings')
+        self.logger.info('Loading default test settings')
         self.instrument = 'FIFI-LS'
         self.local_timezone = 'US/Pacific'
 
@@ -270,7 +262,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
 
         Parameters
         ----------
-
+        default : bool, optional
+            If set, keywords are the default set.
         """
 
         # Read the default keywords for each instrument

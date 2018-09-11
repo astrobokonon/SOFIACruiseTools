@@ -477,6 +477,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # with the correct timezone
             self.local_timezone = window.local_timezone
             self.localtz = pytz.timezone(self.local_timezone)
+            self.logger.info('Timeszone set to {}'.format(self.localtz))
 
             # Parse the flight plan
             self.parse_flight_file(window.fname)
@@ -485,6 +486,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Instrument
             self.instrument = window.instrument
             self.instrument_text.setText(self.instrument)
+            self.logger.info('Instrument set to {}'.format(self.instrument))
             #self.checker_rules = self.checker.choose_rules(self.instrument)
 
             # Data headers
@@ -502,7 +504,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.txt_log_output_name.setText('{0:s}'.format(
                     os.path.basename(str(self.output_name))))
                 self.txt_log_output_name.setStyleSheet(self.pass_style)
+                self.logger.info('Director log output sent to {}'.format(
+                    self.output_name))
             else:
+                self.logger.warning('Director Log name not set')
                 self.txt_log_output_name.setStyleSheet(self.fail_style)
                 return
 
@@ -513,6 +518,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     self.data_log_dir))
                 # Select header checker rules
                 self.choose_head_check_rules()
+                self.logger.info('Data location set to {}'.format(self.data_log_dir))
+            else:
+                self.logger.warning('Data location not set')
 
             # Data Log filename
             if window.datalog_name:
@@ -520,6 +528,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.txt_data_log_save_file.setText('{0:s}'.format(
                     os.path.basename(str(self.log_out_name))))
                 self.txt_data_log_save_file.setStyleSheet(self.pass_style)
+                self.logger.info('Data log output sent to {}'.format(
+                    self.log_out_name))
+            else:
+                self.logger.warning('Data log output not set; Will not store data '
+                                    'results')
 
             # Log append flags
             if window.append_data_log:
@@ -553,6 +566,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         Selects the rules for checking header values.
         """
         if not data_file:
+            self.logger.debug('Setting header checker rules, no data file provided')
             # Get a sample fits file from data directory
             config = self.config['search'][self.instrument]
             # Get the current list of FITS files in the location
@@ -562,8 +576,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 data_files = glob.glob(pattern)
                 if data_files:
                     data_file = data_files[0]
+                    self.logger.debug('Found data_file {} using glob'.format(
+                        data_file))
                 else:
                     self.checker_rules = None
+                    self.logger.debug('Could not find a data file using glob')
                     return
 
             elif config['method'] == 'walk':
@@ -571,12 +588,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 for root, _, filenames in os.walk(str(self.data_log_dir)):
                     for filename in fnmatch.filter(filenames, pattern):
                         data_file = os.path.join(root, filename)
+                        self.logger.debug('Found data file {} using walk'.format(
+                            data_file))
                         break
                     break
             else:
                 # Unknown method
-                print('Unknown method {0:s} for instrument {1:s}'.format(
-                    config['method'], self.instrument))
+                self.logger.warning('Unknown method {0:s} for instrument '
+                                    '{1:s}'.format(config['method'],
+                                                   self.instrument))
                 self.checker_rules = None
                 return
 
@@ -739,7 +759,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                        '\t{0:s}'.format(self.output_name))
             raise IOError(message)
 
-        self.logger.info('Read in {} lines from exisiting director log'.format(
+        self.logger.info('Read in {} lines from existing director log'.format(
                          len(existing_log)))
         # Add to current log
         for line in existing_log:
@@ -783,27 +803,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             return
 
-#    def post_log_line(self):
-#        """
-#        Writes a custom line to the Cruise Director Log.
-#
-#        Records whatever is in the text box at the bottom of the
-#        Cruise Director Log tab to the log file when the 'Post'
-#        Button is pressed.
-#        """
-#        line = self.log_input_line.text()
-#        # If this line is empty, try to pull from the text field
-#        # on the Data Log tab
-#        if not line:
-#            line = self.log_line_director.text()
-#        self.line_stamper(line)
-#        # Clear the line
-#        self.log_input_line.setText('')
-
     def read_data_log(self):
         """
         Reads existing data log
         """
+        pass
 
     def count_direction(self, key):
         """Set the direction the leg timer counts.
@@ -1375,12 +1379,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_target.setText('')
 
     def update_leg_info_window(self):
-        """
-        Displays details of flight plan parsed from .msi file.
-
-        If the flight plan was successfully parsed, show the values
-        for the leg occurring at self.legpos.
-        """
+        """Display details of flight plan parsed from .msi file."""
         # Only worth doing if we read in a flight plan file
         if self.success_parse:
             # Quick and dirty way to show the leg type
@@ -1392,6 +1391,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             legtxt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
                                            leg_label.capitalize())
             self.leg_number.setText(legtxt)
+            self.logger.debug('Moving to leg {}'.format(self.leg_pos))
 
             # Target name
             self.leg_target.setText(self.leg_info.astro.target)
@@ -1413,10 +1413,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 try:
                     self.leg_obs_block.setText(self.leg_info.obs_plan)
                 except AttributeError:
+                    self.logger.exception('Exception during display of science leg '
+                                          'information for leg '
+                                          '{}'.format(self.leg_pos))
                     pass
             else:
                 # If it's a dead leg, update the leg number and we'll move on
                 # Clear values since they're probably crap
+                self.logger.debug('Turning of leg info')
                 self.toggle_leg_param_values_off()
 
             # Update leg_timer
@@ -1438,42 +1442,44 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.leg_timer.flight_parsed = True
 
     def prev_leg(self):
-        """
-        Move the leg position counter to the previous value.
-
-        Bottoms out at 0
-        """
+        """Move the leg position counter to the previous value."""
         if self.success_parse is True:
             self.leg_pos -= 1
             if self.leg_pos < 0:
                 self.leg_pos = 0
             self.leg_info = self.flight_info.legs[self.leg_pos]
+            self.logger.debug('Moving to previous leg, number {}'.format(
+                self.leg_pos))
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
+        self.logger.debug('Stopped leg timer')
 
     def next_leg(self):
-        """
-        Move the leg position counter to the next value.
-
-        Hits the ceiling at the max number of found legs
-        """
+        """Move the leg position counter to the next value."""
         if self.success_parse is True:
             self.leg_pos += 1
             if self.leg_pos > self.flight_info.num_legs - 1:
                 self.leg_pos = self.flight_info.num_legs - 1
             self.leg_info = self.flight_info.legs[self.leg_pos]
+            self.logger.debug('Moved to next leg, number {}'.format(
+                self.leg_pos))
         else:
             pass
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
+        self.logger.debug('Stopped leg timer')
 
     def update_flight_time(self, key):
-        """
-        Fills the takeoff or landing time fields
+        """Fills the takeoff or landing time fields
 
         Grab the flight takeoff time from the flight plan, which is in UTC,
         and turn it into the time at the local location.
         Then, take that time and update the DateTimeEdit box in the GUI
+
+        Parameters
+        ----------
+        key : ['takeoff', 'landing']
+            Set if working with takeoff or landing leg
         """
         if key == 'takeoff':
             time = pytz.utc.localize(self.flight_info.takeoff)
@@ -1481,6 +1487,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             time = self.flight_info.landing.replace(tzinfo=pytz.utc)
         else:
             return
+        self.logger.debug('Updating flight time for {} leg'.format(key))
         time = time.astimezone(self.localtz)
         time_str = time.strftime('%m/%d/%Y %H:%M:%S')
         time_qt = QtCore.QDateTime.fromString(time_str, 'MM/dd/yyyy HH:mm:ss')
@@ -1490,49 +1497,61 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.landing_time.setDateTime(time_qt)
 
     def update_duration(self, reset=False):
-        """Updates the duration of the current leg.
+        """Update the duration of the current leg.
 
+        Parameters
+        ----------
+        reset : bool, optional
+            Updates the duration of the current leg with user inputs,
+            If reset is true, undo user changes and reset the duration to
+            result from flight plan.
         """
         if reset:
             # Reset the duration to the current leg to
             # the duration from flight plan
+            self.logger.debug('Reseting custom duration of leg number {} to '
+                              'original value'.format(self.leg_pos))
             orig_duration = self.flight_info.legs[self.leg_pos].duration
             orig_duration = timedelta_to_time(orig_duration)
-            #self.leg_timer.duration = orig_duration
-            #self.leg_timer.init_duration = orig_duration
             self.leg_timer.control_timer('reset')
             self.leg_duration.setTime(orig_duration)
             self.txt_leg_duration.setText('Leg Duration')
         else:
+            self.logger.debug('Changing duration of leg number {}'.format(
+                self.log_pos))
             new_duration = self.leg_duration.time().toPyTime()
             new_duration = datetime.timedelta(hours=new_duration.hour,
                                               minutes=new_duration.minute,
                                               seconds=new_duration.second)
             self.leg_timer.duration = new_duration
             self.txt_leg_duration.setText('Leg Duration (Changed)')
-            #self.leg_timer.init_duration = new_duration
 
     def parse_flight_file(self, from_gui=None):
-        """
-        Parses flight plan from .msi file.
+        """Parse flight plan from .msi file.
 
         Spawn the file chooser dialog box and return the result, attempting
         to parse the file as a SOFIA flight plan (.mis).
         If successful, set the various state parameters for further use.
         If unsuccessful, make the label text red and angry and give the
         user another chance
+
+        Parameters
+        ----------
+        from_gui : str, optional
+            Name of the flight plan to parse, defaults to None which prompts user
+            for the flight plan's file name.
         """
         # If from_gui is None, prompt the user to select a filename
         if not from_gui:
             self.fname = ''
         else:
             self.fname = from_gui
+        self.logger.debug('Parsing flight plan: {}'.format(self.fname))
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
         self.flight_plan_filename.setStyleSheet(self.pass_style)
         self.flight_plan_filename.setText(os.path.basename(str(self.fname)))
         try:
-            # self.flight_info = fpmis.parseMIS(self.fname)
             self.flight_info = fpmis.parse_mis_file(self.fname)
             self.leg_info = self.flight_info.legs[self.leg_pos]
             self.success_parse = True
@@ -1541,12 +1560,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.update_flight_time('takeoff')
             if self.set_landing_fp.isChecked() is True:
                 self.update_flight_time('landing')
+            self.logger.debug('Flight plan successfully parsed.')
         except IOError:
             self.flight_info = ''
             self.err_msg = 'ERROR: Failure Parsing File!'
             self.flight_plan_filename.setStyleSheet(self.fail_style)
             self.flight_plan_filename.setText(self.err_msg)
             self.success_parse = False
+            self.logger.exception('Failure while parsing {}'.format(self.fname))
 
 
 def total_sec_to_hms_str(obj):
@@ -1581,13 +1602,11 @@ def timedelta_to_time(delta):
     return t
 
 
-#def main(logger):
 def main():
     """ Generate the gui and run """
     app = QtWidgets.QApplication(sys.argv)
     font = './SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf'
     QtGui.QFontDatabase.addApplicationFont(font)
-    #form = SOFIACruiseDirectorApp(logger)
     form = SOFIACruiseDirectorApp()
     form.show()  # Show the form
     app.exec_()  # and execute the app
