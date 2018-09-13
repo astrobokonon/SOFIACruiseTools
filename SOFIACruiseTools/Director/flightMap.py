@@ -1,5 +1,6 @@
 
 import SOFIACruiseTools.Director.flightMapDialog as fm
+import SOFIACruiseTools.Director.flightStepsWidget as fs
 #import SOFIACruiseTools.Director.flightMapWidget as fm
 from PyQt5 import QtGui, QtCore, QtWidgets
 import matplotlib.pyplot as plt
@@ -123,8 +124,12 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_completion_label.setText('- %')
         self.leg_completion_label.setText('- %')
         self.current_leg_label.setText('- / {0:d}'.format(self.flight.num_legs))
+        self.detailsButton.clicked.connect(self.open_details)
+        self.removeButton.clicked.connect(self.close_details)
 
         self.plot_full_flight()
+
+        self.opensteps = None
 
         self.logger.debug('Flight map configured')
         timer = QtCore.QTimer(self)
@@ -286,13 +291,36 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 #
 #        return leg, step_number
 
+    def open_details(self):
+        #self.flight_map_plot.resize(200,100)
+        #print('Old: ', self.flight_map_plot.geometry())
+        if not self.opensteps:
+            self.opensteps = FlightSteps(self)
+        print(type(self.opensteps))
+        self.flight_map_plot.vbl.addWidget(self.opensteps)
+        #rect = self.flight_map_plot.geometry()
+        #rect.setHeight(rect.height()/2)
+        #self.flight_map_plot.setGeometry(rect)
+        #print('New: ', self.flight_map_plot.geometry())
+
+        #self.opensteps.show()
+
+    def close_details(self):
+        self.flight_map_plot.vbl.removeWidget(self.opensteps)
+
     def close_map(self):
         """Closes the map."""
         self.logger.info('Closing flight map.')
         self.close()
 
 
+class FlightSteps(QtWidgets.QWidget, fs.Ui_Form):
 
+    def __init__(self, parent):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.setupUi(self)
+
+        self.closeButton.clicked.connect(self.close)
 
 
 

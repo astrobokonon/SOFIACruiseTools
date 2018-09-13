@@ -11,6 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
+        Dialog.setWindowModality(QtCore.Qt.WindowModal)
         Dialog.resize(677, 778)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -74,6 +75,12 @@ class Ui_Dialog(object):
         self.close_button.setAutoDefault(False)
         self.close_button.setObjectName("close_button")
         self.gridLayout.addWidget(self.close_button, 2, 5, 1, 1)
+        self.detailsButton = QtWidgets.QPushButton(Dialog)
+        self.detailsButton.setObjectName("detailsButton")
+        self.gridLayout.addWidget(self.detailsButton, 1, 5, 1, 1)
+        self.removeButton = QtWidgets.QPushButton(Dialog)
+        self.removeButton.setObjectName("removeButton")
+        self.gridLayout.addWidget(self.removeButton, 0, 5, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 1, 0, 1, 1)
 
         self.retranslateUi(Dialog)
@@ -94,5 +101,7 @@ class Ui_Dialog(object):
         self.current_leg_label.setText(_translate("Dialog", "TextLabel"))
         self.show_leg_labels.setText(_translate("Dialog", "Show Labels"))
         self.close_button.setText(_translate("Dialog", "Close"))
+        self.detailsButton.setText(_translate("Dialog", "Details"))
+        self.removeButton.setText(_translate("Dialog", "Remove"))
 
 from mplwidget import MplWidget
