@@ -37,6 +37,8 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.marker_size = self.parentWidget().marker_size
         self.current_leg_num = 0
 
+        self.flight_plan_label.setText(self.flight.filename)
+
         # Make a list of leg labels, add a
         self.leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
         self.leg_labels.insert(0, '-')
@@ -47,7 +49,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.current_leg = None
         self.selected_leg = list()
         self.now = datetime.datetime.utcnow()
-        self.open_steps = False
+        self.open_steps = None
 
         # Reindex flight
         self.flight_steps = self.flight_steps.set_index(self.flight_steps[
@@ -139,7 +141,8 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.leg_completion_label.setText('- %')
         self.current_leg_label.setText('- / {0:d}'.format(self.flight.num_legs))
         self.detailsButton.clicked.connect(self.open_details)
-        self.removeButton.clicked.connect(self.close_details)
+        #self.removeButton.clicked.connect(self.close_details)
+        self.removeButton.hide()
 
         self.plot_full_flight()
 
@@ -248,7 +251,9 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_progress(leg)
 
         if self.open_steps:
+            print('Updating table at {}'.format(self.now))
             self.open_steps.fill_table()
+            self.open_steps.highlight_current_row()
 
     def flight_progress(self, leg):
         """
@@ -276,30 +281,13 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                                               leg_progress))
 
     def open_details(self):
-        #self.flight_map_plot.resize(200,100)
-        #print('Old: ', self.flight_map_plot.geometry())
 
-        self.open_steps = True
-        FlightSteps(self)
+        self.open_steps = FlightSteps(self)
         return
-
-        if not self.opensteps:
-            self.opensteps = FlightSteps(self)
-        print(type(self.opensteps))
-        self.flight_map_plot.vbl.addWidget(self.opensteps)
-
-        self.opensteps.resize(200,100)
-
-        #rect = self.flight_map_plot.geometry()
-        #rect.setHeight(rect.height()/2)
-        #self.flight_map_plot.setGeometry(rect)
-        #print('New: ', self.flight_map_plot.geometry())
-
-        #self.opensteps.show()
 
     def close_details(self):
         self.flight_map_plot.vbl.removeWidget(self.opensteps)
-        self.open_steps = False
+        self.open_steps = None
 
     def close_map(self):
         """Closes the map."""
@@ -352,7 +340,8 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.setupUi(self)
         self.setModal(0)
-        self.leg_num = self.parentWidget().current_leg_num
+        #self.leg_num = self.parentWidget().current_leg_num
+        #self.now = self.parentWidget().now
         self.closeButton.clicked.connect(self.close)
         self.flight = self.parentWidget().flight
         self.header = self.flight.steps.points.columns
@@ -361,12 +350,10 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
         self.show()
 
     def fill_table(self):
-        """Fill table with the step details for the current leg"""
-        current_steps_index = self.flight.steps.points['leg_num'] == self.leg_num
+        """Fill table with the step details for the current leg."""
+        current_steps_index = (self.flight.steps.points['leg_num'] ==
+                               self.parentWidget().current_leg_num)
         self.steps = self.flight.steps.points[current_steps_index]
-
-        print('Found {} steps for leg number {}'.format(len(self.steps),
-                                                        self.leg_num))
 
         # Clear the table
         self.table.clear()
@@ -398,8 +385,9 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
 
     def highlight_current_row(self):
         """Highlight the row corresponding to the most recent step."""
-        now_dt = pd.to_datetime(self.now)
+        now_dt = pd.to_datetime(self.parentWidget().now)
         current_row = (now_dt > self.steps['timestamp']).sum() - 1
+        print('Now = {}, current_row = {}'.format(now_dt, current_row))
         self.table.selectRow(current_row)
 
 

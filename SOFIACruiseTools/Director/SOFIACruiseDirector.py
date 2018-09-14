@@ -38,6 +38,7 @@ import pytz
 import logging
 import logging.config
 import subprocess
+import cartopy
 
 try:
     from urllib.request import urlopen, URLError
@@ -289,10 +290,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.set_landing_time.hide()
         self.set_takeoff_landing.hide()
 
+
         # Run the setup prompt
         self.logger.info('Running setup prompt')
         self.update_times()
         self.setup()
+
+        self.setup_leg_map()
+        #self.plot_leg()
 
         self.logger.info('Starting loop')
         # Generic timer setup stuff
@@ -301,6 +306,80 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         timer.timeout.connect(self.show_lcd)
         timer.start(500)
         self.show_lcd()
+
+    def setup_leg_map(self):
+        """Set up the small map of the current leg."""
+        code_location = os.path.dirname(os.path.realpath(__file__))
+        cartopy.config['pre_existing_data_dir'] = os.path.join(code_location,
+                                                               'maps')
+
+        print(self.leg_pos)
+        steps = self.flight_info.steps.points[self.flight_info.steps.points[
+                                                  'leg_num'] == self.leg_pos+1]
+        print(steps)
+
+        standard_longitudes = np.arange(-180, 181, 5)
+        med_lat = np.median(steps['latitude'])
+        med_lon = np.median(steps['longitude'])
+        print(med_lat, med_lon)
+
+        # Extra degrees to pad map
+        extent = (np.min(steps['longitude'])-self.map_width,
+                  np.max(steps['longitude'])+self.map_width,
+                  np.min(steps['latitude'])-self.map_width,
+                  np.max(steps['latitude'])+self.map_width)
+
+        ortho = cartopy.crs.Orthographic(central_latitude=med_lat,
+                                         central_longitude=med_lon)
+        self.leg_map.canvas.figure.clf()
+        pos = [0.01, 0.01, 0.98, 0.98]    # left, bottom, width, height
+        self.leg_map.canvas.ax = self.leg_map.canvas.figure.add_subplot(111,
+                                                                 projection=ortho,
+                                                                 position=pos)
+        # Set limits
+        self.leg_map.canvas.ax.set_extent(extent)
+        # Turn on coastlines and other geographic features
+        self.leg_map.canvas.ax.coastlines(resolution='110m',
+                                                  edgecolor='red',
+                                                  linewidth=0.75)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.OCEAN)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.LAND)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.LAKES)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.BORDERS,
+                                                   edgecolor='red',
+                                                   linewidth=0.75)
+        # self.leg_map.canvas.ax.add_feature(cartopy.feature.COASTLINE)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.RIVERS)
+        states_name = 'admin_1_states_provinces_lakes_shp'
+        states = cartopy.feature.NaturalEarthFeature(category='cultural',
+                                                     name=states_name,
+                                                     scale='110m',
+                                                     facecolor='none')
+        self.leg_map.canvas.ax.add_feature(states, edgecolor='black',
+                                                   linewidth=0.75)
+        # self.leg_map.canvas.ax.coastlines(color='black')
+
+        # Set up plot parameters
+        gl = self.leg_map.canvas.ax.gridlines(color='k', linestyle='--',
+                                                      linewidth=0.2)
+        gl.xlocation = matplotlib.ticker.FixedLocator(standard_longitudes)
+        gl.xformatter = cartopy.mpl.gridliner.LONGITUDE_FORMATTER
+        gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
+
+
+    def plot_leg(self, current=True):
+
+        if self.use_current_leg.isChecked():
+            leg_num = 0
+        else:
+            leg_num = self.leg_pos + 1
+        steps = self.flight_info.steps.points[self.flight_info.steps.points[
+                                                  'leg_num'] == self.leg_pos+1]
+        lat = steps['latitude']
+        lon = steps['longitude']
+        self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
+                                    linewidth=0.5,
+                                    transform=cartopy.crs.Geodetic())
 
     def verify_config(self):
         """Checks the config file director.ini
