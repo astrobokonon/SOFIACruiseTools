@@ -11,7 +11,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.setWindowModality(QtCore.Qt.ApplicationModal)
         Form.resize(716, 362)
         self.widget = QtWidgets.QWidget(Form)
         self.widget.setGeometry(QtCore.QRect(10, 10, 691, 341))
@@ -24,11 +23,11 @@ class Ui_Form(object):
         self.gridLayout.addWidget(self.closeButton, 1, 1, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 1, 0, 1, 1)
-        self.tableWidget = QtWidgets.QTableWidget(self.widget)
-        self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(0)
-        self.tableWidget.setRowCount(0)
-        self.gridLayout.addWidget(self.tableWidget, 0, 0, 1, 2)
+        self.table = QtWidgets.QTableWidget(self.widget)
+        self.table.setObjectName("table")
+        self.table.setColumnCount(0)
+        self.table.setRowCount(0)
+        self.gridLayout.addWidget(self.table, 0, 0, 1, 2)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)

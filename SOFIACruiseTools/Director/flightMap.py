@@ -1,6 +1,7 @@
 
 import SOFIACruiseTools.Director.flightMapDialog as fm
 import SOFIACruiseTools.Director.flightStepsWidget as fs
+import SOFIACruiseTools.Director.flightStepsDialog as fw
 #import SOFIACruiseTools.Director.flightMapWidget as fm
 from PyQt5 import QtGui, QtCore, QtWidgets
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ import logging
 
 import os
 import numpy as np
+import pandas as pd
 import cartopy
 import datetime
 
@@ -33,17 +35,19 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.width = self.parentWidget().map_width
         self.current_time = self.parentWidget().utc_now
         self.marker_size = self.parentWidget().marker_size
+        self.current_leg_num = 0
 
         # Make a list of leg labels, add a
-        leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
-        leg_labels.insert(0, '-')
+        self.leg_labels = ['{}'.format(i+1) for i in range(self.flight.num_legs)]
+        self.leg_labels.insert(0, '-')
         self.leg_plot_labels = list()
-        self.logger.debug('Found {} legs in this flight'.format(len(leg_labels)))
+        self.logger.debug('Found {} legs in this flight'.format(len(self.leg_labels)))
 
         self.location = None
         self.current_leg = None
         self.selected_leg = list()
         self.now = datetime.datetime.utcnow()
+        self.opensteps = None
 
         # Reindex flight
         self.flight_steps = self.flight_steps.set_index(self.flight_steps[
@@ -54,6 +58,16 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.logger.debug('Resampling flight steps at {} intervals.'.format(
             sample_rate))
 
+        self.setup_plot()
+
+        timer = QtCore.QTimer(self)
+        timer.timeout.connect(self.plot_current_location)
+        update_freq = float(self.config['flight_map']['update_freq'])*1000
+        timer.start(int(update_freq))
+
+        self.show()
+
+    def setup_plot(self):
         # Set up plot
         code_location = os.path.dirname(os.path.realpath(__file__))
         cartopy.config['pre_existing_data_dir'] = os.path.join(code_location,
@@ -110,7 +124,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
 
         # Set up buttons
-        self.leg_selection_box.addItems(leg_labels)
+        self.leg_selection_box.addItems(self.leg_labels)
         # self.time_selection.timeChanged.connect(self.plot_current_location)
         self.time_selection.timeChanged.connect(self.time_selected)
 
@@ -129,15 +143,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         self.plot_full_flight()
 
-        self.opensteps = None
-
         self.logger.debug('Flight map configured')
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.plot_current_location)
-        update_freq = float(self.config['flight_map']['update_freq'])*1000
-        timer.start(int(update_freq))
-
-        self.show()
 
     def plot_full_flight(self):
         """Plots the legs of a flight."""
@@ -187,6 +193,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         lat = self.flight_steps.iloc[index]['latitude']
         lon = self.flight_steps.iloc[index]['longitude']
         leg_num = int(self.flight_steps.iloc[index]['leg_num'])
+        self.current_leg_num = leg_num
         leg = self.flight.legs[leg_num-1]
         self.logger.debug('Plotting current location at {}, ({}, {})'.format(
             self.now, lat, lon))
@@ -240,6 +247,9 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_map_plot.canvas.draw()
         self.flight_progress(leg)
 
+        if self.opensteps:
+            self.opensteps.fill_table()
+
     def flight_progress(self, leg):
         """
         Calculates progress through total flight and current leg
@@ -265,39 +275,20 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.logger.debug('Flight/Leg Progress: {}/{}'.format(flight_progress,
                                                               leg_progress))
 
-#    def get_current_leg(self):
-#        """
-#        Determines the current leg.
-#
-#        Returns
-#        -------
-#        leg : LegProfile
-#            The leg profile for the current leg
-#
-#        step_number : int
-#            The index of the current leg step
-#        """
-#
-#        leg, step_number, leg_num = None, None, None
-#        for step_number, time in enumerate(self.flight.steps.points['timestamp']):
-#            if self.now < time:
-#                leg_num = self.flight.steps.points['leg_num'][step_number]
-#                break
-#
-#        if leg_num:
-#            leg = self.flight.legs[leg_num-1]
-#        else:
-#            print('Cannot find leg for time {}'.format(self.now))
-#
-#        return leg, step_number
-
     def open_details(self):
         #self.flight_map_plot.resize(200,100)
         #print('Old: ', self.flight_map_plot.geometry())
+
+        FlightSteps(self)
+        return
+
         if not self.opensteps:
             self.opensteps = FlightSteps(self)
         print(type(self.opensteps))
         self.flight_map_plot.vbl.addWidget(self.opensteps)
+
+        self.opensteps.resize(200,100)
+
         #rect = self.flight_map_plot.geometry()
         #rect.setHeight(rect.height()/2)
         #self.flight_map_plot.setGeometry(rect)
@@ -307,6 +298,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
     def close_details(self):
         self.flight_map_plot.vbl.removeWidget(self.opensteps)
+        self.opensteps = None
 
     def close_map(self):
         """Closes the map."""
@@ -314,71 +306,88 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.close()
 
 
-class FlightSteps(QtWidgets.QWidget, fs.Ui_Form):
+class FlightStepsWidget(QtWidgets.QWidget, fs.Ui_Form):
 
     def __init__(self, parent):
         QtWidgets.QWidget.__init__(self, parent)
         self.setupUi(self)
-
+        self.leg_num = self.parentWidget().current_leg_num
         self.closeButton.clicked.connect(self.close)
+        self.flight = self.parentWidget().flight
+        self.header = self.flight.steps.points.columns
+        self.fill_table()
+        self.show()
+
+    def fill_table(self):
+        """Fill table with the step details for the current leg"""
+        current_steps_index = self.flight.steps.points['leg_num'] == self.leg_num
+        steps = self.flight.steps.points[current_steps_index]
+
+        # Clear the table
+        self.table.clear()
+
+        for n in range(0,len(steps)):
+            for m, hkey in enumerate(self.header):
+                val = steps[hkey].iloc[n]
+                if isinstance(val, float):
+                    val = '{0:.3f}'.format(val)
+                elif isinstance(val, pd.tslib.Timestamp):
+                    val = val.__str__()
+                item = QtWidgets.QTableWidgetItem(val)
+                self.table.setItem(n, m, item)
+
+        # Set column labels
+        self.table.setVerticalHeaderLabels(self.header)
+
+        # Resize table and show it
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
+        self.table.show()
 
 
+class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
+    def __init__(self, parent):
 
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setupUi(self)
+        self.setModal(0)
+        self.leg_num = self.parentWidget().current_leg_num
+        self.closeButton.clicked.connect(self.close)
+        self.flight = self.parentWidget().flight
+        self.header = self.flight.steps.points.columns
+        self.fill_table()
+        self.show()
 
+    def fill_table(self):
+        """Fill table with the step details for the current leg"""
+        current_steps_index = self.flight.steps.points['leg_num'] == self.leg_num
+        steps = self.flight.steps.points[current_steps_index]
 
+        print('Found {} steps for leg number {}'.format(len(steps), self.leg_num))
 
+        # Clear the table
+        self.table.clear()
+        self.table.setColumnCount(len(self.header))
+        self.table.setRowCount(len(steps))
 
+        for n in range(0,len(steps)):
+            for m, hkey in enumerate(self.header):
+                val = steps[hkey].iloc[n]
+                if isinstance(val, float):
+                    val = '{0:.3f}'.format(val)
+                elif isinstance(val, pd.Timestamp):
+                    val = val.__str__()
+                item = QtWidgets.QTableWidgetItem(val)
+                self.table.setItem(n, m, item)
 
+        # Set column labels
+        self.table.setVerticalHeaderLabels([str(i) for i in range(1,len(steps)+1)])
+        self.table.setHorizontalHeaderLabels(self.header)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # Resize table and show it
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
+        self.table.show()
 
 
 

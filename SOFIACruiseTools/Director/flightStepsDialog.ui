@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>716</width>
-    <height>362</height>
+    <width>648</width>
+    <height>299</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Dialog</string>
   </property>
   <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>691</width>
-     <height>341</height>
+     <x>20</x>
+     <y>20</y>
+     <width>591</width>
+     <height>241</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
@@ -44,7 +50,14 @@
      </spacer>
     </item>
     <item row="0" column="0" colspan="2">
-     <widget class="QTableWidget" name="table"/>
+     <widget class="QTableWidget" name="table">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
