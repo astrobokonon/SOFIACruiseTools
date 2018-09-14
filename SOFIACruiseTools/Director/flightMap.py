@@ -47,7 +47,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.current_leg = None
         self.selected_leg = list()
         self.now = datetime.datetime.utcnow()
-        self.opensteps = None
+        self.open_steps = False
 
         # Reindex flight
         self.flight_steps = self.flight_steps.set_index(self.flight_steps[
@@ -247,8 +247,8 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_map_plot.canvas.draw()
         self.flight_progress(leg)
 
-        if self.opensteps:
-            self.opensteps.fill_table()
+        if self.open_steps:
+            self.open_steps.fill_table()
 
     def flight_progress(self, leg):
         """
@@ -279,6 +279,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         #self.flight_map_plot.resize(200,100)
         #print('Old: ', self.flight_map_plot.geometry())
 
+        self.open_steps = True
         FlightSteps(self)
         return
 
@@ -298,7 +299,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
     def close_details(self):
         self.flight_map_plot.vbl.removeWidget(self.opensteps)
-        self.opensteps = None
+        self.open_steps = False
 
     def close_map(self):
         """Closes the map."""
@@ -355,24 +356,26 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
         self.closeButton.clicked.connect(self.close)
         self.flight = self.parentWidget().flight
         self.header = self.flight.steps.points.columns
+        self.steps = None
         self.fill_table()
         self.show()
 
     def fill_table(self):
         """Fill table with the step details for the current leg"""
         current_steps_index = self.flight.steps.points['leg_num'] == self.leg_num
-        steps = self.flight.steps.points[current_steps_index]
+        self.steps = self.flight.steps.points[current_steps_index]
 
-        print('Found {} steps for leg number {}'.format(len(steps), self.leg_num))
+        print('Found {} steps for leg number {}'.format(len(self.steps),
+                                                        self.leg_num))
 
         # Clear the table
         self.table.clear()
         self.table.setColumnCount(len(self.header))
-        self.table.setRowCount(len(steps))
+        self.table.setRowCount(len(self.steps))
 
-        for n in range(0,len(steps)):
+        for n in range(0,len(self.steps)):
             for m, hkey in enumerate(self.header):
-                val = steps[hkey].iloc[n]
+                val = self.steps[hkey].iloc[n]
                 if isinstance(val, float):
                     val = '{0:.3f}'.format(val)
                 elif isinstance(val, pd.Timestamp):
@@ -381,13 +384,23 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
                 self.table.setItem(n, m, item)
 
         # Set column labels
-        self.table.setVerticalHeaderLabels([str(i) for i in range(1,len(steps)+1)])
+        self.table.setVerticalHeaderLabels([str(i) for i in
+                                            range(1, len(self.steps)+1)])
         self.table.setHorizontalHeaderLabels(self.header)
 
         # Resize table and show it
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+
+        self.highlight_current_row()
+
         self.table.show()
+
+    def highlight_current_row(self):
+        """Highlight the row corresponding to the most recent step."""
+        now_dt = pd.to_datetime(self.now)
+        current_row = (now_dt > self.steps['timestamp']).sum() - 1
+        self.table.selectRow(current_row)
 
 
 
