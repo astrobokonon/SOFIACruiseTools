@@ -297,7 +297,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.setup()
 
         self.setup_leg_map()
-        #self.plot_leg()
+        self.plot_leg()
 
         self.logger.info('Starting loop')
         # Generic timer setup stuff
@@ -366,6 +366,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         gl.xformatter = cartopy.mpl.gridliner.LONGITUDE_FORMATTER
         gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
 
+        self.leg_map.canvas.draw()
 
     def plot_leg(self, current=True):
 
@@ -378,8 +379,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         lat = steps['latitude']
         lon = steps['longitude']
         self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
-                                    linewidth=0.5,
+                                    linewidth=1.5,
                                     transform=cartopy.crs.Geodetic())
+        self.leg_map.canvas.draw()
 
     def verify_config(self):
         """Checks the config file director.ini
@@ -1036,6 +1038,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.network_status_display_update(stop=True)
 
+        self.plot_leg(self)
+
         # If the program is set to look for data automatically and the time
         # is a multiple of the update frequency and network is good
         if self.start_data_log and self.data_log_autoupdate.isChecked():
@@ -1532,6 +1536,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
         self.logger.debug('Stopped leg timer')
+        self.setup_leg_map()
 
     def next_leg(self):
         """Move the leg position counter to the next value."""
@@ -1547,6 +1552,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
         self.logger.debug('Stopped leg timer')
+        print('Updating map to {}'.format(self.leg_pos))
+        self.setup_leg_map()
 
     def update_flight_time(self, key):
         """Fills the takeoff or landing time fields
