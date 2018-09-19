@@ -36,6 +36,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.current_time = self.parentWidget().utc_now
         self.marker_size = self.parentWidget().marker_size
         self.current_leg_num = 0
+        self.transform = None
 
         self.flight_plan_label.setText(self.flight.filename)
 
@@ -84,7 +85,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         cartopy.config['pre_existing_data_dir'] = os.path.join(code_location,
                                                                'maps')
 
-        standard_longitudes = np.arange(-180, 181, 5)
         med_lat = np.median(self.flight.steps.points['latitude'])
         med_lon = np.median(self.flight.steps.points['longitude'])
         self.logger.debug('Middle of map ({}, {})'.format(med_lat, med_lon))
@@ -99,11 +99,14 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         ortho = cartopy.crs.Orthographic(central_latitude=med_lat,
                                          central_longitude=med_lon)
+
         self.flight_map_plot.canvas.figure.clf()
         pos = [0.01, 0.01, 0.98, 0.98]    # left, bottom, width, height
         self.flight_map_plot.canvas.ax = self.flight_map_plot.canvas.figure.add_subplot(111,
                                                                  projection=ortho,
                                                                  position=pos)
+        self.transform = cartopy.crs.Geodetic()._as_mpl_transform(
+            self.flight_map_plot.canvas.ax)
         # Set limits
         self.flight_map_plot.canvas.ax.set_extent(extent)
         # Turn on coastlines and other geographic features
@@ -128,11 +131,33 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         # self.flight_map_plot.canvas.ax.coastlines(color='black')
 
         # Set up plot parameters
+        standard_lons = np.arange(-180, 181, 5)
+        standard_lats = np.arange(-90, 91, 5)
         gl = self.flight_map_plot.canvas.ax.gridlines(color='k', linestyle='--',
                                                       linewidth=0.2)
-        gl.xlocation = matplotlib.ticker.FixedLocator(standard_longitudes)
+        gl.xlocation = matplotlib.ticker.FixedLocator(standard_lons)
         gl.xformatter = cartopy.mpl.gridliner.LONGITUDE_FORMATTER
         gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
+
+        # Add lat/lon labels
+        lon_to_mark = standard_lons[extent[0] < standard_lons < extent[1]]
+        lat_to_mark = standard_lats[extent[2] < standard_lats < extent[3]]
+
+        for lon in lon_to_mark:
+            std_lat = lat_to_mark[0]
+            label = '{0:d}'.format(int(lon))
+            self.flight_map_plot.canvas.ax.annotate(label, xy=(std_lat, lon),
+                                                    xycoords=self.transform,
+                                                    ha='right', va='center',
+                                                    fontsize=4, alpha=0.5)
+        for lat in lat_to_mark:
+            std_lon = lon_to_mark[0]
+            label = '{0:d}'.format(int(lat))
+            self.flight_map_plot.canvas.ax.annotate(label, xy=(lat, std_lon),
+                                                    xycoords=self.transform,
+                                                    ha='right', va='center',
+                                                    fontsize=4, alpha=0.5)
+
 
         # Set up buttons
         self.leg_selection_box.addItems(self.leg_labels)
@@ -232,8 +257,6 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         # Put labels on each leg
         if self.show_leg_labels.isChecked():
             if not self.leg_plot_labels:
-                transform = cartopy.crs.Geodetic()._as_mpl_transform(
-                    self.flight_map_plot.canvas.ax)
                 self.leg_plot_labels = list()
                 for leg_num in self.flight.steps.points['leg_num'].unique():
                     index = self.flight.steps.points['leg_num']==leg_num
@@ -244,7 +267,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                     label = '{0:d}'.format(leg_num)
                     line = self.flight_map_plot.canvas.ax.annotate(label,
                                                                    xy=(lon, lat),
-                                                                   xycoords=transform,
+                                                                   xycoords=self.transform,
                                                                    ha='right',
                                                                    va='center',
                                                                    fontsize=4,
