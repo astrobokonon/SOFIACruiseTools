@@ -1,5 +1,6 @@
 
 import os
+import sys
 import logging
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -14,7 +15,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
     """
     GUI to configure run of Cruise Director
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, initial=True):
 
         super(StartupApp, self).__init__(parent)
 
@@ -38,7 +39,10 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.datalogButton.clicked.connect(self.select_data_log)
         self.fitkwButton.clicked.connect(self.select_kw)
         self.fitkwButton.setText('Change')
-        self.buttonBox.rejected.connect(self.close)
+        if initial:
+            self.buttonBox.rejected.connect(sys.exit)
+        else:
+            self.buttonBox.rejected.connect(self.close)
         self.buttonBox.accepted.connect(self.start)
         self.timezoneSelect.activated.connect(self.select_local_timezone)
 
@@ -46,7 +50,7 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         self.instrument = str(self.instSelect.currentText())
         if 'hawc' in self.instrument.lower():
             self.instrument = 'HAWC'
-        self.select_kw(default=1)
+        self.select_kw(default=True)
 
         # If settings have already been configured, reflect that
         if self.parentWidget().log_out_name:
@@ -238,7 +242,6 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
     def select_data_log(self):
         """Select where to store the data log."""
         default = 'DataLog_{0:s}'.format(self.utc_now.strftime('%Y%m%d.csv'))
-        print('Selecting datalog name')
         if self.datalog_name:
             directory = os.path.join(os.path.dirname(self.datalog_name), default)
         else:
@@ -254,7 +257,8 @@ class StartupApp(QtWidgets.QDialog, ds.Ui_Dialog):
         if self.datalog_name:
             self.datalogText.setText(
                 '{0:s}'.format(os.path.basename(str(self.datalog_name))))
-            self.logOutButton.setText('Change')
+            #self.logOutButton.setText('Change')
+            self.datalogButton.setText('Change')
             self.logger.info('Data log: {}'.format(self.datalog_name))
 
     def select_kw(self, default=None):

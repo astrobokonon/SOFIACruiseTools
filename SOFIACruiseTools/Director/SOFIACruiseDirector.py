@@ -296,8 +296,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.update_times()
         self.setup()
 
-        self.setup_leg_map()
-        self.plot_leg()
+        if self.flight_info:
+            self.setup_leg_map()
+            self.plot_leg()
 
         self.logger.info('Starting loop')
         # Generic timer setup stuff
@@ -375,9 +376,15 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                                                   'leg_num'] == self.leg_pos+1]
         lat = steps['latitude']
         lon = steps['longitude']
-        self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
-                                    linewidth=1.5,
-                                    transform=cartopy.crs.Geodetic())
+        try:
+            self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
+                                        linewidth=1.5,
+                                        transform=cartopy.crs.Geodetic())
+        except ValueError:
+            self.setup_leg_map()
+            self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
+                                        linewidth=1.5,
+                                        transform=cartopy.crs.Geodetic())
         self.leg_map.canvas.draw()
 
     def verify_config(self):
@@ -619,26 +626,26 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 if os.path.isfile(self.log_out_name):
                     self.data.add_images_from_log(self.log_out_name, self.headers)
                     self.update_table(append_init=True)
-                    self.txt_data_log_save_file.setStyleSheet(self.pass_style)
+                    #self.txt_data_log_save_file.setStyleSheet(self.pass_style)
                 else:
-                    self.logger.error('Data Log {} does not exist! Cannot '
+                    self.logger.info('Data Log {} does not exist! Cannot '
                                       'append'.format(self.log_out_name))
-                    self.txt_data_log_save_file.setText('{} does not '
-                                                        'exist'.format(
-                                                         self.log_out_name))
-                    self.txt_data_log_save_file.setStyleSheet(self.fail_style)
+                    #self.txt_data_log_save_file.setText('{} does not '
+                    #                                    'exist'.format(
+                    #                                     self.log_out_name))
+                    #self.txt_data_log_save_file.setStyleSheet(self.fail_style)
             if window.append_director_log:
                 # Check that file exists:
                 if os.path.isfile(self.output_name):
                     self.read_director_log()
                     self.txt_log_output_name.setStyleSheet(self.pass_style)
                 else:
-                    self.logger.error('Director Log {} does not exist! Cannot '
+                    self.logger.info('Director Log {} does not exist! Cannot '
                                       'append'.format(self.output_name))
-                    self.txt_log_output_name.setText('{} does not '
-                                                     'exist'.format(
-                                                      self.output_name))
-                    self.txt_log_output_name.setStyleSheet(self.fail_style)
+                    #self.txt_log_output_name.setText('{} does not '
+                    #                                 'exist'.format(
+                    #                                  self.output_name))
+                    #self.txt_log_output_name.setStyleSheet(self.fail_style)
 
     def choose_head_check_rules(self, data_file=None):
         """
@@ -1036,7 +1043,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.network_status_display_update(stop=True)
 
-        self.plot_leg(self)
+        if self.flight_info:
+            self.plot_leg(self)
 
         # If the program is set to look for data automatically and the time
         # is a multiple of the update frequency and network is good
