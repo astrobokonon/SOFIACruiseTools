@@ -313,15 +313,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         cartopy.config['pre_existing_data_dir'] = os.path.join(code_location,
                                                                'maps')
 
-        print(self.leg_pos)
         steps = self.flight_info.steps.points[self.flight_info.steps.points[
                                                   'leg_num'] == self.leg_pos+1]
-        print(steps)
 
         standard_longitudes = np.arange(-180, 181, 5)
         med_lat = np.median(steps['latitude'])
         med_lon = np.median(steps['longitude'])
-        print(med_lat, med_lon)
 
         # Extra degrees to pad map
         extent = (np.min(steps['longitude'])-self.map_width,
@@ -1218,6 +1215,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     val = self.fill_space_from_header(n, hkey)
                 # Convert the value to a QTableWidgetItem object
                 new_item = QtWidgets.QTableWidgetItem(val)
+                if hkey=='HEADER_CHECK' and val=='Failed':
+                    new_item.setForeground(QtGui.QColor(255, 0, 0))
                 # Add to the table
                 self.table_data_log.setItem(n, m, new_item)
 
@@ -1553,7 +1552,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.update_leg_info_window()
         self.leg_timer.status = 'stopped'
         self.logger.debug('Stopped leg timer')
-        print('Updating map to {}'.format(self.leg_pos))
         self.setup_leg_map()
 
     def update_flight_time(self, key):
