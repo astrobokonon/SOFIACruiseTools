@@ -1,8 +1,8 @@
 
 import SOFIACruiseTools.Director.flightMapDialog as fm
+#import SOFIACruiseTools.Director.flightMapWidget as fm
 import SOFIACruiseTools.Director.flightStepsWidget as fs
 import SOFIACruiseTools.Director.flightStepsDialog as fw
-#import SOFIACruiseTools.Director.flightMapWidget as fm
 from PyQt5 import QtGui, QtCore, QtWidgets
 import matplotlib.pyplot as plt
 import matplotlib
@@ -17,14 +17,14 @@ import datetime
 
 
 class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
-#class FlightMap(QtCore.QForm, fm.Ui_Form):
+#class FlightMap(QtWidgets.QWidget, fm.Ui_Form):
     """Class for pop-out flight map"""
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
 
         self.setupUi(self)
-        self.setModal(0)
+        #self.setModal(0)
 
         self.logger = logging.getLogger('default')
         self.logger.debug('Opening up FlightMap')
@@ -54,9 +54,18 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         # Reindex flight
         self.flight_steps = self.flight_steps.set_index(self.flight_steps[
                                                             'timestamp'])
+
+        # The leg number should not be interpolated as the other values can
+        # be. It needs to be forward-filled since it doesn't change over until the
+        # time actually changes.
+
         sample_rate = '{}T'.format(self.config['flight_map']['sample_rate'])
         self.flight_steps = self.flight_steps.resample(sample_rate).mean()
+        self.flight_steps['leg_num'] = self.flight_steps['leg_num'].fillna(
+            method='ffill')
         self.flight_steps = self.flight_steps.interpolate(method='time')
+        self.flight_steps['leg_num'] = self.flight_steps['leg_num'].apply(np.ceil)
+
         self.logger.debug('Resampling flight steps at {} intervals.'.format(
             sample_rate))
 
@@ -192,7 +201,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                          minute=now.minute,
                                          second=now.second)
 
-        index = self.flight_steps.index.get_loc(self.now, method='nearest')
+        index = self.flight_steps.index.get_loc(self.now, method='ffill')
         lat = self.flight_steps.iloc[index]['latitude']
         lon = self.flight_steps.iloc[index]['longitude']
         leg_num = int(self.flight_steps.iloc[index]['leg_num'])
@@ -251,7 +260,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.flight_progress(leg)
 
         if self.open_steps:
-            print('Updating table at {}'.format(self.now))
+            # print('Updating table at {}'.format(self.now))
             self.open_steps.fill_table()
             self.open_steps.highlight_current_row()
 
@@ -387,7 +396,6 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
         """Highlight the row corresponding to the most recent step."""
         now_dt = pd.to_datetime(self.parentWidget().now)
         current_row = (now_dt > self.steps['timestamp']).sum() - 1
-        print('Now = {}, current_row = {}'.format(now_dt, current_row))
         self.table.selectRow(current_row)
 
 

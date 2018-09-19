@@ -473,7 +473,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
     def open_flight_map(self):
         """Open the flight map in popout window."""
         self.logger.info('Opened the flight map')
-        FlightMap(self)
+        self.flight_map_dialog = FlightMap(self)
+        self.flight_map_dialog.show()
 
     def flag_file(self):
         """

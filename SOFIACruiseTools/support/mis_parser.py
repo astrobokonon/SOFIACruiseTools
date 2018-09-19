@@ -1033,10 +1033,13 @@ if __name__ == '__main__':
         #fname = loc + '201807_HA_IAGO_MOPS.mis'
         #fname = loc + '201803_FI_DIANA_SCI.mis'
 
+        fname = '/home/jrvander/kevin/201809_HA_KEVIN_WX12.mis'
+
         print(fname)
         flight = parse_mis_file(fname)
         flight.steps.points.to_csv('full_steps.csv', index=False)
 
+        break
         continue
         print('\n', fname.split('/')[-1])
         flight = FlightProfile()
@@ -1055,4 +1058,5 @@ if __name__ == '__main__':
         print('Number of details found: ', len(flight.leg_steps))
         print('Unique leg numbers: ', set(flight.steps.points['leg_num']))
 
+        break
 
