@@ -140,23 +140,25 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
 
         # Add lat/lon labels
-        lon_to_mark = standard_lons[extent[0] < standard_lons < extent[1]]
-        lat_to_mark = standard_lats[extent[2] < standard_lats < extent[3]]
+        lon_to_mark = standard_lons[(extent[0] < standard_lons) &
+                                    (standard_lons < extent[1])]
+        lat_to_mark = standard_lats[(extent[2] < standard_lats) &
+                                    (standard_lats < extent[3])]
 
         for lon in lon_to_mark:
             std_lat = lat_to_mark[0]
             label = '{0:d}'.format(int(lon))
-            self.flight_map_plot.canvas.ax.annotate(label, xy=(std_lat, lon),
+            self.flight_map_plot.canvas.ax.annotate(label, xy=(lon, std_lat),
                                                     xycoords=self.transform,
-                                                    ha='right', va='center',
-                                                    fontsize=4, alpha=0.5)
+                                                    ha='center', va='center',
+                                                    fontsize=2, alpha=0.5)
         for lat in lat_to_mark:
             std_lon = lon_to_mark[0]
             label = '{0:d}'.format(int(lat))
-            self.flight_map_plot.canvas.ax.annotate(label, xy=(lat, std_lon),
+            self.flight_map_plot.canvas.ax.annotate(label, xy=(std_lon, lat),
                                                     xycoords=self.transform,
-                                                    ha='right', va='center',
-                                                    fontsize=4, alpha=0.5)
+                                                    ha='center', va='center',
+                                                    fontsize=2, alpha=0.5)
 
 
         # Set up buttons
