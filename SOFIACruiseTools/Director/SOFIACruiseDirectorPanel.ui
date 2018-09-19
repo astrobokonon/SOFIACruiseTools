@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>881</height>
+    <width>1153</width>
+    <height>867</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
   <property name="maximumSize">
    <size>
     <width>16777215</width>
-    <height>1200</height>
+    <height>867</height>
    </size>
   </property>
   <property name="cursor">
@@ -641,34 +641,6 @@ p, li { white-space: pre-wrap; }
        <string>World Times </string>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="2" column="0">
-        <widget class="QLabel" name="txt_local_time">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>50</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <family>Digital-7</family>
-           <pointsize>50</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>LOCAL</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="txt_utc">
          <property name="sizePolicy">
@@ -691,6 +663,34 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="text">
           <string>UTC</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="txt_local_time">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Digital-7</family>
+           <pointsize>50</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>LOCAL</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -908,137 +908,6 @@ p, li { white-space: pre-wrap; }
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QWidget" name="widget" native="true">
-         <layout class="QGridLayout" name="gridLayout_8">
-          <item row="0" column="1">
-           <widget class="QPushButton" name="leg_timer_stop">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Stop</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QPushButton" name="leg_timer_start">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Start</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="sub_minute">
-            <property name="text">
-             <string>-1 Minute</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QPushButton" name="add_minute">
-            <property name="text">
-             <string>+1 Minute</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="leg_timer_reset">
-            <property name="text">
-             <string>Reset</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QPushButton" name="leg_timer_update">
-            <property name="text">
-             <string>Update</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QWidget" name="widget_2" native="true">
-         <layout class="QGridLayout" name="gridLayout_9">
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="time_select_remaining">
-            <property name="text">
-             <string>Time Remaining</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QRadioButton" name="time_select_elapsed">
-            <property name="text">
-             <string>Time Elapsed</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0" colspan="2">
-           <widget class="QTimeEdit" name="leg_duration">
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="toolTip">
-             <string>HH:MM:SS</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-            <property name="dateTime">
-             <datetime>
-              <hour>0</hour>
-              <minute>0</minute>
-              <second>0</second>
-              <year>2000</year>
-              <month>1</month>
-              <day>1</day>
-             </datetime>
-            </property>
-            <property name="currentSection">
-             <enum>QDateTimeEdit::HourSection</enum>
-            </property>
-            <property name="displayFormat">
-             <string>hh:mm:ss</string>
-            </property>
-            <property name="timeSpec">
-             <enum>Qt::LocalTime</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0" colspan="2">
-           <widget class="QLabel" name="txt_leg_duration">
-            <property name="text">
-             <string>Leg Duration</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
@@ -1076,6 +945,137 @@ p, li { white-space: pre-wrap; }
              </widget>
             </item>
            </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QWidget" name="widget_2" native="true">
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="3" column="0" colspan="2">
+           <widget class="QTimeEdit" name="leg_duration">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>HH:MM:SS</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="dateTime">
+             <datetime>
+              <hour>0</hour>
+              <minute>0</minute>
+              <second>0</second>
+              <year>2000</year>
+              <month>1</month>
+              <day>1</day>
+             </datetime>
+            </property>
+            <property name="currentSection">
+             <enum>QDateTimeEdit::HourSection</enum>
+            </property>
+            <property name="displayFormat">
+             <string>hh:mm:ss</string>
+            </property>
+            <property name="timeSpec">
+             <enum>Qt::LocalTime</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QRadioButton" name="time_select_elapsed">
+            <property name="text">
+             <string>Time Elapsed</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QLabel" name="txt_leg_duration">
+            <property name="text">
+             <string>Leg Duration</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QRadioButton" name="time_select_remaining">
+            <property name="text">
+             <string>Time Remaining</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QWidget" name="widget" native="true">
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="1" column="1">
+           <widget class="QPushButton" name="leg_timer_update">
+            <property name="text">
+             <string>Update</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="add_minute">
+            <property name="text">
+             <string>+1 Minute</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="sub_minute">
+            <property name="text">
+             <string>-1 Minute</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="leg_timer_stop">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Stop</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="leg_timer_reset">
+            <property name="text">
+             <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="leg_timer_start">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Start</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -1235,22 +1235,6 @@ p, li { white-space: pre-wrap; }
          <item row="4" column="0">
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <widget class="QPushButton" name="leg_previous">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Previous Leg</string>
-             </property>
-             <property name="shortcut">
-              <string>&lt;, Ctrl+N</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QPushButton" name="leg_next">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1263,6 +1247,22 @@ p, li { white-space: pre-wrap; }
              </property>
              <property name="shortcut">
               <string>&gt;, Ctrl+M</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="leg_previous">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Previous Leg</string>
+             </property>
+             <property name="shortcut">
+              <string>&lt;, Ctrl+N</string>
              </property>
             </widget>
            </item>
