@@ -199,7 +199,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Read config file
         try:
-            self.config = co.ConfigObj('director.ini')
+            config_file = os.path.join(os.path.dirname(
+                                       os.path.dirname(
+                                       os.path.dirname(__file__))),
+                                       'director.ini')
+            self.logger.info('Reading configuration file {}'.format(config_file))
+            self.config = co.ConfigObj(config_file)
         except co.ConfigObjError:
             message = ('Cannot parse config file director.ini\n'
                        'Verify it is in the correct location '
