@@ -9,7 +9,7 @@ import os
 import SOFIACruiseTools.Director.SOFIACruiseDirector as cruise
 
 if __name__=='__main__':
-    logconfig = os.path.join(os.path.dirname(__name__), 'log.conf')
+    logconfig = os.path.join(os.path.dirname(__file__), 'log.conf')
     logging.config.fileConfig(logconfig)
     logger = logging.getLogger('default')
 
