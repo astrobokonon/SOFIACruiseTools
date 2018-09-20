@@ -4,13 +4,21 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import logging.config
-import logging.handlers
+#import logging.handlers
+import os
 import SOFIACruiseTools.Director.SOFIACruiseDirector as cruise
 
 if __name__=='__main__':
     logging.config.fileConfig('log.conf')
-    #logger = logging.getLogger('default')
-    #logger.info('Starting Cruise Director')
+    logger = logging.getLogger('default')
+
+    # This is hacky as all get out. It gets around
+    # permissions issues by giving the log file
+    # universal read/write permissions.
+    logpath = logger.handlers[0].baseFilename
+    os.chmod(logpath, 0o666)
+
+    logger.info('Starting Cruise Director')
 
     #cruise.main(logger)
     cruise.main()
