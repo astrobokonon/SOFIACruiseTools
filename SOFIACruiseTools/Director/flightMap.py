@@ -231,7 +231,10 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                          minute=now.minute,
                                          second=now.second)
 
-        index = self.flight_steps.index.get_loc(self.now, method='ffill')
+        try:
+            index = self.flight_steps.index.get_loc(self.now, method='ffill')
+        except KeyError:
+            return
         lat = self.flight_steps.iloc[index]['latitude']
         lon = self.flight_steps.iloc[index]['longitude']
         leg_num = int(self.flight_steps.iloc[index]['leg_num'])
@@ -284,7 +287,12 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                     label.remove()
                 self.leg_plot_labels = list()
 
-        self.flight_map_plot.canvas.draw()
+        try:
+            self.flight_map_plot.canvas.draw()
+        except IndexError:
+            message = 'Index Error while drawing flight map'
+            self.logger.exception(message)
+            pass
         self.flight_progress(leg)
 
         if self.open_steps:
@@ -425,8 +433,6 @@ class FlightSteps(QtWidgets.QDialog, fw.Ui_Dialog):
         now_dt = pd.to_datetime(self.parentWidget().now)
         current_row = (now_dt > self.steps['timestamp']).sum() - 1
         self.table.selectRow(current_row)
-
-
 
 
 
