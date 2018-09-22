@@ -75,6 +75,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         self.setup_plot()
 
+        self.plot_current_location()
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.plot_current_location)
         update_freq = float(self.config['flight_map']['update_freq'])*1000
@@ -218,8 +219,30 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
         self.use_current.setChecked(False)
         self.plot_current_location()
 
+    def current_point(self):
+        """Determine the current point in flight."""
+        if self.use_current.isChecked():
+            self.now = datetime.datetime.utcnow()
+        else:
+            now = self.time_selection.time().toPyTime()
+            utc = datetime.datetime.utcnow()
+            self.now = datetime.datetime(year=utc.year, month=utc.month, day=utc.day,
+                                         hour=now.hour,
+                                         minute=now.minute,
+                                         second=now.second)
+
+        # Old way
+        #index = self.flight_steps.index.get_loc(self.now, method='ffill')
+
+        # Loop through and look for when timestamp is first
+        # greater than now
+        for i, t in enumerate(self.flight_steps.index):
+            if t>self.now:
+                break
+        return i
+
     def plot_current_location(self):
-        """Plots a black x at the plane's current location"""
+        """Plot a black x at the plane's current location"""
         # Loop through times to find the most recent one
         if self.use_current.isChecked():
             self.now = datetime.datetime.utcnow()
@@ -231,10 +254,7 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                                          minute=now.minute,
                                          second=now.second)
 
-        try:
-            index = self.flight_steps.index.get_loc(self.now, method='ffill')
-        except KeyError:
-            return
+        index = self.current_point()
         lat = self.flight_steps.iloc[index]['latitude']
         lon = self.flight_steps.iloc[index]['longitude']
         leg_num = int(self.flight_steps.iloc[index]['leg_num'])

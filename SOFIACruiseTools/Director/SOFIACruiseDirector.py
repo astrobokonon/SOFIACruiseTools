@@ -39,6 +39,7 @@ import logging
 import logging.config
 import subprocess
 import cartopy
+import psutil
 
 try:
     from urllib.request import urlopen, URLError
@@ -116,6 +117,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.logger = logging.getLogger('default')
         self.logger.info('Read in log default')
+
+        self.perform_logger = logging.getLogger('perform')
+        self.perform_logger.info('Cruise Director/System performance log')
+
+        self.process = psutil.Process(os.getpid())
 
         self.pass_style = 'QLabel { color : black; }'
         self.warn_style = 'QLabel { color : orange; }'
@@ -196,6 +202,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.map_width = 15
         self.marker_size = 10
         self.update_freq = 5
+        self.perf_count = 0
 
         # Read config file
         try:
@@ -1061,6 +1068,14 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     self.logger.debug('Check for data')
                     self.update_data()
 
+        if self.perf_count == 10:
+            self.perf_count = 0
+            self.log_performance(header=True)
+        else:
+            self.perf_count += 1
+            self.log_performance()
+
+
     def manual_toggle_network(self):
         """Test button to toggle network status."""
         self.logger.info('Toggling test for network health.')
@@ -1667,6 +1682,33 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.success_parse = False
             self.logger.exception('Failure while parsing {}'.format(self.fname))
 
+    def log_performance(self, header=False):
+        """Log code performance.
+
+        Records the memory and cpu consumption of Cruise
+        Director, as well as the total health of the system.
+
+        Parameters
+        ----------
+        header : bool
+            If true print the header as well
+        """
+        pmem = self.process.memory_full_info()
+        smem = psutil.virtual_memory()
+
+        if header:
+            self.perform_logger.info('Process CPU, RMS, VMS, USS: System CPU, '
+                                     'total, available, active, used, free')
+
+        line = '{} , {} , {} , {} , {} , {} , {} , {} , {} , {}'.format(
+            self.process.cpu_percent(), bytes2human(pmem.rss),
+            bytes2human(pmem.vms), bytes2human(pmem.uss),
+            psutil.cpu_percent(percpu=False), bytes2human(smem.total),
+            bytes2human(smem.available), bytes2human(smem.active),
+            bytes2human(smem.used), bytes2human(smem.free))
+
+        self.perform_logger.info(line)
+
 
 def total_sec_to_hms_str(obj):
     """ Formats a datetime object into a time string """
@@ -1698,6 +1740,27 @@ def timedelta_to_time(delta):
     iseconds = np.int(seconds)
     t = datetime.time(hour=ihours, minute=iminutes, second=iseconds)
     return t
+
+
+def bytes2human(n):
+    """Converts bytes to human readable value.
+
+    http://code.activestate.com/recipes/578019
+
+    >>> bytes2human(10000)
+    '9.8K'
+    >>> bytes2human(100001221)
+    '95.4M'
+    """
+    symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    prefix = {}
+    for i, s in enumerate(symbols):
+        prefix[s] = 1 << (i + 1) * 10
+    for s in reversed(symbols):
+        if n >= prefix[s]:
+            value = float(n) / prefix[s]
+            return '{0:.2f}{1:s}'.format(value, s)
+    return '{}B'.format(n)
 
 
 def main():

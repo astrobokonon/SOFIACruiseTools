@@ -12,11 +12,14 @@ if __name__=='__main__':
     logconfig = os.path.join(os.path.dirname(__file__), 'log.conf')
     logging.config.fileConfig(logconfig)
     logger = logging.getLogger('default')
+    loggerp = logging.getLogger('perform')
 
     # This is hacky as all get out. It gets around
     # permissions issues by giving the log file
     # universal read/write permissions.
     logpath = logger.handlers[0].baseFilename
+    os.chmod(logpath, 0o666)
+    logpath = loggerp.handlers[0].baseFilename
     os.chmod(logpath, 0o666)
 
     logger.info('Starting Cruise Director')
