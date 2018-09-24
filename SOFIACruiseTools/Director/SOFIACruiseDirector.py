@@ -203,6 +203,9 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.marker_size = 10
         self.update_freq = 5
         self.perf_count = 0
+        self.loop_count = 0
+        self.small_map_count = 0
+        self.small_map_update_count = 60
 
         # Read config file
         try:
@@ -478,6 +481,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.update_freq = float(self.config['flight_map']['update_freq'])
         except ValueError:
             raise ConfigError('Unable to parse flight map settings.')
+
+        # Calculate the small map update rate
+        flight_map_update_time = self.update_freq * 1000
+        self.small_map_update_count = int(flight_map_update_time / 500)
 
         self.logger.info('Configuration file passes')
 
@@ -1055,8 +1062,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         else:
             self.network_status_display_update(stop=True)
 
-        if self.flight_info:
+        if self.flight_info and self.small_map_count == self.small_map_update_count:
+            self.small_map_count = 0
             self.plot_leg(self)
+        else:
+            self.small_map_count += 1
 
         # If the program is set to look for data automatically and the time
         # is a multiple of the update frequency and network is good
@@ -1068,12 +1078,17 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                     self.logger.debug('Check for data')
                     self.update_data()
 
-        if self.perf_count == 10:
-            self.perf_count = 0
-            self.log_performance(header=True)
+        # Record performance only every 5 minutes
+        if self.loop_count == 600:
+            self.loop_count = 0
+            if self.perf_count == 10:
+                self.perf_count = 0
+                self.log_performance(header=True)
+            else:
+                self.perf_count += 1
+                self.log_performance()
         else:
-            self.perf_count += 1
-            self.log_performance()
+            self.loop_count += 1
 
 
     def manual_toggle_network(self):
