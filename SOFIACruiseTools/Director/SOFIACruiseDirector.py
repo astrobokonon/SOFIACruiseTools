@@ -1781,6 +1781,7 @@ def bytes2human(n):
 def main():
     """ Generate the gui and run """
     app = QtWidgets.QApplication(sys.argv)
+    app.setStyle('Fusion')
     font = './SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf'
     QtGui.QFontDatabase.addApplicationFont(font)
     form = SOFIACruiseDirectorApp()
