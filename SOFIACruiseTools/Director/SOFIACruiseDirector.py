@@ -1781,10 +1781,19 @@ def bytes2human(n):
 def main():
     """ Generate the gui and run """
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyle('motif')
+    app.setStyle('fusion')
+    
     font = './SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf'
     QtGui.QFontDatabase.addApplicationFont(font)
+
     form = SOFIACruiseDirectorApp()
+
+    resolution = app.desktop().screenGeometry()
+    w, h = resolution.width(), resolution.height()
+    new_w = w*0.5
+    new_h = h*0.75
+
+    form.resize(new_w, new_h)
     form.show()  # Show the form
     app.exec_()  # and execute the app
 
