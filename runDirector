@@ -9,6 +9,15 @@ import os
 import SOFIACruiseTools.Director.SOFIACruiseDirector as cruise
 
 if __name__=='__main__':
+
+    log_loc = os.path.expanduser('~/.cruiseDirector')
+    runlog_loc = os.path.join(log_loc, 'runtime_logs')
+    perflog_loc = os.path.join(log_loc, 'performance_logs')
+    
+    for loc in [log_loc, runlog_loc, perflog_loc]:
+        if not os.path.isdir(loc):
+            os.makedirs(loc)
+
     logconfig = os.path.join(os.path.dirname(__file__), 'log.conf')
     logging.config.fileConfig(logconfig)
     logger = logging.getLogger('default')
