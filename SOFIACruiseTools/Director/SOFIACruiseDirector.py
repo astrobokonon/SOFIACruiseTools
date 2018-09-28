@@ -1784,6 +1784,9 @@ def main():
     app.setStyle('fusion')
     
     font = './SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf'
+    font = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                        'resources', 'fonts', 'digital_7', 
+                        'digital-7_mono.ttf')
     QtGui.QFontDatabase.addApplicationFont(font)
 
     form = SOFIACruiseDirectorApp()
