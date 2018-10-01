@@ -273,14 +273,12 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
 
         # Highlight the current leg
         index = self.flight_steps['leg_num']==leg_num
-        lat = self.flight_steps[index]['latitude']
-        lon = self.flight_steps[index]['longitude']
         if self.current_leg:
             self.current_leg.pop(0).remove()
-        self.current_leg = self.flight_map_plot.canvas.ax.plot(lon, lat,
-                                                               color='orchid',
-                                            linewidth=0.5,
-                                            transform=cartopy.crs.Geodetic())
+        self.current_leg = self.flight_map_plot.canvas.ax.plot(
+            lon = self.flight_steps[index]['longitude'],
+            lat = self.flight_steps[index]['latitude'],
+            color='orchid', linewidth=0.5, transform=cartopy.crs.Geodetic())
 
         # Put labels on each leg
         if self.show_leg_labels.isChecked():
@@ -289,17 +287,15 @@ class FlightMap(QtWidgets.QDialog, fm.Ui_Dialog):
                 for leg_num in self.flight.steps.points['leg_num'].unique():
                     index = self.flight.steps.points['leg_num']==leg_num
 
-                    lat = self.flight.steps.points[index]['latitude'].mean()
-                    lon = self.flight.steps.points[index]['longitude'].mean()
-
                     label = '{0:d}'.format(leg_num)
                     line = self.flight_map_plot.canvas.ax.annotate(label,
-                                                                   xy=(lon, lat),
-                                                                   xycoords=self.transform,
-                                                                   ha='right',
-                                                                   va='center',
-                                                                   fontsize=4,
-                                                                   alpha=0.5)
+                        xy=(self.flight.steps.points[index]['longitude'].mean(),
+                            self.flight.steps.points[index]['latitude'].mean()),
+                        xycoords=self.transform,
+                        ha='right',
+                        va='center',
+                        fontsize=4,
+                        alpha=0.5)
                     self.leg_plot_labels.append(line)
         else:
             if self.leg_plot_labels:

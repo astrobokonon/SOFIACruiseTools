@@ -40,12 +40,10 @@ import logging.config
 import subprocess
 import cartopy
 import psutil
+import threading
+import traceback
 
-try:
-    from urllib.request import urlopen, URLError
-except ImportError:
-    # When using Python2
-    from urllib2 import urlopen, URLError
+from urllib.request import urlopen, URLError
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
 
@@ -122,6 +120,10 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.perform_logger.info('Cruise Director/System performance log')
 
         self.process = psutil.Process(os.getpid())
+        self.threadpool = QtCore.QThreadPool()
+        self.worker = None
+        self.worker_start_time = None
+        self.worker_running = False
 
         self.pass_style = 'QLabel { color : black; }'
         self.warn_style = 'QLabel { color : orange; }'
@@ -152,6 +154,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.leg_timer.init_duration = None
 
         self.good_connection = True
+        self.network_status_health = True
 
         self.cruise_log = []
         self.start_data_log = False
@@ -383,21 +386,20 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
     def plot_leg(self, current=True):
 
-        if self.use_current_leg.isChecked():
-            leg_num = 0
-        else:
-            leg_num = self.leg_pos + 1
-        steps = self.flight_info.steps.points[self.flight_info.steps.points[
-                                                  'leg_num'] == self.leg_pos+1]
-        lat = steps['latitude']
-        lon = steps['longitude']
+        #steps = self.flight_info.steps.points[self.flight_info.steps.points[
+        #                                          'leg_num'] == self.leg_pos+1]
+        steps = self.flight_info.steps.points['leg_num'] == self.leg_pos+1
         try:
-            self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
+            self.leg_map.canvas.ax.plot(self.flight_info.steps.points[steps]['longitude'],
+                                        self.flight_info.steps.points[steps]['latitude'],
+                                        color='orchid',
                                         linewidth=1.5,
                                         transform=cartopy.crs.Geodetic())
         except ValueError:
             self.setup_leg_map()
-            self.leg_map.canvas.ax.plot(lon, lat, color='orchid',
+            self.leg_map.canvas.ax.plot(self.flight_info.steps.points[steps]['longitude'],
+                                        self.flight_info.steps.points[steps]['latitude'],
+                                        color='orchid',
                                         linewidth=1.5,
                                         transform=cartopy.crs.Geodetic())
         self.leg_map.canvas.draw()
@@ -470,6 +472,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         try:
             self.dns_check = int(self.config['network_test']['dns_check'])
             self.file_check = int(self.config['network_test']['file_check'])
+            self.timeout = float(self.config['network_test']['timeout'])
         except ValueError:
             raise ConfigError('Unable to parse network_test settings')
 
@@ -568,6 +571,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         # Open the dialog
         window = StartupApp(self)
+
+        screenShape = QtWidgets.QDesktopWidget().screenGeometry()
+        new_w = screenShape.width()*0.35
+        new_h = screenShape.height()*0.5
+
+        window.resize(new_w, new_h)
+
         result = window.exec_()
 
         if result:
@@ -619,8 +629,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             # Location of data
             if window.data_dir:
                 self.data_log_dir = window.data_dir
-                self.txt_data_log_dir.setText('{0:s}'.format(
-                    self.data_log_dir))
+                self.txt_data_log_dir.setText('{0:s}'.format(self.data_log_dir))
                 # Select header checker rules
                 self.choose_head_check_rules()
                 self.logger.info('Data location set to {}'.format(self.data_log_dir))
@@ -705,10 +714,13 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.checker_rules = None
                 return
 
-        self.logger.debug('Selecting header checking rules for {}'.format(data_file))
-        # Pass it to self.checker.choose_rules
-        rule = self.checker.choose_rules(data_file)
-        self.logger.debug('Selected {}'.format(rule))
+        if self.network_status_health:
+            self.logger.debug('Selecting header checking rules for {}'.format(data_file))
+            # Pass it to self.checker.choose_rules
+            rule = self.checker.choose_rules(data_file)
+            self.logger.debug('Selected {}'.format(rule))
+        else:
+            self.logger.debug('Network bad, not checking for rules')
 
         # Set return value to self.checker_rules
         self.checker_rules = rule
@@ -1056,11 +1068,11 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_local_time.setText(self.local_now_str)
 
         # Update the network test flag
-        if (self.dns_check or self.file_check) and self.network_status_control:
-            self.verify_network()
-            self.network_status_display_update()
-        else:
-            self.network_status_display_update(stop=True)
+        #if (self.dns_check or self.file_check) and self.network_status_control:
+            #self.verify_network()
+            #self.network_status_display_update()
+        #else:
+            #self.network_status_display_update(stop=True)
 
         if self.flight_info and self.small_map_count == self.small_map_update_count:
             self.small_map_count = 0
@@ -1074,12 +1086,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if self.utc_now.second % self.data_log_update_interval.value() == 0:
                 # If the network is good or if the user has turned off
                 # checking the network
-                if self.network_status or not self.network_status_control:
-                    self.logger.debug('Check for data')
-                    self.update_data()
+                #if self.network_status or not self.network_status_control:
+                self.logger.debug('Check for data')
+                self.update_data()
 
         # Record performance only every 5 minutes
-        if self.loop_count == 600:
+        if self.loop_count == self.small_map_update_count:
             self.loop_count = 0
             if self.perf_count == 10:
                 self.perf_count = 0
@@ -1089,7 +1101,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                 self.log_performance()
         else:
             self.loop_count += 1
-
 
     def manual_toggle_network(self):
         """Test button to toggle network status."""
@@ -1101,41 +1112,41 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.network_status_display_update(stop=True)
             self.network_status_control = not self.network_status_control
 
-    def verify_network(self, host='8.8.8.8', port=53, 
-                       timeout=3, testing=False):
-        """Test the current status of the network.
+#    def verify_network(self, host='8.8.8.8', port=53,
+#                       timeout=3, testing=False):
+#        """Test the current status of the network.
+#
+#        Checks if Google can be pinged and if the data
+#        directory is still available. If not, set
+#        good_connection flag low to pause data collection.
+#        """
+#        self.logger.debug('Testing network')
+#        if testing:
+#            self.network_status = not self.network_status
+#        elif self.network_status_hold:
+#            pass
+#        else:
+#            if self.file_check:
+#                if os.path.isdir(self.data_log_dir):
+#                    self.network_status = True
+#                else:
+#                    self.network_status = False
+#            else:
+#                self.network_status = False
 
-        Checks if Google can be pinged and if the data
-        directory is still available. If not, set 
-        good_connection flag low to pause data collection.
-        """
-        self.logger.debug('Testing network')
-        if testing:
-            self.network_status = not self.network_status
-        elif self.network_status_hold:
-            pass
-        else:
-            if self.file_check:
-                if os.path.isdir(self.data_log_dir):
-                    self.network_status = True
-                else:
-                    self.network_status = False
-            else:
-                self.network_status = False
-
-    def network_status_display_update(self, stop=False):
+    def network_status_display_update(self, timeout=False):
         """Updates the GUI status with current network status."""
         style = 'QLabel {{color : {0:s}; }}'
-        if stop:
-            self.network_status_display.setText('Not testing network')
-            self.network_status_display.setStyleSheet(style.format('black'))
+#        if timeout:
+#            self.network_status_display.setText('Not testing network')
+#            self.network_status_display.setStyleSheet(style.format('black'))
+#        else:
+        if timeout:
+            self.network_status_display.setText('Network Timeout')
+            self.network_status_display.setStyleSheet(style.format('red'))
         else:
-            if self.network_status:
-                self.network_status_display.setText('Network Good')
-                self.network_status_display.setStyleSheet(style.format('green'))
-            else:
-                self.network_status_display.setText('Network Bad')
-                self.network_status_display.setStyleSheet(style.format('red'))
+            self.network_status_display.setText('Network Good')
+            self.network_status_display.setStyleSheet(style.format('green'))
 
     def leg_timer_color(self, remaining_seconds):
         """Set the color of the leg timer.
@@ -1312,46 +1323,36 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
                          'with {2}'.format(hkey, fname, val))
         return val
 
-    def update_data(self):
-        """Look for new observations.
+    def query_archiver(self, instrument, location, method, suffix,
+                       progress_callback):
 
-        Reads in new FITS files and adds them to the header_vals
-        """
-
-        self.logger.debug('Looking for new data')
-        # Each instrument can store their data in a different way.
-        # Read in the correct method to use from the
-        # director.ini config file
-        config = self.config['search'][self.instrument]
         self.new_files = []
+        contents = list()
         # Get the current list of FITS files in the location
-        if config['method'] == 'glob':
-            if self.instrument.lower() == 'forcast':
+        if method == 'glob':
+            if instrument.lower() == 'forcast':
                 # FORCAST has 2 channels, r and b. While not used at the
                 # same time, they are often used in the same flight. To prevent
                 # restarting Cruise Director every time, the data_log_dir
                 # is set to the parent directory and new files are pulled from
                 # both the r and b subdirectories.
-                pattern = '{0:s}/[rb]/*.{1:s}'.format(str(self.data_log_dir),
-                                                      config['extension'])
+                pattern = '{0:s}/[rbRB]/*.{1:s}'.format(location, suffix)
             else:
-                pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
-                                                 config['extension'])
-            self.data_current = glob.glob(pattern)
-        elif config['method'] == 'walk':
-            pattern = '*.{0:s}'.format(config['extension'])
-            current_data = []
-            for root, _, filenames in os.walk(str(self.data_log_dir)):
+                pattern = '{0:s}/*.{1:s}'.format(location, suffix)
+            contents = glob.glob(pattern)
+        elif method == 'walk':
+            pattern = '*.{0:s}'.format(suffix)
+            for root, _, filenames in os.walk(location):
                 for filename in fnmatch.filter(filenames, pattern):
-                    current_data.append(os.path.join(root, filename))
-            self.data_current = current_data
+                    contents.append(os.path.join(root, filename))
         else:
             # Unknown method
             message = ('Unknown method {0:s} for instrument {1:s}'.format(
-                       config['method'], self.instrument))
-            self.logger.warning(message)
-            return
+                       method, instrument))
+            raise ConfigError(message)
 
+        progress_callback.emit('Ongoing')
+        self.data_current = contents
         # Correct the file listing to be ordered by modification time
         self.data_current = self.sort_files(self.data_current)
 
@@ -1379,12 +1380,93 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.data_filenames.append(bname)
             self.new_files.append(bname)
 
+    def search_function(self):
+
+        config = self.config['search'][self.instrument]
+        if config['method'] == 'glob':
+            if self.instrument.lower() == 'forcast':
+                pattern = '{0:s}/[rbRB]/*.{1:s}'.format(str(self.data_log_dir),
+                                                        config['extension'])
+            else:
+                pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
+                                                 config['extension'])
+            data_current = glob.glob(pattern)
+        elif config['method'] == 'walk':
+            pattern = '*.{0:s}'.format(config['extension'])
+            current_data = []
+            for root, _, filenames in os.walk(str(self.data_log_dir)):
+                for filename in fnmatch.filter(filenames, pattern):
+                    current_data.append(os.path.join(root, filename))
+            data_current = current_data
+
+        else:
+            # Unknown method
+            message = ('Unknown method {0:s} for instrument {1:s}'.format(
+                       config['method'], self.instrument))
+            self.logger.warning(message)
+            raise ConfigError(message)
+        return data_current
+
+    def directory_walk(self, location, suffix):
+        result = list()
+        pattern = '*.{}'.format(suffix)
+        for root, _, filenames in os.walk(location):
+            for filename in fnmatch.filter(filenames, pattern):
+                result.append(os.path.join(root, filename))
+        return result
+
+    def worker_result(self):
+        pass
+
+    def worker_finished(self):
+        self.worker_running = False
+        self.network_status_display_update(timeout=False)
         # If new files exist, update the table widget and
         # write the new data to file
-        if new_files:
+        if self.new_files:
             self.update_table()
             if self.log_out_name != '':
                 self.data.write_to_file(self.log_out_name, self.headers)
+
+    def worker_progress(self):
+        pass
+
+    def update_data(self):
+        """Look for new observations.
+
+        Reads in new FITS files and adds them to the header_vals
+        """
+
+        self.logger.debug('Looking for new data')
+        # Each instrument can store their data in a different way.
+        # Read in the correct method to use from the
+        # director.ini config file
+#        config = self.config['search'][self.instrument]
+
+        if self.worker_running:
+            # Worker already running, check the time
+            now = datetime.datetime.utcnow()
+            if (now - self.worker_start_time).total_seconds() > self.timeout:
+                # Worker has likely stalled
+                # Update the network health flag
+                self.network_status_health = False
+                self.network_status_display_update(timeout=True)
+            else:
+                self.network_status_health = True
+            return
+        else:
+            # Worker is not running
+            # Star one up and go
+            self.worker_start_time = datetime.datetime.utcnow()
+            self.worker = Worker(self.query_archiver, self.instrument,
+                                 self.data_log_dir,
+                                 self.config['search'][self.instrument]['method'],
+                                 self.config['search'][self.instrument]['extension'])
+            self.worker.signals.result.connect(self.worker_result)
+            self.worker.signals.finished.connect(self.worker_finished)
+            self.worker.signals.progress.connect(self.worker_progress)
+            self.threadpool.start(self.worker)
+            self.worker_running = True
 
     def sort_files(self, files):
         """Sort files based on method in config.
@@ -1409,7 +1491,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             if self.instrument.lower() == 'forcast':
                 return sorted(files, key=lambda x:
                         int(os.path.basename(x).split('_')[-1].split('.')[0]))
-                        #int(x.split(os.path.sep)[-1].split('_')[1].split('.')[0]))
             else:
                 message = ('Unknown file formatting for {0:s} ',
                            'Cannot sort'.format(self.instrument))
@@ -1725,6 +1806,78 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.perform_logger.info(line)
 
 
+class WorkerSignals(QtCore.QObject):
+    '''
+    Defines the signals available from a running worker thread.
+
+    Supported signals are:
+
+    finished
+        No data
+
+    error
+        `tuple` (exctype, value, traceback.format_exc() )
+
+    result
+        `object` data returned from processing, anything
+
+    progress
+        `int` indicating % progress
+
+    '''
+    finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(tuple)
+    result = QtCore.pyqtSignal(object)
+    progress = QtCore.pyqtSignal(int)
+
+
+class Worker(QtCore.QRunnable):
+    '''
+    Worker thread
+
+    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
+
+    :param callback: The function callback to run on this worker thread.
+                     Supplied args and
+                     kwargs will be passed through to the runner.
+    :type callback: function
+    :param args: Arguments to pass to the callback function
+    :param kwargs: Keywords to pass to the callback function
+
+    '''
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+        # Add the callback to our kwargs
+        self.kwargs['progress_callback'] = self.signals.progress
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        '''
+        Initialise the runner function with passed args, kwargs.
+        '''
+
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the
+                                              # processing
+        finally:
+            self.signals.finished.emit()  # Done
+
+
 def total_sec_to_hms_str(obj):
     """ Formats a datetime object into a time string """
     tsecs = obj.total_seconds()
@@ -1783,7 +1936,6 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle('fusion')
     
-    font = './SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf'
     font = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                         'resources', 'fonts', 'digital_7', 
                         'digital-7_mono.ttf')
