@@ -574,7 +574,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         screenShape = QtWidgets.QDesktopWidget().screenGeometry()
         new_w = screenShape.width()*0.35
-        new_h = screenShape.height()*0.5
+        new_h = screenShape.height()*0.6
 
         window.resize(new_w, new_h)
 
@@ -1067,13 +1067,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.txt_utc.setText(self.utc_now_str)
         self.txt_local_time.setText(self.local_now_str)
 
-        # Update the network test flag
-        #if (self.dns_check or self.file_check) and self.network_status_control:
-            #self.verify_network()
-            #self.network_status_display_update()
-        #else:
-            #self.network_status_display_update(stop=True)
-
         if self.flight_info and self.small_map_count == self.small_map_update_count:
             self.small_map_count = 0
             self.plot_leg(self)
@@ -1109,38 +1102,12 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
             self.network_status_display_update()
             self.network_status_control = not self.network_status_control
         else: 
-            self.network_status_display_update(stop=True)
+            self.network_status_display_update()
             self.network_status_control = not self.network_status_control
-
-#    def verify_network(self, host='8.8.8.8', port=53,
-#                       timeout=3, testing=False):
-#        """Test the current status of the network.
-#
-#        Checks if Google can be pinged and if the data
-#        directory is still available. If not, set
-#        good_connection flag low to pause data collection.
-#        """
-#        self.logger.debug('Testing network')
-#        if testing:
-#            self.network_status = not self.network_status
-#        elif self.network_status_hold:
-#            pass
-#        else:
-#            if self.file_check:
-#                if os.path.isdir(self.data_log_dir):
-#                    self.network_status = True
-#                else:
-#                    self.network_status = False
-#            else:
-#                self.network_status = False
 
     def network_status_display_update(self, timeout=False):
         """Updates the GUI status with current network status."""
         style = 'QLabel {{color : {0:s}; }}'
-#        if timeout:
-#            self.network_status_display.setText('Not testing network')
-#            self.network_status_display.setStyleSheet(style.format('black'))
-#        else:
         if timeout:
             self.network_status_display.setText('Network Timeout')
             self.network_status_display.setStyleSheet(style.format('red'))
@@ -1441,7 +1408,6 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         # Each instrument can store their data in a different way.
         # Read in the correct method to use from the
         # director.ini config file
-#        config = self.config['search'][self.instrument]
 
         if self.worker_running:
             # Worker already running, check the time
@@ -1807,8 +1773,7 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
 
 class WorkerSignals(QtCore.QObject):
-    '''
-    Defines the signals available from a running worker thread.
+    """Defines the signals available from a running worker thread.
 
     Supported signals are:
 
@@ -1824,7 +1789,7 @@ class WorkerSignals(QtCore.QObject):
     progress
         `int` indicating % progress
 
-    '''
+    """
     finished = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(tuple)
     result = QtCore.pyqtSignal(object)
@@ -1832,19 +1797,20 @@ class WorkerSignals(QtCore.QObject):
 
 
 class Worker(QtCore.QRunnable):
-    '''
-    Worker thread
+    """Handles a QThread instance to run a function separate from the main thread.
 
     Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
+    Uses the WorkerSignals class for custom signal handling.
 
-    :param callback: The function callback to run on this worker thread.
-                     Supplied args and
-                     kwargs will be passed through to the runner.
-    :type callback: function
-    :param args: Arguments to pass to the callback function
-    :param kwargs: Keywords to pass to the callback function
-
-    '''
+    Parameters
+    ----------
+    fn : function
+        Function the worker will run
+    args : list-like
+        Arguments for `fn`
+    kwargs : list-like
+        Key word arguments for `fn`
+    """
 
     def __init__(self, fn, *args, **kwargs):
         super(Worker, self).__init__()
@@ -1860,9 +1826,13 @@ class Worker(QtCore.QRunnable):
 
     @QtCore.pyqtSlot()
     def run(self):
-        '''
-        Initialise the runner function with passed args, kwargs.
-        '''
+        """Initialise the runner function with passed args, kwargs.
+
+        Attempt to run `fn`. If an exception occurs, emit the
+        error signal. If no exception occurs, emit the result
+        signal. At the end, emit the finished signal regardless
+        of exceptions.
+        """
 
         # Retrieve args/kwargs here; and fire processing using them
         try:
