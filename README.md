@@ -1,3 +1,8 @@
+SOFIA Cruise Tools: In Otto We Trust
+====================================
+
+![logo](SOFIACruiseTools/resources/images/OttotheAutopilot.png)
+
 Quickstart:
 ===========
 - Change 'self.headers' to the FITS keyword headers you want.
