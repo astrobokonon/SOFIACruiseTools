@@ -1,0 +1,6 @@
+[submodule "SOFIACruiseTools/qa-tools"]
+	path = SOFIACruiseTools/qa-tools
+	url = git@gitlab.sofia.usra.edu:dps/qa-tools.git
+[submodule "SOFIACruiseTools/header_checker"]
+	path = SOFIACruiseTools/header_checker
+	url = git@gitlab.sofia.usra.edu:dps/header_checker.git

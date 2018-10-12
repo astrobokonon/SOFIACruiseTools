@@ -1,90 +1,121 @@
-SOFIA Cruise Tools: In Otto We Trust
-====================================
 
-![logo](SOFIACruiseTools/resources/images/OttotheAutopilot.png)
+### Cruise Director Instructions
 
-Quickstart:
-===========
-- Change 'self.headers' to the FITS keyword headers you want.
-- Change 'self.instrument' to something OTHER than 'HAWCFlight' to search for 
-.FITS files normally; 'HAWCFlight' is a workaround for HAWC+ specifically.
-- Make sure the flight plan file is readable before flight; see below.
-- FITS keyword panel is notional at this time and doesn't change anything.
-- python SOFIACruiseDirector.py
+#### Overview
+CruiseDirector is a tool for recording notes during flights. It features:
+- Tool to record notes throughout the flight
+- Reads in FITS headers from observations for easy checking
+- Timers for current leg
+- Timers for flight
 
-Slowstart:
-===========
-Python packages required:
-    python >= 2.7 (should work ok in Python >= 3.6)
-    pytz, numpy, scipy, astropy, PyQt5
+#### Starting the program
+To run the code, use:
+./runDirector
 
-NOTE: If you use anaconda, you're probably already set.
+The first window that opens will allow for the setup of the code. There are six
+fields to set up, but not all are required:
 
-Start it by:
-python SOFIACruiseDirector.py
+- **Flight Plan**: Select the .mis file for the current flight. The program will
+  parse this for information about each leg. The instrument is also pulled from
+  the name of this file.
+- **Instrument**: In case the wrong instrument is parsed from the flight plan, 
+set it
+  here. The choice of instrument alters both the default FITS keywords to present
+  and how the code searches for observations. FORCAST, FIFI-LS, EXES, and HAWC+
+  (Ground) search for .fits files while HAWC+ (Flight) searches for .grabme 
+  files. 
+- **Log Output**: This is where the comment log will be stored. The default naming
+  convention is "SILog_<utc date stamp>.txt". This is the only required field. 
+- **Log Data Output**: This file will contain a csv version of the FITS  
+keywords parsed from observations during the flight. 
+- **Data Location**: Where observations will be read in from. FORCAST, EXES, and
+  either HAWC settings will search for the corresponding file type in this
+  directory only, while FIFI-LS searches for all FITS files in all subdirectories. 
+  FORCAST data is stored in two channels, r and b. To avoid having to set up 
+  separate runs of Cruise Director every time the channel being used is 
+  changed, Cruise Director instead always looks in both. For FORCAST 
+  observations, the *data location* should be set to the parent directory of 
+  the r and b directories. 
+- **FITS Keywords**: This opens a new dialog where the initial keywords to be
+  monitored are defined. Each instrument has a default list, but this can be 
+  customized.
+  A personalized list can be curated then saved to file
+  for future use. This file can later be read in for quick 
+  personalization. Regardless of the keywords chosen, three keywords are 
+  added automatically:
+  + NOTES: For recording notes for a specific files.
+  + BADCAL: A column for designating which files you have flagged for later 
+  inspection with the "Flag File" button. 
+  + HEADER_CHECK: Shows the result of passing the file through header_checker.
+  A pass indicates there were no problems while "FAIL" indicates one or 
+  more warnings were found. Details can be found in the header_checker_<utc 
+  date stamp>.log file. 
 
-The other files need to be in the same directory but you shouldn't ever have to
-touch them.
+Once the setup is complete, the main Cruise Director window opens. There are six
+panels:
 
-Usage:
-Most buttons should be self explanatory.  'Open Flight Plan' will ask you for a
-.mis file to load in and set parameters in the GUI accordingly.
+- **Setup**: This contains both the control buttons and the settings defined 
+during
+  startup. To change the setting, click the "Set Up" button. The "Start" button
+  begins the flight timers and starts the collection of data, while "End" performs
+  a final write of all log files and closes the program.
 
-But!  If you have a non-siderial target, you'll have to remove the extra line
-underneath the "Target: ..." line in the leg header.  For example, a recent
-FLITECAM flight plan contained.
+- **Current Flight Progress**: This contains two timers, the Mission Elapsed 
+Time
+  (MET) and Time Until Landing (TTL), both of which are initiated by the "Start"
+  button.
 
-Leg 8 (Asteroid with naif_id =2000016) Start: 09:03:38     Leg Dur: 01:02:48   Req. Alt: 42000 ft  
-ObspID: 02_0066     Blk: OB_02_0066_07  Priority: C         Obs Dur: 00:52:48   
-Target: Asteroid with naif_id =2000016 RA: 05h27m19.65s    Dec: 19d26m56.0s    Equinox: J2000.0    
-NAIF ID: 2000016    
-Elev: [37.1, 45.8]  ROF: [331.4, 326.5] rate: [-0.09, -0.07] deg/min  Moon Angle: 14
+- **Flight Plan Information**: Details each leg of the flight as parsed from the
+  selected .mis file. The "Previous Leg" and "Next Leg" buttons can be used to
+  step through the flight. These also control the leg timers. 
 
-That "NAIF ID: ..." line is the one that has to go.  I should probably add a
-check to do that automatically but I've obviously haven't.
+- **World Times**: The current time in both UTC and Local time zones. 
 
-Recent (2016) flight plans now also change the way departure/arrival legs are 
-denoted; make sure that the ( ) next to "Leg N" say "Departure" or "Arrival" 
-rather than the waypoint names (such as "ROSIN").
+- **Leg Timers**: Timers for the current leg, as defined by the contents of the
+  "Flight Plan Information" panel. Controls are present to start, pause, and
+  reset the timer, as well as to control the counting direction (up or down).
+  If you need to make small adjustments to the leg timer, there are buttons to
+  add or subtract one minute from the time. Above the leg timer are the leg start
+  time and duration from the flight plan for reference. 
 
-The FITS keyword panel is functional within itself, but at this point
-purely aspirational and does nothing of use.  I struggled in my head with how
-to deal with changing keywords if the log is already written/started, or
-at least changing the order of the keywords.  That struggle never was resolved,
-so it's non-functional.  So if you want to change the FITS headers that are 
-queried, look at SOFIACruiseDirector.py:229 and change what you need there.  It
-should be commented enough to read through briefly and at least find the
-relevant section if you need/want to tinker with something but that varies
-greatly since I wrote the bulk of this while transitioning to a night schedule
-in the day or two before flights.
+- **Logging**: This is the main panel and has two tabs. 
+    - *Cruise Director Log*: This is the open log for recording events/comments
+      during the flight. It is saved to the file defined with the "Log Output"
+      step of setup. There are quick buttons for common events, such as "Takeoff" and
+      "Landing", as well as a text box to enter text into at the bottom. All comments
+      are posted in the window of the tab as well as written to file as soon as they
+      are made. 
+    - *Data Log*: This window displays the FITS keywords read in during the 
+     flight.
+      The rate at which the program looks for new files is controlled by the
+      "Autoupdate every: " control. As new files are found, the table is populated with
+      the files sorted by modification time. There are a few quick controls
+      available: 
+        + To alter the contents of any field, click in the cell and enter the 
+          modification. The corresponding file header is not altered, only the 
+          local log. 
+        + To search for files immediately, use the "Force Update" button. Any time 
+          the table is altered, either by finding a new file or by changing a keyword 
+          property, the log file is written to the filename specified by the "Data Log" field. 
+        + If a file read in that you want to flag for future investigation, 
+          select the desired row and click the "Flag File" button. This 
+          changes the content of the "BADCAL" column to "FLAG". 
+        + A blank line can be added to the log with the "Add a Blank Row" button. 
+        + To delete a row, select the row by clicking on any cell in the desired row
+          and use the "Remove Highlighted Row" button. 
+        + To alter the keywords being used, use the "Edit Keywords..." button. 
+          This opens the same dialog shown during the setup step. Adding a keyword
+          during the flight will only look for that keyword in all new files. It
+          will not fill it for past files until "Force Update" is pressed. 
+    - The default set up does not allow the user to see both logs at the same
+      time. If you want to see both simultaneously, there is a button on the Data
+      Log tab to pop-out the Director Log called "Open Director Log". This opens
+      a new window mimicing the Director Log and works the same. When this window
+      is closed, the contents of the log are copied to the Cruise Director Log
+      tab. 
 
-Also, change self.instrument to what you'd like.  The dropdown menu to choose
-the instrument is there but disconnected.  'HAWCFlight' is a special
-case that queries/looks for files in the specific way to get around how
-HAWC+ writes fits files
+To start the MET/TTL timers and start gathering data files, click the "Start"
+button. To end the program, use the "End" button. Upon confirmation of exiting,
+both the Director's Log and the Data Log are written to file once again, then
+ the window is closed. 
 
-It works best if you "Choose Output Filename" for the Cruise Director Log tab
-before you put anything in it to make sure your first comments are saved.
-Additionally, the "Data Log Output" file will only be written when new files
-arrive in the list.  So if you set the output file first, then point it to the
-directory, then it'll be guaranteed to write to the file the first run through.
-Any notes that you add won't be added until it finds a new file and adds that
-file to the list, which just needs some simple rewiring of the logic flow to
-make that not a pain like that.
-
-Description:
-============
-The main package is PyQt5, that handles all of the window and GUI things.  The
-nice thing about that is there's a GUI for making GUIs, QtCreator, that offers
-a drag-and-drop interface to do stuff.  Once you have your design you can use a
-simple command-line tool to take that GUI output and turn it into a python file
-that you can import into your project, and *then* and assign actions to all the
-different buttons.  That keeps the GUI divorced from the actions so you can
-move stuff around without having to actually change the meat of your code.
-
-'SOFIACruiseDirectorPanel.ui' is the actual GUI design file,
-'SOFIACruiseDirectorPanel.py' is the python automatically translated
-equivalent, and 'SOFIACruiseDirector.py' is where all the actions/magic
-happens.  There's an additional file 'newparse.py' that I wrote 
-to read and parse .mis files into python structures that I rolled into this as
-well since it was convenient.

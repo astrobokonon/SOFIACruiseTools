@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'FITSKeywordPanel.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -19,7 +19,6 @@ class Ui_FITSKWDialog(object):
         self.widget_4 = QtWidgets.QWidget(FITSKWDialog)
         self.widget_4.setObjectName("widget_4")
         self.gridLayout_13 = QtWidgets.QGridLayout(self.widget_4)
-        self.gridLayout_13.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_13.setObjectName("gridLayout_13")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_13.addItem(spacerItem, 0, 0, 1, 1)
@@ -27,11 +26,10 @@ class Ui_FITSKWDialog(object):
         self.fitskw_dialogbutts.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.fitskw_dialogbutts.setObjectName("fitskw_dialogbutts")
         self.gridLayout_13.addWidget(self.fitskw_dialogbutts, 0, 1, 1, 1)
-        self.gridLayout.addWidget(self.widget_4, 24, 0, 1, 2)
+        self.gridLayout.addWidget(self.widget_4, 23, 0, 1, 2)
         self.widget = QtWidgets.QWidget(FITSKWDialog)
         self.widget.setObjectName("widget")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.widget)
-        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.fitskw_hdu = QtWidgets.QSpinBox(self.widget)
         self.fitskw_hdu.setAlignment(QtCore.Qt.AlignCenter)
@@ -102,15 +100,6 @@ class Ui_FITSKWDialog(object):
         item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsEnabled)
         self.fitskw_listing.addItem(item)
         self.gridLayout.addWidget(self.fitskw_listing, 1, 0, 3, 1)
-        self.txt_fitskw_hint = QtWidgets.QLabel(FITSKWDialog)
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setUnderline(True)
-        font.setWeight(75)
-        self.txt_fitskw_hint.setFont(font)
-        self.txt_fitskw_hint.setAlignment(QtCore.Qt.AlignCenter)
-        self.txt_fitskw_hint.setObjectName("txt_fitskw_hint")
-        self.gridLayout.addWidget(self.txt_fitskw_hint, 4, 0, 1, 1)
 
         self.retranslateUi(FITSKWDialog)
         QtCore.QMetaObject.connectSlotsByName(FITSKWDialog)
@@ -141,5 +130,4 @@ class Ui_FITSKWDialog(object):
         item = self.fitskw_listing.item(6)
         item.setText(_translate("FITSKWDialog", "INSTRUME"))
         self.fitskw_listing.setSortingEnabled(__sortingEnabled)
-        self.txt_fitskw_hint.setText(_translate("FITSKWDialog", "Note: Drag and Drop Items to Reorder"))
 

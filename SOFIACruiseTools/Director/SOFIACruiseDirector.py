@@ -3,6 +3,21 @@
 Created on Wed Sep 16 16:40:05 2015
 
 @author: rhamilton
+
+Program to facilitate the logging of an observing run with SOFIA.
+Reads in a flight plan, parses out the legs of observations and targets.
+Displays relevant timers for flight/leg.
+Generates log files.
+
+Program is structured around two objects:
+  - SOFIACruiseDirectorApp: Main panel for the UI; everthing is based
+    around this
+  - FITSKeyWordDialog: Secondary panel allowing for interactive selection
+    of header keywords to use. Currently does nothing.
+
+Initialization of SOFIACruiseDirectorApp starts up the UI and begins the main
+loop, a function called showlcd connected to a QtTimer object.
+
 """
 # Regen the UI Py file via:
 #   pyuicX SOFIACruiseDirectorPanel.ui -o SOFIACruiseDirectorPanel.py
@@ -12,203 +27,76 @@ Created on Wed Sep 16 16:40:05 2015
 from __future__ import division, print_function, absolute_import
 
 import sys
-import csv
-import pytz
 import glob
 import fnmatch
 import datetime
-import itertools
-from os import listdir, walk
-from os.path import join, basename, getmtime
+import os
+import matplotlib
+matplotlib.use('QT5Agg')
+import configobj as co
+import pytz
+import logging
+import logging.config
+import subprocess
+import cartopy
+import psutil
+import threading
+import traceback
 
+from urllib.request import urlopen, URLError
 import numpy as np
 from PyQt5 import QtGui, QtCore, QtWidgets
-
-from .. import support as fpmis
-
-from . import FITSKeywordPanel as fkwp
-from . import SOFIACruiseDirectorPanel as scdp
 
 try:
     import astropy.io.fits as pyf
 except ImportError:
     import pyfits as pyf
 
-
-def headerList(infile, headerlist, HDU=0):
-    """
-    Given a FITS file and a list of header keywords of interest,
-    parse those two together and return the result as a tuple of
-    base filename and an sequential list of the keywords.
-    """
-    key = ''
-    bname = basename(infile)
-    try:
-        hed = pyf.getheader(infile, ext=HDU)
-    except:
-        hed = ' '
-
-    item = []
-    for key in headerlist:
-        try:
-            item.append(hed[key])
-        except:
-            item.append('')
-
-    return bname, item
+import SOFIACruiseTools.support.mis_parser as fpmis
+import SOFIACruiseTools.Director.SOFIACruiseDirectorPanel as scdp
+from SOFIACruiseTools.Director.flightMap import FlightMap
+from SOFIACruiseTools.Director.directorLog import DirectorLogDialog
+from SOFIACruiseTools.Director.startupApp import StartupApp
+from SOFIACruiseTools.Director.FITSKeyWordDialog import FITSKeyWordDialog
+from SOFIACruiseTools.Director.fitsHeader import FITSHeader
+from SOFIACruiseTools.Director.legTimer import LegTimerObj
 
 
-def headerDict(infile, headerlist, HDU=0):
-    """
-    Given a filename (with path), return a dict of the desired header
-    keywords.
-    """
-    item = {}
-    bname = basename(infile)
-
-    # NOTE: This isn't just called 'filename' beacuse I didn't want to risk
-    #   it getting clobbered if the user was actually interested in
-    #   a FITS keyword called "FILENAME" at some point in the future...
-    item['PhysicalFilename'] = bname
-    try:
-        hed = pyf.getheader(infile, ext=HDU)
-        failed = False
-    except:
-        failed = True
-
-    for key in headerlist:
-        if failed is False:
-            try:
-                item[key] = hed[key]
-            except:
-                item[key] = ''
+try:
+    from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
+except ImportError as e:
+    print('\nEncountered {0} while importint header checker: '
+          '\n\t{1}\n'.format(e.__class__.__name__, e))
+    # Check that the directory is not empty
+    target = './SOFIACruiseTools/header_checker/hcheck/file_checker.py'
+    if os.path.isfile(target):
+        # File exists, but not imported.
+        # Check if __init__.py exists
+        target = './SOFIACruiseTools/header_checker/__init__.py'
+        if os.path.isfile(target):
+            # Dunder init exists, but isn't being imported for some reason
+            raise ImportError('Unable to import header_checker')
         else:
-            item[key] = ''
-
-    return item
-
-
-class FITSKeyWordDialog(QtWidgets.QDialog, fkwp.Ui_FITSKWDialog):
-    def __init__(self, parent=None):
-        super(FITSKeyWordDialog, self).__init__(parent)
-
-        self.setupUi(self)
-
-        self.fitskw_add.clicked.connect(self.getkeywordfromuser)
-        self.fitskw_remove.clicked.connect(self.removekeywordfromlist)
-        self.fitskw_model = self.fitskw_listing.model()
-        self.fitskw_model.layoutChanged.connect(self.reorderedheadlist)
-
-        self.fitskw_savelist.clicked.connect(self.kwsavelist)
-        self.fitskw_loadlist.clicked.connect(self.kwloadlist)
-
-        self.fitskw_dialogbutts.accepted.connect(self.accept)
-        self.fitskw_dialogbutts.rejected.connect(self.reject)
-
-        self.utcnow = self.parent().utcnow
-
-        # Grab a few things from the parent widget to use here
-        self.headers = self.parentWidget().headers
-        self.fitshdu = self.parentWidget().fitshdu
-        self.reorderkwwidget()
-        self.updateheadlist()
-
-    def reorderedheadlist(self):
-        self.updateheadlist()
-        self.txt_fitskw_status.setText("Unsaved Changes!")
-
-    def kwsavelist(self):
-        self.selectKWFile(kind='save')
-        if self.kwname != '':
+            # Dunder init is not there. Make it and try import again
+            subprocess.call('touch {0}'.format(target), shell=True)
             try:
-                f = open(self.kwname, 'w')
-                writer = csv.writer(f)
-                rowdata = []
-                for column in range(len(self.headers)):
-                    if column is not None:
-                        rowdata.append(str(self.headers[column]))
-                    else:
-                        rowdata.append('')
-                writer.writerow(rowdata)
-                f.close()
-                statusline = "File Written: %s" % str(self.kwname)
-                self.txt_fitskw_status.setText(statusline)
-            except Exception as why:
-                print(str(why))
-                self.txt_fitskw_status.setText("ERROR WRITING TO FILE!")
+                from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
+            except ImportError:
+                raise ImportError('Unable to import header_checker')
+    else:
+        raise ImportError('Header checker directory is empty.\n'
+                          'Run:\n\tgit submodule update --init --recursive')
 
-    def kwloadlist(self):
-        self.selectKWFile(kind='load')
-        if self.kwname != '':
-            try:
-                f = open(self.kwname, 'r')
-                self.headers = []
-                reader = csv.reader(f)
-                for row in reader:
-                    self.headers.append(row)
-                statusline = "File Loaded: %s" % str(self.kwname)
-                self.txt_fitskw_status.setText(statusline)
-            except Exception as why:
-                print(str(why))
-                self.txt_fitskw_status.setText("ERROR READING THE FILE!")
-            finally:
-                f.close()
-                # Loading could have left us with a list of lists, so flatten
-                self.headers = list(itertools.chain(*self.headers))
-                self.reorderkwwidget()
 
-    def reorderkwwidget(self):
-        self.fitskw_listing.clear()
-        for key in self.headers:
-            self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(key))
-
-    def getkeywordfromuser(self):
-        text, ok = QtWidgets.QInputDialog.getText(self, "Add Keyword",
-                                                  "New Keyword:",
-                                                  QtWidgets.QLineEdit.Normal,
-                                                  QtCore.QDir.home().dirName())
-        text = str(text)
-        if ok and text != '':
-            text = text.strip()
-            text = text.upper()
-            self.fitskw_listing.addItem(QtWidgets.QListWidgetItem(text))
-            self.reorderkwwidget()
-            self.updateheadlist()
-            self.txt_fitskw_status.setText("Unsaved Changes!")
-
-    def removekeywordfromlist(self):
-        for it in self.fitskw_listing.selectedItems():
-            self.fitskw_listing.takeItem(self.fitskw_listing.row(it))
-        self.txt_fitskw_status.setText("Unsaved Changes!")
-        self.updateheadlist()
-        self.reorderkwwidget()
-
-    def selectKWFile(self, kind='save'):
-        """
-        Spawn the file chooser diaglog box and return the result, attempting
-        to both open and write to the file.
-
-        """
-        defaultname = "KWList_" + self.parentWidget().instrument +\
-            self.utcnow.strftime("_%Y%m%d.txt")
-        if kind == 'save':
-            self.kwname = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                                "Save File",
-                                                                defaultname)[0]
-        if kind == 'load':
-            self.kwname = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                                "Load File",
-                                                                defaultname)[0]
-
-    def updateheadlist(self):
-        self.headers = []
-        for j in range(self.fitskw_listing.count()):
-            ched = self.fitskw_listing.item(j).text()
-            self.headers.append(str(ched))
-        self.headers = [hlab.upper() for hlab in self.headers]
+class ConfigError(Exception):
+    """ Exception for errors in the config file """
+    pass
 
 
 class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
+    """
+    Main class for the Cruise Director
+    """
     def __init__(self):
         # Since the SOFIACruiseDirectorPanel file will be overwritten each time
         #   we change something in the design and recreate it, we will not be
@@ -220,851 +108,1817 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
 
         self.setupUi(self)
 
+        #config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+        #                                                           'log.conf')
+        #logging.config.fileConfig(config_file)
+        #self.logger = logging.getLogger('default')
+
+        self.logger = logging.getLogger('default')
+        self.logger.info('Read in log default')
+
+        self.perform_logger = logging.getLogger('perform')
+        self.perform_logger.info('Cruise Director/System performance log')
+
+        self.process = psutil.Process(os.getpid())
+        self.threadpool = QtCore.QThreadPool()
+        self.worker = None
+        self.worker_start_time = None
+        self.worker_running = False
+
+        self.pass_style = 'QLabel { color : black; }'
+        self.warn_style = 'QLabel { color : orange; }'
+        self.fail_style = 'QLabel { color : red; }'
+
         # Some constants/tracking variables and various defaults
-        self.legpos = 0
-        self.successparse = False
-        self.toggle_legparam_values_off()
-        self.metcounting = False
-        self.ttlcounting = False
-        self.legcounting = False
-        self.legcountingstopped = False
-        self.doLegCountRemaining = True
-        self.doLegCountElapsed = False
-        self.outputname = ''
-        self.localtz = pytz.timezone('US/Pacific')
-        self.setDateTimeEditBoxes()
-        self.txt_met.setText("+00:00:00 MET")
-        self.txt_ttl.setText("+00:00:00 TTL")
-        # Is a list really the best way of handling this? Don't know yet.
-        self.CruiseLog = []
-        self.startdatalog = False
+        self.leg_pos = 0
+        self.success_parse = False
+        self.toggle_leg_param_values_off()
+        self.met_counting = False
+        self.ttl_counting = False
+        self.leg_count_remaining = True
+        self.output_name = ''
+        self.local_timezone = 'US/Pacific'
+        self.localtz = pytz.timezone(self.local_timezone)
+        self.set_date_time_edit_boxes()
+        self.txt_met.setText('+00:00:00 MET')
+        self.txt_ttl.setText('+00:00:00 TTL')
+        self.data = FITSHeader()
+        self.required_fields = ['NOTES', 'BADCAL', 'HEADER_CHECK']
+
+        date = datetime.datetime.utcnow().strftime('%Y%m%d')
+        self.header_check_warnings = 'header_check_{0:s}.log'.format(date)
+        with open(self.header_check_warnings, 'w'):
+            pass
+
+        self.leg_timer = LegTimerObj()
+        self.leg_timer.init_duration = None
+
+        self.good_connection = True
+        self.network_status_health = True
+
+        self.cruise_log = []
+        self.start_data_log = False
         self.data_current = []
         self.data_previous = []
-        self.datatable = []
-        self.datafilenames = []
-        self.logoutnme = ''
+        self.data_table = []
+        self.data_filenames = []
+        self.log_out_name = ''
         self.headers = []
-        self.fitshdu = 0
-#        self.instrument = 'FLITECAM'
-#        self.headers = ['object', 'aor_id', 'exptime', 'itime', 'co_adds',
-#                        'spectel1', 'spectel2', 'fcfilta', 'fcfiltb',
-#                        'date-obs', 'time_gps', 'sibs_x', 'sibs_y', 'nodcrsys',
-#                        'nodangle', 'nodamp', 'nodbeam', 'dthpatt', 'dthnpos',
-#                        'dthindex', 'dthxoff', 'dthyoff', 'dthoffs',
-#                        'dthcrsys', 'telra', 'teldec', 'tellos', 'telrof',
-#                        'telvpa', "BBMODE", "CBMODE", "BGRESETS", "GRSTCNT",
-#                        'missn-id', 'instcfg', 'instmode']
+        self.fits_hdu = 0
 
-        # HAWC instrument name and headers
-        # Use HAWCFlight to support current SI file storage method
-#        self.instrument = 'HAWC'
-#        self.instrument = 'HAWCFlight'
-#        self.headers = ['date-obs', 'object', 'mccsmode',
-#                        'spectel1', 'spectel2',
-#                        'instcfg', 'instmode', 'obsmode', 'scnpatt',
-#                        'calmode', 'exptime', 'nodtime', 'fcstoff',
-#                        'chpamp1', 'chpamp2', 'chpfreq',
-#                        'chpangle', 'chpcrsys', 'nodangle', 'nodcrsys',
-#                        'aor_id', 'dthindex', 'dthnpos',
-#                        'dthxoff', 'dthyoff', 'dthscale', 'dthunit',
-#                        'dthcrsys', 'scnrate', 'scncrsys', 'scniters',
-#                        'scnanglc', 'scnampel', 'scnampxl', 'scnfqrat',
-#                        'scnphase', 'scntoff', 'scnnsubs', 'scnlen',
-#                        'scnstep', 'scnsteps', 'scncross',
-#                        'intcalv', 'diag_hz',
-#                        'nhwp', 'hwpstart',
-#                        'telra', 'teldec', 'telvpa',
-#                        'obsra', 'obsdec', 'objra', 'objdec',
-#                        'za_start', 'za_end', 'focus_st', 'focus_en',
-#                        'utcstart', 'utcend',
-#                        'missn-id']
-
-        # FIFI-LS instrument name and headers
-        self.instrument = 'FIFI-LS'
-        self.headers = ["DATE-OBS", "AOR_ID", "OBJECT", "EXPTIME",
-                        "OBSRA", "OBSDEC", "DETCHAN", "DICHROIC",
-                        "ALTI_STA", "ZA_START", "NODSTYLE", "NODBEAM",
-                        "DLAM_MAP", "DBET_MAP", "DET_ANGL",
-                        "OBSLAM", "OBSBET", "G_WAVE_B", "G_WAVE_R"]
-
+        # Set the default instrument and FITS headers
+        self.last_instrument_index = -1
         # Things are easier if the keywords are always in CAPS
-        self.headers = [each.upper() for each in self.headers]
-        # The addition of the NOTES column happens in here
-        self.updatetablecols()
+        # The addition of the notes column happens in here
+        self.update_table_cols()
+
+        # Variables previously defined in function
+        self.data_log_dir = ''
+        self.takeoff = None
+        self.landing = None
+        self.utc_now = None
+        self.utc_now_str = None
+        self.utc_now_datetime_str = None
+        self.local_now = None
+        self.local_now_str = None
+        self.local_now_datetime_str = None
+        self.met = None
+        self.met_str = None
+        self.ttl = None
+        self.ttl_str = None
+        self.instrument = ''
+        self.new_files = None
+        self.leg_info = None
+        self.fname = None
+        self.err_msg = None
+        self.kwname = None
+        self.new_headers = None
+        self.flight_info = None
+        self.checker = fc.FileChecker()
+        self.checker_rules = None
+        self.network_status = True
+        self.network_status_hold = False
+        self.network_status_control = True
+        self.dns_check = 0
+        self.file_check = 1
+        self.sample_rate = 2
+        self.map_width = 15
+        self.marker_size = 10
+        self.update_freq = 5
+        self.perf_count = 0
+        self.loop_count = 0
+        self.small_map_count = 0
+        self.small_map_update_count = 60
+
+        # Read config file
+        try:
+            config_file = os.path.join(os.path.dirname(
+                                       os.path.dirname(
+                                       os.path.dirname(__file__))),
+                                       'director.ini')
+            self.logger.info('Reading configuration file {}'.format(config_file))
+            self.config = co.ConfigObj(config_file)
+        except co.ConfigObjError:
+            message = ('Cannot parse config file director.ini\n'
+                       'Verify it is in the correct location '
+                       'and formatted correctly.')
+            raise co.ConfigObjError(message)
+
+        self.verify_config()
 
         # Looks prettier with this stuff
-        self.table_datalog.resizeColumnsToContents()
-        self.table_datalog.resizeRowsToContents()
+        self.table_data_log.resizeColumnsToContents()
+        self.table_data_log.resizeRowsToContents()
+        # Resize the Notes column, which should be
+        # first column
+        self.table_data_log.setColumnWidth(1, 10)
 
         # Actually show the table
-        self.table_datalog.show()
+        self.table_data_log.show()
 
-        # Hooking up the various buttons to their actions to take
+        # Connect a signal to catch when the items in the table change
+        self.table_data_log.itemChanged.connect(self.table_update)
+
+        ####
+        # Set up buttons
+        ####
+        self.logger.info('Starting button setup')
+
+        self.toggle_network.clicked.connect(self.manual_toggle_network)
+
+        # Control buttons
+        self.setup_button.clicked.connect(self.setup)
+        self.start_button.clicked.connect(self.start_run)
+        self.end_button.clicked.connect(self.end_run)
+
         # Open the file chooser for the flight plan input
-        self.flightplan_openfile.clicked.connect(self.selectInputFile)
         # Flight plan progression
-        self.leg_previous.clicked.connect(self.prevLeg)
-        self.leg_next.clicked.connect(self.nextLeg)
+        self.leg_previous.clicked.connect(self.prev_leg)
+        self.leg_next.clicked.connect(self.next_leg)
         # Start the flight progression timers
-        self.set_takeoff_time.clicked.connect(self.settakeoff)
-        self.set_landing_time.clicked.connect(self.setlanding)
-        self.set_takeofflanding.clicked.connect(self.settakeoffandlanding)
+        self.set_takeoff_time.clicked.connect(lambda: self.flight_timer('met'))
+        self.set_landing_time.clicked.connect(lambda: self.flight_timer('ttl'))
+        self.set_takeoff_landing.clicked.connect(lambda:
+                                                 self.flight_timer('both'))
+
         # Leg timer control
-        self.leg_timer_start.clicked.connect(self.startlegtimer)
-        self.leg_timer_stop.clicked.connect(self.stoplegtimer)
-        self.leg_timer_reset.clicked.connect(self.resetlegtimer)
-        # Leg timer counting type (radio buttons)
-        self.time_select_remaining.clicked.connect(self.countremaining)
-        self.time_select_elapsed.clicked.connect(self.countelapsed)
+        self.time_select_remaining.clicked.connect(lambda:
+                                                   self.count_direction('remain'))
+        self.time_select_elapsed.clicked.connect(lambda:
+                                                 self.count_direction('elapse'))
+        self.leg_timer_start.clicked.connect(lambda:
+                                             self.leg_timer.control_timer('start'))
+        self.leg_timer_stop.clicked.connect(lambda:
+                                            self.leg_timer.control_timer('stop'))
+        #self.leg_timer_reset.clicked.connect(lambda:
+        #                                     self.leg_timer.control_timer('reset'))
+        self.leg_timer_reset.clicked.connect(lambda:
+                                             self.update_duration(reset=True))
+        self.add_minute.clicked.connect(lambda:
+                                        self.leg_timer.minute_adjust('add'))
+        self.sub_minute.clicked.connect(lambda:
+                                        self.leg_timer.minute_adjust('sub'))
+        self.leg_timer_update.clicked.connect(self.update_duration)
+        #self.leg_duration.timeChanged(self.update_duration())
+
         # Text log stuff
-        self.log_post.clicked.connect(self.postlogline)
-        self.log_inputline.returnPressed.connect(self.postlogline)
+        self.log_input_line.returnPressed.connect(lambda: self.mark_message('post'))
+        self.open_director_log.clicked.connect(self.popout_director_log)
 
-        self.log_quick_faultmccs.clicked.connect(self.mark_faultmccs)
-        self.log_quick_faultsi.clicked.connect(self.mark_faultsi)
-        self.log_quick_landing.clicked.connect(self.mark_landing)
-        self.log_quick_onheading.clicked.connect(self.mark_onheading)
-        self.log_quick_ontarget.clicked.connect(self.mark_ontarget)
-        self.log_quick_takeoff.clicked.connect(self.mark_takeoff)
-        self.log_quick_turning.clicked.connect(self.mark_turning)
-        self.log_save.clicked.connect(self.selectOutputFile)
+        self.open_map.clicked.connect(self.open_flight_map)
 
-        self.datalog_opendir.clicked.connect(self.selectDir)
-        self.datalog_savefile.clicked.connect(self.selectLogOutputFile)
-        self.datalog_forcewrite.clicked.connect(self.writedatalog)
-        self.datalog_forceupdate.clicked.connect(self.updateDatalog)
-        self.datalog_editkeywords.clicked.connect(self.spawnkwwindow)
-        self.datalog_addrow.clicked.connect(self.adddatalogrow)
-        self.datalog_deleterow.clicked.connect(self.deldatalogrow)
-        # Add an action that detects when a cell is changed by the user
-        #  in table_datalog!
+        self.log_fault_mccs.clicked.connect(lambda: self.mark_message('mccs'))
+        self.log_fault_si.clicked.connect(lambda: self.mark_message('si'))
+        self.log_landing.clicked.connect(lambda: self.mark_message('land'))
+        self.log_on_heading.clicked.connect(lambda: self.mark_message('head'))
+        self.log_on_target.clicked.connect(lambda: self.mark_message('target'))
+        self.log_takeoff.clicked.connect(lambda: self.mark_message('takeoff'))
+        self.log_turning.clicked.connect(lambda: self.mark_message('turn'))
+        self.log_post.clicked.connect(lambda: self.mark_message('post'))
+        self.log_ignore.clicked.connect(lambda: self.mark_message('ignore'))
 
+        self.data_log_flag_file.clicked.connect(self.flag_file)
+        self.data_log_force_update.clicked.connect(self.fill_blanks)
+        self.data_log_edit_keywords.clicked.connect(self.spawn_kw_window)
+        self.data_log_add_row.clicked.connect(self.add_data_log_row)
+        self.data_log_delete_row.clicked.connect(self.del_data_log_row)
+
+        # Hide buttons that aren't needed anymore due to setup prompt
+        self.set_takeoff_time.hide()
+        self.set_landing_time.hide()
+        self.set_takeoff_landing.hide()
+
+
+        # Run the setup prompt
+        self.logger.info('Running setup prompt')
+        self.update_times()
+        self.setup()
+
+        if self.flight_info:
+            self.setup_leg_map()
+            self.plot_leg()
+
+        self.logger.info('Starting loop')
         # Generic timer setup stuff
         timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.showlcd)
+        # Set up the time to run self.showlcd() every 500 ms
+        timer.timeout.connect(self.show_lcd)
         timer.start(500)
-        self.showlcd()
+        self.show_lcd()
 
-    def spawnkwwindow(self):
+    def setup_leg_map(self):
+        """Set up the small map of the current leg."""
+        code_location = os.path.dirname(os.path.realpath(__file__))
+        cartopy.config['pre_existing_data_dir'] = os.path.join(code_location,
+                                                               'maps')
+
+        steps = self.flight_info.steps.points[self.flight_info.steps.points[
+                                                  'leg_num'] == self.leg_pos+1]
+
+        standard_longitudes = np.arange(-180, 181, 5)
+        med_lat = np.median(steps['latitude'])
+        med_lon = np.median(steps['longitude'])
+
+        # Extra degrees to pad map
+        extent = (np.min(steps['longitude'])-self.map_width,
+                  np.max(steps['longitude'])+self.map_width,
+                  np.min(steps['latitude'])-self.map_width,
+                  np.max(steps['latitude'])+self.map_width)
+
+        ortho = cartopy.crs.Orthographic(central_latitude=med_lat,
+                                         central_longitude=med_lon)
+        self.leg_map.canvas.figure.clf()
+        pos = [0.01, 0.01, 0.98, 0.98]    # left, bottom, width, height
+        self.leg_map.canvas.ax = self.leg_map.canvas.figure.add_subplot(111,
+                                                                 projection=ortho,
+                                                                 position=pos)
+        # Set limits
+        self.leg_map.canvas.ax.set_extent(extent)
+        # Turn on coastlines and other geographic features
+        self.leg_map.canvas.ax.coastlines(resolution='110m',
+                                                  edgecolor='red',
+                                                  linewidth=0.75)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.OCEAN)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.LAND)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.LAKES)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.BORDERS,
+                                                   edgecolor='red',
+                                                   linewidth=0.75)
+        # self.leg_map.canvas.ax.add_feature(cartopy.feature.COASTLINE)
+        self.leg_map.canvas.ax.add_feature(cartopy.feature.RIVERS)
+        states_name = 'admin_1_states_provinces_lakes_shp'
+        states = cartopy.feature.NaturalEarthFeature(category='cultural',
+                                                     name=states_name,
+                                                     scale='110m',
+                                                     facecolor='none')
+        self.leg_map.canvas.ax.add_feature(states, edgecolor='black',
+                                                   linewidth=0.75)
+        # self.leg_map.canvas.ax.coastlines(color='black')
+
+        # Set up plot parameters
+        gl = self.leg_map.canvas.ax.gridlines(color='k', linestyle='--',
+                                                      linewidth=0.2)
+        gl.xlocation = matplotlib.ticker.FixedLocator(standard_longitudes)
+        gl.xformatter = cartopy.mpl.gridliner.LONGITUDE_FORMATTER
+        gl.yformatter = cartopy.mpl.gridliner.LATITUDE_FORMATTER
+
+        self.leg_map.canvas.draw()
+
+    def plot_leg(self, current=True):
+
+        #steps = self.flight_info.steps.points[self.flight_info.steps.points[
+        #                                          'leg_num'] == self.leg_pos+1]
+        steps = self.flight_info.steps.points['leg_num'] == self.leg_pos+1
+        try:
+            self.leg_map.canvas.ax.plot(self.flight_info.steps.points[steps]['longitude'],
+                                        self.flight_info.steps.points[steps]['latitude'],
+                                        color='orchid',
+                                        linewidth=1.5,
+                                        transform=cartopy.crs.Geodetic())
+        except ValueError:
+            self.setup_leg_map()
+            self.leg_map.canvas.ax.plot(self.flight_info.steps.points[steps]['longitude'],
+                                        self.flight_info.steps.points[steps]['latitude'],
+                                        color='orchid',
+                                        linewidth=1.5,
+                                        transform=cartopy.crs.Geodetic())
+        self.leg_map.canvas.draw()
+
+    def verify_config(self):
+        """Checks the config file director.ini
+
+        The config file is read in during __init__, this verifies
+        the correct formatting of the file. If new keys or values are
+        added, this method needs to be updated.
+
+        Raises
+        ------
+        ConfigError
+            If any rules are violated
+        """
+        self.logger.info('Verifying config file')
+        # Verify config is not empty
+        if not self.config:
+            raise ConfigError('Config empty. Verify director.ini'
+                              ' is present and correctly formatted.')
+        # Verify that all sections are present
+        required_sections = ['keywords', 'search', 'sort',
+                             'ttl_timer_hour_warnings',
+                             'leg_timer_minute_warnings',
+                             'network_test', 'flight_map']
+        if len(required_sections) != len(self.config.keys()):
+            raise ConfigError('Config missing keys')
+        if set(required_sections) != set(self.config.keys()):
+            raise ConfigError('Config missing keys')
+
+        # Verify search methods are valid (either glob or walk)
+        valid_methods = 'glob walk'.split()
+        for instrument in self.config['search'].keys():
+            method = self.config['search'][instrument]['method']
+            if method not in valid_methods:
+                raise ConfigError('Invalid search method for'
+                                  ' {0:s}'.format(instrument))
+
+        # Verify sort methods are valid (either name or time)
+        valid_methods = 'name time'.split()
+        for instrument in self.config['sort'].keys():
+            method = self.config['sort'][instrument]
+            if method not in valid_methods:
+                raise ConfigError('Invalid sort method for'
+                                  ' {0:s}'.format(instrument))
+
+        # Verify first timer warning is longer than the second
+        # timer warning for both TTL and leg timers
+        try:
+            first = float(self.config['ttl_timer_hour_warnings']['first'])
+            second = float(self.config['ttl_timer_hour_warnings']['second'])
+        except ValueError:
+            raise ConfigError('Config TTL warnings must be numbers')
+        else:
+            if first < second:
+                raise ConfigError('Config TTL timer warnings error: '
+                                  'Second longer than first')
+        try:
+            first = float(self.config['leg_timer_minute_warnings']['first'])
+            second = float(self.config['leg_timer_minute_warnings']['second'])
+        except ValueError:
+            raise ConfigError('Config leg warnings must be numbers')
+        else:
+            if first < second:
+                raise ConfigError('Config leg timer warnings error: '
+                                  'Second longer than first')
+
+        # Check network test flags
+        try:
+            self.dns_check = int(self.config['network_test']['dns_check'])
+            self.file_check = int(self.config['network_test']['file_check'])
+            self.timeout = float(self.config['network_test']['timeout'])
+        except ValueError:
+            raise ConfigError('Unable to parse network_test settings')
+
+        # Check map size setting
+        try:
+            self.map_width = float(self.config['flight_map']['width'])
+            self.marker_size = float(self.config['flight_map']['marker_size'])
+            self.sample_rate = int(self.config['flight_map']['sample_rate'])
+            self.update_freq = float(self.config['flight_map']['update_freq'])
+        except ValueError:
+            raise ConfigError('Unable to parse flight map settings.')
+
+        # Calculate the small map update rate
+        flight_map_update_time = self.update_freq * 1000
+        self.small_map_update_count = int(flight_map_update_time / 500)
+
+        self.logger.info('Configuration file passes')
+
+    def popout_director_log(self):
+        """Open the director log in separate window."""
+        self.logger.info('Opened director log in popout window')
+        DirectorLogDialog(self)
+
+    def open_flight_map(self):
+        """Open the flight map in popout window."""
+        self.logger.info('Opened the flight map')
+        self.flight_map_dialog = FlightMap(self)
+        self.flight_map_dialog.show()
+
+    def flag_file(self):
+        """
+        Update "BADCAL" flag for the selected row.
+
+        When the "Flag File" on the Data Log tab is pressed, the "BADCAL" value
+        for the selected row is set to "FLAG" in both the table and the
+        background data structure.
+        """
+        row = self.table_data_log.currentRow()
+        fname = self.data_filenames[row]
+        self.logger.debug('Flagging bad calibration for %s' % fname)
+        flag_text = 'FLAG'
+        flag_col = 'BADCAL'
+        if self.data.header_vals[fname][flag_col]:
+            flag_text = '{0:s}, {1:s}'.format(self.data.header_vals[fname][flag_col],
+                                              flag_text)
+            self.data.header_vals[fname][flag_col] = flag_text
+        else:
+            self.data.header_vals[fname][flag_col] = flag_text
+
+        # Change the QtTable
+        for column in range(self.table_data_log.columnCount()):
+            header_text = self.table_data_log.horizontalHeaderItem(column).text()
+            if header_text == 'BADCAL':
+                self.table_data_log.setItem(row, column,
+                                            QtWidgets.QTableWidgetItem(flag_text))
+        # Update the widget with the new values
+        self.repopulate_data_log()
+
+    def fill_blanks(self):
+        """
+        Fills blanks in QtTableWidget
+
+        Loops through the files in the background data structure and
+        calls the fill_data_blank_cells method of the FITSHeader class
+        to verify all header values that can be filled for the file are
+        filled. Most useful for when a new FITS header keyword is added
+        during the flight and previous observations need to be updated.
+        """
+        for fname in self.data.header_vals:
+            filename = os.path.join(self.data_log_dir, fname)
+            self.data.fill_data_blank_cells(filename, self.headers, self.fits_hdu)
+        self.repopulate_data_log()
+
+    def table_update(self, item):
+        """
+        Updates the data structure when the table is changed by the user
+
+        This is called automatically whenever the QtTableWidget detects a
+        change to its contents. Most likely this is due to a user manually
+        changing a cell in the table. Gets the new value from the QtTableWidget
+        and updates the background data structure.
+        """
+        # Change the value
+        fname = self.table_data_log.verticalHeaderItem(item.row()).text()
+        hkey = self.table_data_log.horizontalHeaderItem(item.column()).text()
+        self.data.header_vals[fname][hkey] = item.text()
+
+    def setup(self):
+        """
+        Prompts user for files needed to run program.
+
+        Opens a dialog and prompts the user for the flight plan, location
+        of data, where to write the data log to, where to write the director's
+        log to, and the option to change the FITS keywords to use.
+        """
+
+        # Open the dialog
+        window = StartupApp(self)
+
+        screenShape = QtWidgets.QDesktopWidget().screenGeometry()
+        new_w = screenShape.width()*0.35
+        new_h = screenShape.height()*0.6
+
+        window.resize(new_w, new_h)
+
+        result = window.exec_()
+
+        if result:
+            self.logger.info('Successful setup pane')
+            self.logger.info('Flight plan: %s' % window.fname)
+            # Parse the results of the dialog.
+            if not window.fname:
+                self.flight_plan_filename.setStyleSheet(self.warn_style)
+
+            # Local timezone
+            # Do this first so the flight plan times are parsed
+            # with the correct timezone
+            self.local_timezone = window.local_timezone
+            self.localtz = pytz.timezone(self.local_timezone)
+            self.logger.info('Timeszone set to {}'.format(self.localtz))
+
+            # Parse the flight plan
+            self.parse_flight_file(window.fname)
+            #self.flight_info = window.flight_info
+
+            # Instrument
+            self.instrument = window.instrument
+            self.instrument_text.setText(self.instrument)
+            self.logger.info('Instrument set to {}'.format(self.instrument))
+            #self.checker_rules = self.checker.choose_rules(self.instrument)
+
+            # Data headers
+            # Get the headers and set up the QtTableWidget
+            self.headers = window.headers
+            self.update_table_cols()
+            self.table_data_log.resizeColumnsToContents()
+            self.table_data_log.resizeRowsToContents()
+
+            # Cruise Director Log filename
+            # If this hasn't been set, change text to red as this
+            # is required for the program to run
+            if window.dirlog_name:
+                self.output_name = window.dirlog_name
+                self.txt_log_output_name.setText('{0:s}'.format(
+                    os.path.basename(str(self.output_name))))
+                self.txt_log_output_name.setStyleSheet(self.pass_style)
+                self.logger.info('Director log output sent to {}'.format(
+                    self.output_name))
+            else:
+                self.logger.warning('Director Log name not set')
+                self.txt_log_output_name.setStyleSheet(self.fail_style)
+                return
+
+            # Location of data
+            if window.data_dir:
+                self.data_log_dir = window.data_dir
+                self.txt_data_log_dir.setText('{0:s}'.format(self.data_log_dir))
+                # Select header checker rules
+                self.choose_head_check_rules()
+                self.logger.info('Data location set to {}'.format(self.data_log_dir))
+            else:
+                self.logger.warning('Data location not set')
+
+            # Data Log filename
+            if window.datalog_name:
+                self.log_out_name = window.datalog_name
+                self.txt_data_log_save_file.setText('{0:s}'.format(
+                    os.path.basename(str(self.log_out_name))))
+                self.txt_data_log_save_file.setStyleSheet(self.pass_style)
+                self.logger.info('Data log output sent to {}'.format(
+                    self.log_out_name))
+            else:
+                self.logger.warning('Data log output not set; Will not store data '
+                                    'results')
+
+            # Log append flags
+            if window.append_data_log:
+                # Check file exists
+                if os.path.isfile(self.log_out_name):
+                    self.data.add_images_from_log(self.log_out_name, self.headers)
+                    self.update_table(append_init=True)
+                    #self.txt_data_log_save_file.setStyleSheet(self.pass_style)
+                else:
+                    self.logger.info('Data Log {} does not exist! Cannot '
+                                      'append'.format(self.log_out_name))
+                    #self.txt_data_log_save_file.setText('{} does not '
+                    #                                    'exist'.format(
+                    #                                     self.log_out_name))
+                    #self.txt_data_log_save_file.setStyleSheet(self.fail_style)
+            if window.append_director_log:
+                # Check that file exists:
+                if os.path.isfile(self.output_name):
+                    self.read_director_log()
+                    self.txt_log_output_name.setStyleSheet(self.pass_style)
+                else:
+                    self.logger.info('Director Log {} does not exist! Cannot '
+                                      'append'.format(self.output_name))
+                    #self.txt_log_output_name.setText('{} does not '
+                    #                                 'exist'.format(
+                    #                                  self.output_name))
+                    #self.txt_log_output_name.setStyleSheet(self.fail_style)
+
+    def choose_head_check_rules(self, data_file=None):
+        """
+        Selects the rules for checking header values.
+        """
+        if not data_file:
+            self.logger.debug('Setting header checker rules, no data file provided')
+            # Get a sample fits file from data directory
+            config = self.config['search'][self.instrument]
+            # Get the current list of FITS files in the location
+            if config['method'] == 'glob':
+                pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
+                                                 config['extension'])
+                data_files = glob.glob(pattern)
+                if data_files:
+                    data_file = data_files[0]
+                    self.logger.debug('Found data_file {} using glob'.format(
+                        data_file))
+                else:
+                    self.checker_rules = None
+                    self.logger.debug('Could not find a data file using glob')
+                    return
+
+            elif config['method'] == 'walk':
+                pattern = '*.{0:s}'.format(config['extension'])
+                for root, _, filenames in os.walk(str(self.data_log_dir)):
+                    for filename in fnmatch.filter(filenames, pattern):
+                        data_file = os.path.join(root, filename)
+                        self.logger.debug('Found data file {} using walk'.format(
+                            data_file))
+                        break
+                    break
+            else:
+                # Unknown method
+                self.logger.warning('Unknown method {0:s} for instrument '
+                                    '{1:s}'.format(config['method'],
+                                                   self.instrument))
+                self.checker_rules = None
+                return
+
+        if self.network_status_health:
+            self.logger.debug('Selecting header checking rules for {}'.format(data_file))
+            # Pass it to self.checker.choose_rules
+            rule = self.checker.choose_rules(data_file)
+            self.logger.debug('Selected {}'.format(rule))
+        else:
+            self.logger.debug('Network bad, not checking for rules')
+
+        # Set return value to self.checker_rules
+        self.checker_rules = rule
+
+    def start_run(self):
+        """
+        Starts the inner workings of the program.
+
+        Flips the flags so the code starts looking for FITS files
+        and starts the flight timers, but only if the Director Log
+        output has been set up properly
+        """
+        if self.output_name:
+            self.logger.info('Starting full operations')
+            # Start collecting data
+            self.start_data_log = True
+            # Start MET and TTL timers
+            self.flight_timer('both')
+            self.instrument_text.setText(self.instrument)
+        else:
+            self.txt_log_output_name.setStyleSheet(self.fail_style)
+
+    def end_run(self):
+        """
+        Ends the program
+
+        Prompts the user for confirmation. If yes, write the data log and
+        director log to file once again for good measure. Then close
+        the app.
+        """
+        choice = QtWidgets.QMessageBox.question(self, 'Confirm',
+                                                'Quit Cruise Director?',
+                                                QtWidgets.QMessageBox.Yes |
+                                                QtWidgets.QMessageBox.No)
+        if choice == QtWidgets.QMessageBox.Yes:
+            self.logger.info('Ending program, begin writing logs')
+            # Write the data log and director log one last time
+            self.data.write_to_file(self.log_out_name, self.headers)
+            self.logger.info('Data log written')
+            self.write_director_log()
+            self.logger.info('Director log written')
+            # Close the app
+            self.logger.info('Closing Cruise Director')
+            self.close()
+
+    def spawn_kw_window(self):
+        """
+        Opens the FITS Keywords select window.
+
+        Called when the 'Edit Keywords...' button on the Data Log tab
+        is pressed.
+        """
+        self.logger.debug('Opening keyword selector')
         window = FITSKeyWordDialog(self)
+        # Open the FITS keyword dialog. The result is one if
+        # the window is closed by pushing the okay button and
+        # zero if the window is closed by pushing the
+        # cancel button.
         result = window.exec_()
         if result == 1:
-            self.fitshdu = np.int(window.fitskw_hdu.value())
-            self.newheaders = window.headers
-            print(self.newheaders)
+            self.fits_hdu = np.int(window.fitskw_hdu.value())
+            self.new_headers = window.headers
+            for i, require in enumerate(self.required_fields):
+                if require not in self.new_headers:
+                    self.new_headers.insert(i, require)
 
-            # NOT WORKING YET
             # Update the column data itself if we're actually logging
-            if self.startdatalog is True:
-                self.repopulateDatalog(rescan=False)
+            if self.start_data_log is True:
+                self.repopulate_data_log(rescan=True)
 
-        # Explicitly kill it
-#        del window
+    def update_table_cols(self):
+        """Updates the columns in the QTable Widget in the Data Log tab.
 
-    def updatetablecols(self):
-        # This always puts the NOTES col. right next to the filename
-        self.table_datalog.insertColumn(0)
+        Called initially when the window is first opened and again if the
+        FITS keywords are changed. Due to the weird way the QtTableWidget
+        works, the best way is to completely clear the table then remake it.
+        """
+
+        self.logger.debug('Updating data table columns in widget')
+        # Clear the table
+        self.table_data_log.setColumnCount(0)
+        self.table_data_log.setRowCount(0)
 
         # Add the number of columns we'll need for the header keys given
-        for hkey in self.headers:
-            colPosition = self.table_datalog.columnCount()
-            self.table_datalog.insertColumn(colPosition)
-        self.table_datalog.setHorizontalHeaderLabels(['NOTES'] + self.headers)
+        for _ in self.headers:
+            col_position = self.table_data_log.columnCount()
+            self.table_data_log.insertColumn(col_position)
+        self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
-    def selectDir(self):
-        dtxt = 'Select Data Directory'
-        self.datalogdir = QtWidgets.QFileDialog.getExistingDirectory(self, dtxt)
-        if self.datalogdir != '':
-            self.txt_datalogdir.setText(self.datalogdir)
-            self.startdatalog = True
+    def line_stamper(self, line):
+        """Update the Cruise Director Log
 
-    def linestamper(self, line):
-        timestamp = datetime.datetime.utcnow()
-        timestamp = timestamp.replace(microsecond=0)
-        stampedline = timestamp.isoformat() + "> " + line
-        self.CruiseLog.append(stampedline + '\n')
-        self.log_display.append(stampedline)
-        if self.outputname != '':
+        Appends a string given by line to the Director Log after
+        it has been properly formatted by adding the UTC time and data
+        stamp to the beginning. The line is added to both the GUI Log
+        and the background list.
+
+        Parameters
+        ----------
+        line : str
+            The line to append to the log.
+        """
+        self.logger.debug('Appending to director log: {}'.format(line))
+
+        # Format log line
+        time_stamp = datetime.datetime.utcnow()
+        time_stamp = time_stamp.replace(microsecond=0)
+        stamped_line = '{0:s}> {1:s}'.format(time_stamp.isoformat(), line)
+
+        # Write the log line to the cruise_log and log_display
+        # cruise_log is a list
+        # log_display is a QtWidgets.QTextEdit object
+        self.cruise_log.append(stamped_line + '\n')
+        self.log_display.append(stamped_line)
+        self.write_director_log()
+
+    def write_director_log(self):
+        """Write the cruise_log to file.
+
+        Dumps the contents of the background list, cruise_log, to
+        the file specified by output_name. If any error occurs,
+        change the name of the output file on the GUI to an error
+        message.
+        """
+        self.logger.debug('Writing director log to file')
+        if self.output_name:
             try:
-                f = open(self.outputname, 'w')
-                f.writelines(self.CruiseLog)
-                f.close()
-            except Exception:
-                self.txt_logoutputname.setText("ERROR WRITING TO FILE!")
+                with open(self.output_name, 'w') as f:
+                    f.writelines(self.cruise_log)
+            except IOError as e:
+                self.logger.error('Cannot write director log to file:\n\t{}'.format(
+                                  e))
+                self.txt_log_output_name.setText('ERROR WRITING TO FILE!')
 
-    def mark_faultmccs(self):
-        line = "MCCS fault encountered"
-        self.linestamper(line)
+    def read_director_log(self):
+        """Read in existing director log.
 
-    def mark_faultsi(self):
-        line = "SI fault encountered"
-        self.linestamper(line)
+        Called if the user wants to append an existing director log
+        to the new log.
 
-    def mark_landing(self):
-        line = "End of flight, packing up and sitting down"
-        self.linestamper(line)
-
-    def mark_onheading(self):
-        line = "On heading, TOs setting up"
-        self.linestamper(line)
-
-    def mark_ontarget(self):
-        line = "On target, SI taking over"
-        self.linestamper(line)
-
-    def mark_takeoff(self):
-        line = "Beginning of flight, getting set up"
-        self.linestamper(line)
-
-    def mark_turning(self):
-        line = "Turning off target"
-        self.linestamper(line)
-
-    def selectOutputFile(self):
+        Raises
+        ------
+        IOError
+            Raised if the existing log cannot be read in.
         """
-        Spawn the file chooser diaglog box and return the result, attempting
-        to both open and write to the file.
+        self.logger.info('Reading existing director log {}'.format(self.output_name))
+        # Read in current log
+        try:
+            with open(self.output_name,'r') as f:
+                existing_log = f.readlines()
+        except IOError:
+            message = ('Unable to read existing director log:\n'
+                       '\t{0:s}'.format(self.output_name))
+            raise IOError(message)
 
+        self.logger.info('Read in {} lines from existing director log'.format(
+                         len(existing_log)))
+        # Add to current log
+        for line in existing_log:
+            self.cruise_log.append(line)
+            self.log_display.append(line.strip())
+
+    def mark_message(self, key):
+        """Write a message to the director's log with timestamp.
+
+        Parameters
+        ----------
+        key ; str
+            Keyword to select which message will be posted. Options are:
+             - mccs : notes a MCCS fault
+             - si : notes a SI fault
+             - land : landing
+             - head : notes TO taking over
+             - target : notes SI taking over
+             - takeoff : takeoff
+             - turn : notes turn off target
+             - ignore : ignore last message
+             - post : writes text user put in text box
         """
-        defaultname = "SILog_" + self.utcnow.strftime("%Y%m%d.txt")
-        self.outputname = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                                "Save File",
-                                                                defaultname)[0]
-        if self.outputname != '':
-            self.txt_logoutputname.setText("Writing to: " +
-                                           basename(str(self.outputname)))
 
-    def selectLogOutputFile(self):
-        """
-        Spawn the file chooser diaglog box and return the result, attempting
-        to both open and write to the file.
+        self.logger.debug('Writing to director log with {} key'.format(key))
+        messages = {'mccs': 'MCCS fault encountered',
+                    'si': 'SI fault encountered',
+                    'land': 'End of flight, packing up and sitting down',
+                    'head': 'On heading, TOs setting up',
+                    'target': 'On target, SI taking over',
+                    'takeoff': 'Beginning of flight, getting set up',
+                    'turn': 'Turning off target',
+                    'ignore': 'Ignore the previous message'}
 
-        """
-        defaultname = "DataLog_" + self.utcnow.strftime("%Y%m%d.csv")
-        self.logoutnme = QtWidgets.QFileDialog.getSaveFileName(self,
-                                                               "Save File",
-                                                               defaultname)[0]
-
-        if self.logoutnme != '':
-            self.txt_datalogsavefile.setText("Writing to: " +
-                                             basename(str(self.logoutnme)))
-
-    def postlogline(self):
-        line = self.log_inputline.text()
-        self.linestamper(line)
-        # Clear the line
-        self.log_inputline.setText('')
-
-    def countremaining(self):
-        self.doLegCountElapsed = False
-        self.doLegCountRemaining = True
-
-    def countelapsed(self):
-        self.doLegCountElapsed = True
-        self.doLegCountRemaining = False
-
-    def startlegtimer(self):
-        if self.legcounting is True:
-            pass
+        if key in messages.keys():
+            self.line_stamper(messages[key])
+        elif key == 'post':
+            self.line_stamper(self.log_input_line.text())
+            # Clear the line
+            self.log_input_line.setText('')
         else:
-            self.legcounting = True
-            self.timerstarttime = datetime.datetime.now()
-            self.timerstarttime = self.timerstarttime.replace(microsecond=0)
-            if self.legcountingstopped is False:
-                hms = self.leg_duration.time().toPyTime()
-                dhour = hms.hour
-                dmins = hms.minute
-                dsecs = hms.second
-            else:
-                newdur = self.txt_leg_timer.text()
-                dhour = np.int(newdur.split(":")[0])
-                dmins = np.int(newdur.split(":")[1])
-                dsecs = np.int(newdur.split(":")[2])
+            return
 
-            durationDT = datetime.timedelta(hours=dhour,
-                                            minutes=dmins,
-                                            seconds=dsecs)
-            self.timerendtime = self.timerstarttime + durationDT
-            self.legcountingstopped = False
-
-    def stoplegtimer(self):
-        self.legcounting = False
-        self.legcountingstopped = True
-
-    def resetlegtimer(self):
-        self.legcounting = True
-        self.timerstarttime = datetime.datetime.now()
-        self.timerstarttime = self.timerstarttime.replace(microsecond=0)
-        hms = self.leg_duration.time().toPyTime()
-        dhour = hms.hour
-        dmins = hms.minute
-        dsecs = hms.second
-        durationDT = datetime.timedelta(hours=dhour,
-                                        minutes=dmins,
-                                        seconds=dsecs)
-        self.timerendtime = self.timerstarttime + durationDT
-
-    def totalsec_to_hms_str(self, obj):
-        tsecs = obj.total_seconds()
-        if tsecs < 0:
-            isneg = True
-            tsecs *= -1
-        else:
-            isneg = False
-        hours = tsecs/60./60.
-        ihrs = np.int(hours)
-        minutes = (hours - ihrs)*60.
-        imin = np.int(minutes)
-        seconds = (minutes - imin)*60.
-        if isneg is True:
-            donestr = "-%02i:%02i:%02.0f" % (ihrs, imin, seconds)
-        else:
-            donestr = "+%02i:%02i:%02.0f" % (ihrs, imin, seconds)
-        return donestr
-
-    def setDateTimeEditBoxes(self):
+    def read_data_log(self):
         """
-        Init. the takeoff and landing DateTimeEdit boxes to the time
-        at the start of the app, so we don't have to type in as much.
+        Reads existing data log
         """
+        pass
+
+    def count_direction(self, key):
+        """Set the direction the leg timer counts.
+
+        Parameters
+        ----------
+        key : ['remain', 'elapse']
+            Sets the leg timer to show remaining/elapsed time
+        """
+        self.logger.debug('Changing leg timer counting direction to {}'.format(key))
+        if key == 'remain':
+            # self.do_leg_count_elapsed = False
+            self.leg_count_remaining = True
+        elif key == 'elapse':
+            # self.do_leg_count_elapsed = True
+            self.leg_count_remaining = False
+        else:
+            return
+
+    def set_date_time_edit_boxes(self):
+        """Initialize the takeoff/landing fields.
+
+        Initially sets the fields to the current time, so we don't have
+        to type in as much. The fields will be overwritten if a flight
+        plan is read in.
+        """
+        self.logger.debug('Initializing takeoff/landing time displays')
         # Get the current time(s)
         self.update_times()
         # Get the actual displayed formatting string (set in the UI file)
         self.takeoff_time.displayFormat()
         self.landing_time.displayFormat()
         # Make the current time into a QDateTime object that we can display
-        cur = QtCore.QDateTime.fromString(self.localnow_datetimestr,
+        cur = QtCore.QDateTime.fromString(self.local_now_datetime_str,
                                           self.takeoff_time.displayFormat())
         # Actually put it in the box
         self.takeoff_time.setDateTime(cur)
         self.landing_time.setDateTime(cur)
 
-    def settakeoff(self):
-        self.metcounting = True
-        self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
-        # Add tzinfo to this object to make it able to interact
-        self.takeoff = self.takeoff.replace(tzinfo=self.localtz)
+    def flight_timer(self, key):
+        """Start MET and/or TTL timers.
 
-    def setlanding(self):
-        self.ttlcounting = True
-        self.landing = self.landing_time.dateTime().toPyDateTime()
-        # Add tzinfo to this object to make it able to interact
-        self.landing = self.landing.replace(tzinfo=self.localtz)
-
-    def settakeoffandlanding(self):
-        self.settakeoff()
-        self.setlanding()
+        Parameters
+        ----------
+        key : ['met', 'ttl', 'both']
+            Specifies which timer to start.
+        """
+        self.logger.info('Starting flight timers.')
+        if key in 'met both'.split():
+            self.met_counting = True
+            self.takeoff = self.takeoff_time.dateTime().toPyDateTime()
+            # Add tzinfo to this object to make it able to interact
+            self.takeoff = self.localtz.localize(self.takeoff)
+        if key in 'ttl both'.split():
+            self.ttl_counting = True
+            self.landing = self.landing_time.dateTime().toPyDateTime()
+            # Add tzinfo to this object to make it able to interact
+            self.landing = self.localtz.localize(self.landing)
+        if self.ttl_counting is False and self.met_counting is False:
+            return
 
     def update_times(self):
+        """Determines the UTC/local time and fills the display strings.
+
+        The  microseconds are zeroed outso everything will count
+        together, otherwise it'll be out of sync due to microsecond
+        delay between triggers/button presses. Called during
+        initialization of the app and at the beginning of every show_lcd loop.
         """
-        Grab the current UTC and local timezone time, and populate the strings.
-        We need to throw away microseconds so everything will count together,
-        otherwise it'll be out of sync due to microsecond delay between
-        triggers/button presses.
-        """
-        self.utcnow = datetime.datetime.utcnow()
-        self.utcnow = self.utcnow.replace(microsecond=0)
-        self.utcnow_str = self.utcnow.strftime(' %H:%M:%S UTC')
-        self.utcnow_datetimestr = self.utcnow.strftime('%m/%d/%Y %H:%M:%S $Z')
+        self.logger.debug('Updating time')
+        self.utc_now = datetime.datetime.utcnow()
+        self.utc_now = self.utc_now.replace(microsecond=0)
+        self.utc_now_str = self.utc_now.strftime(' %H:%M:%S UTC')
+        self.utc_now_datetime_str = self.utc_now.strftime('%m/%d/%Y %H:%M:%S $Z')
 
         # Safest way to sensibly go from UTC -> local timezone...?
-        self.localnow = self.utcnow.replace(
-            tzinfo=pytz.utc).astimezone(self.localtz)
-        self.localnow_str = self.localnow.strftime(' %H:%M:%S %Z')
-        self.localnow_datetimestr = self.localnow.strftime(
-            '%m/%d/%Y %H:%M:%S')
+        utc = pytz.utc.localize(self.utc_now)
+        self.local_now = utc.astimezone(self.localtz)
+        self.local_now_str = self.local_now.strftime(' %H:%M:%S %Z')
+        self.local_now_datetime_str = self.local_now.strftime('%m/%d/%Y %H:%M:%S')
 
-    def showlcd(self):
-        """
-        The main loop for the code.
+    def show_lcd(self):
+        """The main loop for the code.
 
         Contains the clock logic code for all the various timers.
-
         MET: Mission Elapsed Time
         TTL: Time unTill Landing
         Plus the leg timer variants (elapsed/remaining)
-
         Since the times were converted to local elsewhere,
         we ditch the tzinfo to make everything naive to subtract easier.
         """
+
         # Update the current local/utc times before computing timedeltas
         self.update_times()
+
         # We set the takeoff time to be in local time, and we know the
         #   current time is in local as well. So ditch the tzinfo because
         #   timezones suck and it's a big pain in the ass otherwise.
         #   The logic follows the same for each counter/timer.
-        if self.metcounting is True:
-            local2 = self.localnow.replace(tzinfo=None)
+        if self.met_counting:
+            self.logger.debug('Updating MET')
+            # Set the MET to show the time between now and takeoff
+            local2 = self.local_now.replace(tzinfo=None)
             takeoff2 = self.takeoff.replace(tzinfo=None)
             self.met = local2 - takeoff2
-            self.metstr = self.totalsec_to_hms_str(self.met) + " MET"
-            self.txt_met.setText(self.metstr)
-        if self.ttlcounting is True:
-            local2 = self.localnow.replace(tzinfo=None)
+            self.met_str = '{0:s} MET'.format(total_sec_to_hms_str(self.met))
+            self.txt_met.setText(self.met_str)
+        if self.ttl_counting:
+            self.logger.debug('Updating TTL')
+            local2 = self.local_now.replace(tzinfo=None)
             landing2 = self.landing.replace(tzinfo=None)
             self.ttl = landing2 - local2
-            self.ttlstr = self.totalsec_to_hms_str(self.ttl) + " TTL"
-            self.txt_ttl.setText(self.ttlstr)
+            self.ttl_str = '{0:s} TTL'.format(total_sec_to_hms_str(self.ttl))
+            self.txt_ttl.setText(self.ttl_str)
 
             # Visual indicators setup; times are in seconds
-            if self.ttl.total_seconds() >= 7200:
-                self.txt_ttl.setStyleSheet("QLabel { color : black; }")
+            timer_warnings = self.config['ttl_timer_hour_warnings']
+            first_warning = float(timer_warnings['first'])*3600.
+            second_warning = float(timer_warnings['second'])*3600.
+            if self.ttl.total_seconds() >= first_warning:
+                self.txt_ttl.setStyleSheet(self.pass_style)
+            elif self.ttl.total_seconds() >= second_warning:
+                self.txt_ttl.setStyleSheet(self.warn_style)
+            else:
+                self.txt_ttl.setStyleSheet(self.fail_style)
 
-            elif self.ttl.total_seconds() < 7200 and\
-                    self.ttl.total_seconds() >= 5400:
-                self.txt_ttl.setStyleSheet("QLabel { color : darkyellow; }")
+        if self.leg_timer.status == 'running':
+            self.logger.debug('Update leg timers')
+            # Addresses the timer in the "Leg Timer" panel.
+            # Only runs if the "Start" button in the "Leg Timer"
+            # panel is pressed
+            if self.leg_count_remaining:
+                time_string = self.leg_timer.timer_string('remaining')
+                self.leg_timer_color(self.leg_timer.remaining.total_seconds())
+            else:
+                time_string = self.leg_timer.timer_string('elapsed')
+            self.txt_leg_timer.setText(time_string)
 
-            elif self.ttl.total_seconds() < 5400:
-                self.txt_ttl.setStyleSheet("QLabel { color : red; }")
+        # Update the UTC and Local Clocks in the 'World Times' panel
+        self.txt_utc.setText(self.utc_now_str)
+        self.txt_local_time.setText(self.local_now_str)
 
-        if self.legcounting is True:
-            local2 = self.localnow.replace(tzinfo=None)
-            legend = self.timerendtime.replace(tzinfo=None)
-            legstart = self.timerstarttime.replace(tzinfo=None)
+        if self.flight_info and self.small_map_count == self.small_map_update_count:
+            self.small_map_count = 0
+            self.plot_leg(self)
+        else:
+            self.small_map_count += 1
 
-            if self.doLegCountRemaining is True:
-                self.legremain = legend - local2
-                self.legremainstr = self.totalsec_to_hms_str(self.legremain)
-                self.txt_leg_timer.setText(self.legremainstr)
+        # If the program is set to look for data automatically and the time
+        # is a multiple of the update frequency and network is good
+        if self.start_data_log and self.data_log_autoupdate.isChecked():
+            if self.utc_now.second % self.data_log_update_interval.value() == 0:
+                # If the network is good or if the user has turned off
+                # checking the network
+                #if self.network_status or not self.network_status_control:
+                self.logger.debug('Check for data')
+                self.update_data()
 
-                # Visual indicators setup
-                if self.legremain.total_seconds() >= 3600:
-                    self.txt_leg_timer.setStyleSheet(
-                        "QLabel { color : black; }")
+        # Record performance only every 5 minutes
+        if self.loop_count == self.small_map_update_count:
+            self.loop_count = 0
+            if self.perf_count == 10:
+                self.perf_count = 0
+                self.log_performance(header=True)
+            else:
+                self.perf_count += 1
+                self.log_performance()
+        else:
+            self.loop_count += 1
 
-                elif self.legremain.total_seconds() < 3600 and\
-                        self.legremain.total_seconds() >= 2400:
-                    self.txt_leg_timer.setStyleSheet(
-                        "QLabel { color : darkyellow; }")
+    def manual_toggle_network(self):
+        """Test button to toggle network status."""
+        self.logger.info('Toggling test for network health.')
+        if self.network_status_control:
+            self.network_status_display_update()
+            self.network_status_control = not self.network_status_control
+        else: 
+            self.network_status_display_update()
+            self.network_status_control = not self.network_status_control
 
-                elif self.legremain.total_seconds() < 2400:
-                    self.txt_leg_timer.setStyleSheet("QLabel { color : red; }")
+    def network_status_display_update(self, timeout=False):
+        """Updates the GUI status with current network status."""
+        style = 'QLabel {{color : {0:s}; }}'
+        if timeout:
+            self.network_status_display.setText('Network Timeout')
+            self.network_status_display.setStyleSheet(style.format('red'))
+        else:
+            self.network_status_display.setText('Network Good')
+            self.network_status_display.setStyleSheet(style.format('green'))
 
-            if self.doLegCountElapsed is True:
-                self.legelapsed = local2 - legstart
-                self.legelapsedstr = self.totalsec_to_hms_str(self.legelapsed)
-                self.txt_leg_timer.setText(self.legelapsedstr)
+    def leg_timer_color(self, remaining_seconds):
+        """Set the color of the leg timer.
 
-        self.txt_utc.setText(self.utcnow_str)
-        self.txt_localtime.setText(self.localnow_str)
+        Parameters
+        ----------
+        remaining_seconds : int
+            Number of seconds left in the leg.
+        """
+        timer_warnings = self.config['leg_timer_minute_warnings']
+        first_warning = float(timer_warnings['first'])*60
+        second_warning = float(timer_warnings['second'])*60
 
-        if self.startdatalog is True and\
-           self.datalog_autoupdate.isChecked() is True:
-            if self.utcnow.second % self.datalog_updateinterval.value() == 0:
-                self.updateDatalog()
-#                print self.datatable
+        # Visual indicators setup
+        if remaining_seconds >= first_warning:
+            self.txt_leg_timer.setStyleSheet(self.pass_style)
+        elif remaining_seconds >= second_warning:
+            # Used to be orange. Maybe go back to this?
+            self.txt_leg_timer.setStyleSheet(self.warn_style)
+        else:
+            self.txt_leg_timer.setStyleSheet(self.fail_style)
 
-    def adddatalogrow(self):
-        rowPosition = self.table_datalog.rowCount()
-        self.table_datalog.insertRow(rowPosition)
-        self.datafilenames.append('--> ')
+    def add_data_log_row(self):
+        """Add a blank row to the Data Log.
+
+        Called when the 'Add Blank Row' button in the Data
+        Log tab is pressed.
+        """
+
+        self.logger.debug('Adding blank row to data log')
+        # Add the blank row to the data structure
+        self.data.add_blank_row(self.headers)
+
+        self.table_data_log.blockSignals(True)
+
+        row_position = self.table_data_log.rowCount()
+        self.table_data_log.insertRow(row_position)
+        self.data_filenames.append('blank_{0:d}'.format(self.data.blank_count))
         # Actually set the labels for rows
-        self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
-        self.writedatalog()
+        self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
+        self.data.write_to_file(self.log_out_name, self.headers)
 
-    def deldatalogrow(self):
-        bad = self.table_datalog.currentRow()
+        self.table_data_log.blockSignals(False)
+
+    def del_data_log_row(self):
+        """Removes a row from the Data Log.
+
+        Called when the 'Remove Highlighted Row' button in
+        the Data Log tab is pressed.
+        """
+        self.logger.info('Removing row from data log')
+        bad = self.table_data_log.currentRow()
         # -1 means we didn't select anything
         if bad != -1:
+            self.table_data_log.blockSignals(True)
             # Clear the data we don't need anymore
-            del self.datafilenames[bad]
-            self.table_datalog.removeRow(self.table_datalog.currentRow())
-
+            self.data.remove_image(self.data_filenames[bad])
+            del self.data_filenames[bad]
+            self.table_data_log.removeRow(bad)
             # Redraw
-            self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
-            self.writedatalog()
+            self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
+            self.data.write_to_file(self.log_out_name, self.headers)
+            self.table_data_log.blockSignals(False)
 
-    def repopulateDatalog(self, rescan=False):
+    def repopulate_data_log(self, rescan=False):
+        """Recreate the data log table after keyword changes.
+
+        This is called after changing keywords, blanks are filled,
+        or a file has been flagged.
         """
-        After changing the column ordering or adding/removing keywords,
-        use this to redraw the table in the new positions.
-        """
+        self.logger.info('Recreate data log')
         # Disable fun stuff while we update
-        self.table_datalog.setSortingEnabled(False)
-        self.table_datalog.horizontalHeader().setSectionsMovable(False)
-        self.table_datalog.horizontalHeader().setDragEnabled(False)
-        self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
+        self.table_data_log.setSortingEnabled(False)
+        self.table_data_log.horizontalHeader().setSectionsMovable(False)
+        self.table_data_log.horizontalHeader().setDragEnabled(False)
+        self.table_data_log.horizontalHeader().setDragDropMode(
+            QtWidgets.QAbstractItemView.NoDragDrop)
+        self.table_data_log.blockSignals(True)
 
-        thedlist = ['NOTES'] + self.headers
+        thed_list = self.headers
 
-        # First, grab the data
-        tablist = []
-        for n in xrange(0, self.table_datalog.rowCount()):
-            rowdata = {}
-            for m, hkey in enumerate(thedlist):
-                if rescan is True:
-                    # Need to somehow remap the basename'd row label to the
-                    #   original listing of files (with path) to go rescan
-                    fname = ''
-                    rowdata = headerDict(fname, self.headers,
-                                         HDU=self.fitshdu)
+        # First, grab the current table's contents
+        tab_list = []
+        for n in range(0, self.table_data_log.rowCount()):
+            row_data = {}
+            for m, hkey in enumerate(thed_list):
+                rdat = self.table_data_log.item(n, m)
+                if rdat is not None:
+                    row_data[hkey] = rdat.text()
                 else:
-                    rdat = self.table_datalog.item(n, m)
-                    if rdat is not None:
-                        rowdata[hkey] = rdat.text()
-                    else:
-                        rowdata[hkey] = ''
-            tablist.append(rowdata)
+                    row_data[hkey] = ''
+            tab_list.append(row_data)
 
         # Clear out the old data, since we could have rearranged columns
-        self.table_datalog.clear()
+        self.table_data_log.clear()
 
         # Actually assign the new headers
-        self.headers = self.newheaders
+        if rescan:
+            self.headers = self.new_headers
 
-        # Update with the new number of colums
-        self.table_datalog.setColumnCount(len(self.headers) + 1)
-
-        # Update with the new column labels
-        self.updatetablecols()
+        # Update with the new number of columns
+        self.table_data_log.setColumnCount(len(self.headers))
+        self.table_data_log.setRowCount(len(tab_list))
 
         # Actually set the labels for rows
-        self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
+        self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
 
         # Create the data table items and populate things
-        #   Note! This is for use with headerDict style of grabbing stuff
-        for n, row in enumerate(tablist):
+        for n, row in enumerate(tab_list):
             for m, hkey in enumerate(self.headers):
-                print(n, m, row, hkey, row[hkey])
-                newitem = QtWidgets.QTableWidgetItem(str(row[hkey]))
-                self.table_datalog.setItem(n, m+1, newitem)
+                try:
+                    if row[hkey] == '':
+                        # Field in the original table was empty
+                        val = self.fill_space_from_header(n, hkey)
+                    else:
+                        # Field in the original table contained a value
+                        val = row[hkey]
+                except KeyError:
+                    # Key not in the original table
+                    val = self.fill_space_from_header(n, hkey)
+                # Convert the value to a QTableWidgetItem object
+                new_item = QtWidgets.QTableWidgetItem(val)
+                if hkey=='HEADER_CHECK' and val=='Failed':
+                    new_item.setForeground(QtGui.QColor(255, 0, 0))
+                # Add to the table
+                self.table_data_log.setItem(n, m, new_item)
+
+        # Update with the new column labels
+        self.table_data_log.setHorizontalHeaderLabels(self.headers)
 
         # Resize to minimum required, then display
-        self.table_datalog.resizeRowsToContents()
+        self.table_data_log.resizeColumnsToContents()
+        self.table_data_log.resizeRowsToContents()
 
-        # Seems to be more trouble than it's worth, so keep this commented
-#        self.table_datalog.setSortingEnabled(True)
-
-        # Reenable fun stuff
-        self.table_datalog.horizontalHeader().setSectionsMovable(True)
-        self.table_datalog.horizontalHeader().setDragEnabled(True)
-        self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
-
-        self.table_datalog.show()
+        # Re-enable fun stuff
+        self.table_data_log.horizontalHeader().setSectionsMovable(True)
+        self.table_data_log.horizontalHeader().setDragEnabled(True)
+        self.table_data_log.horizontalHeader().setDragDropMode(
+            QtWidgets.QAbstractItemView.InternalMove)
+        self.table_data_log.show()
+        self.table_data_log.blockSignals(False)
 
         # Should add this as a checkbox option to always scroll to bottom
         #   whenever a new file comes in...
-        self.table_datalog.scrollToBottom()
+        self.table_data_log.scrollToBottom()
 
-    def updateDatalog(self):
+    def fill_space_from_header(self, n, hkey):
+        """Attempt to fill an empty cell in the QtTableWidget.
+
+        If a cell in the data_log is empty after a change in
+        keyword headers, read through the file headers again
+        to see if the keyword is there.
+
+        Parameters
+        ----------
+        n : int
+            Index count of the file to process
+        hkey : str
+            Header keyword to fill in
+
+        Returns
+        -------
+        val : str
+            Value stored in the header ``hkey`` in selected file. If ``hkey``
+            is not in the header, val is an empty string.
         """
-        General notes:
-          glob.glob returns a randomly ordered result, so that can lead
-            to jumbled results if you just use it blindly. Sort by modification
-            time to get a sensible listing.
-            (can't use creation time cross-platform)
-        """
+        fname = self.data_filenames[n]
+
+        try:
+            val = '{0}'.format(self.data.header_vals[fname][hkey])
+        except KeyError:
+            val = ''
+        self.logger.info('Filled missing value for key {0} in file {1} '
+                         'with {2}'.format(hkey, fname, val))
+        return val
+
+    def query_archiver(self, instrument, location, method, suffix,
+                       progress_callback):
+
+        self.new_files = []
+        contents = list()
         # Get the current list of FITS files in the location
-        if self.instrument == 'HAWCFlight':
-            self.data_current = glob.glob(str(self.datalogdir) + "/*.grabme")
-        elif self.instrument == 'FIFI-LS':
-            curdata = []
-            for root, dirnames, filenames in walk(str(self.datalogdir)):
-                for filename in fnmatch.filter(filenames, '*.fits'):
-                    curdata.append(join(root, filename))
-            self.data_current = curdata
+        if method == 'glob':
+            if instrument.lower() == 'forcast':
+                # FORCAST has 2 channels, r and b. While not used at the
+                # same time, they are often used in the same flight. To prevent
+                # restarting Cruise Director every time, the data_log_dir
+                # is set to the parent directory and new files are pulled from
+                # both the r and b subdirectories.
+                pattern = '{0:s}/[rbRB]/*.{1:s}'.format(location, suffix)
+            else:
+                pattern = '{0:s}/*.{1:s}'.format(location, suffix)
+            contents = glob.glob(pattern)
+        elif method == 'walk':
+            pattern = '*.{0:s}'.format(suffix)
+            for root, _, filenames in os.walk(location):
+                for filename in fnmatch.filter(filenames, pattern):
+                    contents.append(os.path.join(root, filename))
         else:
-            self.data_current = glob.glob(str(self.datalogdir) + "/*.fits")
+            # Unknown method
+            message = ('Unknown method {0:s} for instrument {1:s}'.format(
+                       method, instrument))
+            raise ConfigError(message)
 
+        progress_callback.emit('Ongoing')
+        self.data_current = contents
         # Correct the file listing to be ordered by modification time
-        self.data_current.sort(key=getmtime)
+        self.data_current = self.sort_files(self.data_current)
 
-        # Ok, lets try this beast again.
-        #   Main difference here is the addition of a basename'd version
-        #   of current and previous data. Maybe it's a network path bug?
-        #   (grasping at any and all straws here)
-        bncur = [basename(x) for x in self.data_current]
-
-        if self.instrument == "HAWCFlight":
-            bnpre = [basename(x)[:-4] + 'grabme' for x in self.datafilenames]
+        bncur = [os.path.basename(x) for x in self.data_current]
+        if self.instrument == 'HAWCFlight':
+            bnpre = [os.path.basename(x)[:-4] + 'grabme' for x in self.data_filenames]
         else:
-            bnpre = [basename(x) for x in self.datafilenames]
+            bnpre = [os.path.basename(x) for x in self.data_filenames]
 
-        if len(bncur) != len(bnpre):
-            self.datanew = []
-            # Make the unique listing of old files
-            s = set(bnpre)
-
-            # Compare the new listing to the unique set of the old ones
-            #   Previous logic was:
-#            diff = [x for x in self.data_current if x not in s]
-            # Unrolled logic (might be easier to spot a goof-up)
-            diff = []
-            idxs = []
-            for i, x in enumerate(bncur):
-                if x not in s:
-                    idxs.append(i)
-                    diff.append(x)
-
-            # Capture the last row position so we know where to start
-            self.lastdatarow = self.table_datalog.rowCount()
-
-            print("PreviousFileList:", bnpre)
-            print("CurrentFileList:", bncur)
-            # Actually query the files for the desired headers
-            for idx in idxs:
-                # REMEMBER: THIS NEEDS TO REFERENCE THE ORIGINAL LIST!
-                if self.instrument == "HAWCFlight":
-                    realfile = self.data_current[idx][:-6] + 'fits'
-                else:
-                    realfile = self.data_current[idx]
-                print("Newfile: %s" % (realfile))
-                # Save the filenames
-                self.datafilenames.append(basename(realfile))
-                # Add number of rows for files to go into first
-                rowPosition = self.table_datalog.rowCount()
-                self.table_datalog.insertRow(rowPosition)
-                # Actually get the header data
-                theData = headerDict(realfile, self.headers, HDU=self.fitshdu)
-#                self.allData.append(theData)
-                self.datanew.append(theData)
-
-            self.setTableData()
-            self.writedatalog()
-
-    def setTableData(self):
-        if len(self.datanew) != 0:
-            # Disable fun stuff while we update
-            self.table_datalog.setSortingEnabled(False)
-            self.table_datalog.horizontalHeader().setSectionsMovable(False)
-            self.table_datalog.horizontalHeader().setDragEnabled(False)
-            self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
-
-            # Actually set the labels for rows
-            self.table_datalog.setVerticalHeaderLabels(self.datafilenames)
-
-            # Create the data table items and populate things
-            #   Note! This is for use with headerDict style of grabbing stuff
-            for n, row in enumerate(self.datanew):
-                for m, hkey in enumerate(self.headers):
-                    newitem = QtWidgets.QTableWidgetItem(str(row[hkey]))
-                    self.table_datalog.setItem(n + self.lastdatarow,
-                                               m+1, newitem)
-
-            # Resize to minimum required, then display
-#            self.table_datalog.resizeColumnsToContents()
-            self.table_datalog.resizeRowsToContents()
-
-            # Seems to be more trouble than it's worth, so keep this commented
-#            self.table_datalog.setSortingEnabled(True)
-
-            # Reenable fun stuff
-            self.table_datalog.horizontalHeader().setSectionsMovable(True)
-            self.table_datalog.horizontalHeader().setDragEnabled(True)
-            self.table_datalog.horizontalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
-
-            self.table_datalog.show()
-
-            # Should add this as a checkbox option to always scroll to bottom
-            #   whenever a new file comes in...
-            self.table_datalog.scrollToBottom()
+        # Separate out the new files
+        new_files = set(bncur) - set(bnpre)
+        self.logger.debug('Found {} new files'.format(len(new_files)))
+        if self.instrument.lower() == 'forcast':
+            new_files = [os.path.join(self.data_log_dir, i[0], i)
+                         for i in new_files]
         else:
-            print("No new files!")
+            new_files = [os.path.join(self.data_log_dir, i) for i in new_files]
+        new_files = self.sort_files(new_files)
+        for fname in new_files:
+            if not self.checker_rules:
+                self.choose_head_check_rules(data_file=fname)
+            self.data.add_image(fname, self.headers, self.header_check_warnings,
+                                hdu=self.fits_hdu, rules=self.checker_rules)
+            bname = os.path.basename(fname)
+            self.data_filenames.append(bname)
+            self.new_files.append(bname)
 
-    def writedatalog(self):
-        if self.logoutnme != '':
-            try:
-                f = open(self.logoutnme, 'w')
-                writer = csv.writer(f)
-                # Write the column labels first...assumes that the
-                #   filename and notes column are first and second
-                clabs = ['FILENAME', 'NOTES'] + self.headers
-                writer.writerow(clabs)
-                for row in range(self.table_datalog.rowCount()):
-                    rowdata = []
-                    rowdata.append(self.datafilenames[row])
-                    for column in range(self.table_datalog.columnCount()):
-                        item = self.table_datalog.item(row, column)
-                        if item is not None:
-                            rowdata.append(item.text())
-                        else:
-                            rowdata.append('')
-                    writer.writerow(rowdata)
-                f.close()
-            except Exception as why:
-                print(str(why))
-                self.txt_datalogsavefile.setText("ERROR WRITING TO FILE!")
+    def search_function(self):
 
-    def toggle_legparam_labels_off(self):
-        """
-        Quick method to hide the leg parameter labels,
-        should we find them distracting
-        """
-        self.txt_elevation.setVisible(False)
-        self.txt_obsplan.setVisible(False)
-        self.txt_rof.setVisible(False)
-        self.txt_target.setVisible(False)
+        config = self.config['search'][self.instrument]
+        if config['method'] == 'glob':
+            if self.instrument.lower() == 'forcast':
+                pattern = '{0:s}/[rbRB]/*.{1:s}'.format(str(self.data_log_dir),
+                                                        config['extension'])
+            else:
+                pattern = '{0:s}/*.{1:s}'.format(str(self.data_log_dir),
+                                                 config['extension'])
+            data_current = glob.glob(pattern)
+        elif config['method'] == 'walk':
+            pattern = '*.{0:s}'.format(config['extension'])
+            current_data = []
+            for root, _, filenames in os.walk(str(self.data_log_dir)):
+                for filename in fnmatch.filter(filenames, pattern):
+                    current_data.append(os.path.join(root, filename))
+            data_current = current_data
 
-    def toggle_legparam_values_off(self):
+        else:
+            # Unknown method
+            message = ('Unknown method {0:s} for instrument {1:s}'.format(
+                       config['method'], self.instrument))
+            self.logger.warning(message)
+            raise ConfigError(message)
+        return data_current
+
+    def directory_walk(self, location, suffix):
+        result = list()
+        pattern = '*.{}'.format(suffix)
+        for root, _, filenames in os.walk(location):
+            for filename in fnmatch.filter(filenames, pattern):
+                result.append(os.path.join(root, filename))
+        return result
+
+    def worker_result(self):
+        pass
+
+    def worker_finished(self):
+        self.worker_running = False
+        self.network_status_display_update(timeout=False)
+        # If new files exist, update the table widget and
+        # write the new data to file
+        if self.new_files:
+            self.update_table()
+            if self.log_out_name != '':
+                self.data.write_to_file(self.log_out_name, self.headers)
+
+    def worker_progress(self):
+        pass
+
+    def update_data(self):
+        """Look for new observations.
+
+        Reads in new FITS files and adds them to the header_vals
         """
-        Quick method to clear the leg parameter values,
-        should we know them to be wrong/bogus
-        (such as on dead/departure/arrival) legs
+
+        self.logger.debug('Looking for new data')
+        # Each instrument can store their data in a different way.
+        # Read in the correct method to use from the
+        # director.ini config file
+
+        if self.worker_running:
+            # Worker already running, check the time
+            now = datetime.datetime.utcnow()
+            if (now - self.worker_start_time).total_seconds() > self.timeout:
+                # Worker has likely stalled
+                # Update the network health flag
+                self.network_status_health = False
+                self.network_status_display_update(timeout=True)
+            else:
+                self.network_status_health = True
+            return
+        else:
+            # Worker is not running
+            # Star one up and go
+            self.worker_start_time = datetime.datetime.utcnow()
+            self.worker = Worker(self.query_archiver, self.instrument,
+                                 self.data_log_dir,
+                                 self.config['search'][self.instrument]['method'],
+                                 self.config['search'][self.instrument]['extension'])
+            self.worker.signals.result.connect(self.worker_result)
+            self.worker.signals.finished.connect(self.worker_finished)
+            self.worker.signals.progress.connect(self.worker_progress)
+            self.threadpool.start(self.worker)
+            self.worker_running = True
+
+    def sort_files(self, files):
+        """Sort files based on method in config.
+
+        Takes in the a list of files and sorts them. If there
+        are problems return the unsorted list.
+
+        Parameters
+        ----------
+        files : list
+            List of files to be sorted.
+
+        Returns
+        -------
+        files : list
+            Same files but sorted according to config settings for
+            the current instrument.
         """
+        if self.config['sort'][self.instrument] == 'time':
+            return sorted(files, key=os.path.getmtime)
+        elif self.config['sort'][self.instrument] == 'name':
+            if self.instrument.lower() == 'forcast':
+                return sorted(files, key=lambda x:
+                        int(os.path.basename(x).split('_')[-1].split('.')[0]))
+            else:
+                message = ('Unknown file formatting for {0:s} ',
+                           'Cannot sort'.format(self.instrument))
+                self.logger.warning(message)
+                return files
+        else:
+            message = ('Unknown file sorting method. Check config file, '
+                       'director.ini')
+            self.logger.warning(message)
+            return files
+
+    def update_table(self, append_init=False):
+        """Update the table widget to display newly found files."""
+
+        self.logger.debug('Updating table widget')
+        # Disable table features during alteration
+        self.table_data_log.setSortingEnabled(False)
+        self.table_data_log.horizontalHeader().setSectionsMovable(False)
+        self.table_data_log.horizontalHeader().setDragEnabled(False)
+        self.table_data_log.horizontalHeader().setDragDropMode(
+            QtWidgets.QAbstractItemView.NoDragDrop)
+        self.table_data_log.blockSignals(True)
+
+        if append_init:
+            self.logger.info('Updating table widget with data log '
+                             'from a previous run')
+            self.new_files = list(self.data.header_vals.keys())
+            self.data_filenames = list(self.data.header_vals.keys())
+
+        # Add the data to the table
+        self.logger.debug('Added {} new files to table widget'.format(len(
+                           self.new_files)))
+        for file_key in self.new_files:
+            row_count = self.table_data_log.rowCount()
+            self.table_data_log.insertRow(row_count)
+            for m, key in enumerate(self.headers):
+                val = self.data.header_vals[file_key][key]
+                item = QtWidgets.QTableWidgetItem(str(val))
+                if key == 'HEADER_CHECK' and val == 'Failed':
+                    # Set text to red
+                    item.setForeground(QtGui.QColor(255, 0, 0))
+                self.table_data_log.setItem(row_count, m, item)
+
+        # Set the row labels
+        self.table_data_log.setVerticalHeaderLabels(self.data_filenames)
+
+        self.table_data_log.resizeColumnsToContents()
+        self.table_data_log.resizeRowsToContents()
+
+        # Re-enable features
+        self.table_data_log.horizontalHeader().setSectionsMovable(True)
+        self.table_data_log.horizontalHeader().setDragEnabled(True)
+        self.table_data_log.horizontalHeader().setDragDropMode(
+            QtWidgets.QAbstractItemView.InternalMove)
+        self.table_data_log.show()
+        self.table_data_log.blockSignals(False)
+
+        self.table_data_log.scrollToBottom()
+        self.logger.debug('Done updated table widget')
+
+    def leg_param_labels(self, key):
+        """Toggle the visibility of the leg parameter labels.
+
+        Parameters
+        ----------
+        key : ['on', 'off']
+            Determines if the labels should be on or off
+        """
+        if key == 'on':
+            self.logger.debug('Turn leg parameter labels on')
+            self.txt_elevation.setVisible(True)
+            self.txt_obs_plan.setVisible(True)
+            self.txt_rof.setVisible(True)
+            self.txt_target.setVisible(True)
+        elif key == 'off':
+            self.logger.debug('Turn leg parameter labels off')
+            self.txt_elevation.setVisible(False)
+            self.txt_obs_plan.setVisible(False)
+            self.txt_rof.setVisible(False)
+            self.txt_target.setVisible(False)
+        else:
+            return
+
+    def toggle_leg_param_values_off(self):
+        """Clear the leg parameter values.
+
+        Useful for dead/departure/arrival legs
+        """
+        self.logger.debug('Turning off leg parameters')
         self.leg_elevation.setText('')
-        self.leg_obsblock.setText('')
-        self.leg_rofrofrt.setText('')
+        self.leg_obs_block.setText('')
+        self.leg_rof_rof_rate.setText('')
         self.leg_target.setText('')
 
-    def toggle_legparam_labels_on(self):
-        """
-        Quick method to ensure that the leg parameter labels are visible
-        """
-        self.txt_elevation.setVisible(True)
-        self.txt_obsplan.setVisible(True)
-        self.txt_rof.setVisible(True)
-        self.txt_target.setVisible(True)
-
-    def updateLegInfoWindow(self):
-        """
-        If the flight plan was successfully parsed, show the values
-        for the leg occuring at self.legpos (+1 if you prefer 1-indexed)
-        """
+    def update_leg_info_window(self):
+        """Display details of flight plan parsed from .msi file."""
         # Only worth doing if we read in a flight plan file
-        if self.successparse is True:
+        if self.success_parse:
             # Quick and dirty way to show the leg type
-            legtxt = "%i\t%s" % (self.legpos + 1, self.lginfo.legtype)
+            leg_labels = 'landing departure science dead'.split()
+            if self.leg_info.leg_type.lower() not in leg_labels:
+                leg_label = 'Other'
+            else:
+                leg_label = self.leg_info.leg_type
+            legtxt = '{0:d}\t{1:s}'.format(self.leg_pos + 1,
+                                           leg_label.capitalize())
             self.leg_number.setText(legtxt)
+            self.logger.debug('Moving to leg {}'.format(self.leg_pos))
 
             # Target name
-            self.leg_target.setText(self.lginfo.target)
+            self.leg_target.setText(self.leg_info.astro.target)
 
             # If the leg type is an observing leg, show the deets
-            if self.lginfo.legtype is 'Observing':
-                self.toggle_legparam_labels_on()
-                elevation_label = "%.1f to %.1f" % (self.lginfo.range_elev[0],
-                                                    self.lginfo.range_elev[1])
+            # if self.leg_info.leg_type == 'Observing':
+            if self.leg_info.leg_type == 'science':
+                self.leg_param_labels('on')
+                elevation_label = '{0:.1f} to {1:.1f}'.format(
+                    self.leg_info.plane.elevation_range[0],
+                    self.leg_info.plane.elevation_range[1])
                 self.leg_elevation.setText(elevation_label)
-                rof_label = "%.1f to %.1f | %.1f to %.1f" % \
-                    (self.lginfo.range_rof[0], self.lginfo.range_rof[1],
-                     self.lginfo.range_rofrt[0], self.lginfo.range_rofrt[1])
-                self.leg_rofrofrt.setText(rof_label)
+                rof_label = '{0:.1f} to {1:.1f} | {2:.1f} to {3:.1f}'.format(
+                    self.leg_info.plane.rof_range[0],
+                    self.leg_info.plane.rof_range[1],
+                    self.leg_info.plane.rof_rate_range[0],
+                    self.leg_info.plane.rof_rate_range[1])
+                self.leg_rof_rof_rate.setText(rof_label)
                 try:
-                    self.leg_obsblock.setText(self.lginfo.obsplan)
-                except:
+                    self.leg_obs_block.setText(self.leg_info.obs_plan)
+                except AttributeError:
+                    self.logger.exception('Exception during display of science leg '
+                                          'information for leg '
+                                          '{}'.format(self.leg_pos))
                     pass
             else:
                 # If it's a dead leg, update the leg number and we'll move on
                 # Clear values since they're probably crap
-                self.toggle_legparam_values_off()
-                # Quick and dirty way to show the leg type
-                legtxt = "%i\t%s" % (self.legpos + 1, self.lginfo.legtype)
-                self.leg_number.setText(legtxt)
+                self.logger.debug('Turning of leg info')
+                self.toggle_leg_param_values_off()
 
+            # Update leg_timer
             # Now take the duration and autoset our timer duration
-            timeparts = str(self.lginfo.duration)
-            timeparts = timeparts.split(":")
-            timeparts = [np.int(x) for x in timeparts]
-            durtime = QtCore.QTime(timeparts[0], timeparts[1], timeparts[2])
-            self.leg_duration.setTime(durtime)
+            time_parts = str(self.leg_info.duration).split(':')
+            time_parts = [np.int(x) for x in time_parts]
+            dur_time = datetime.time(hour=time_parts[0], minute=time_parts[1],
+                                     second=time_parts[2])
+            self.leg_duration.setTime(dur_time)
+            dur_time = datetime.timedelta(hours=dur_time.hour,
+                                          minutes=dur_time.minute,
+                                          seconds=dur_time.second)
+            self.leg_timer.duration = dur_time
+            self.leg_timer.init_duration = dur_time
 
-    def prevLeg(self):
-        """
-        Move the leg position counter to the previous value,
-        bottoming out at 0
-        """
-        if self.successparse is True:
-            self.legpos -= 1
-            if self.legpos < 0:
-                self.legpos = 0
-            self.lginfo = self.flightinfo.legs[self.legpos]
-        self.updateLegInfoWindow()
+            # Set the timing parameters display
+            self.leg_dur_from_mis.setText(str(self.leg_info.duration))
+            self.leg_start_from_mis.setText(str(self.leg_info.start))
+            self.leg_timer.flight_parsed = True
 
-    def nextLeg(self):
-        """
-        Move the leg position counter to the next value,
-        hitting the ceiling at the max number of found legs
-        """
-        if self.successparse is True:
-            self.legpos += 1
-            if self.legpos > self.flightinfo.nlegs-1:
-                self.legpos = self.flightinfo.nlegs-1
-            self.lginfo = self.flightinfo.legs[self.legpos]
+    def prev_leg(self):
+        """Move the leg position counter to the previous value."""
+        if self.success_parse is True:
+            self.leg_pos -= 1
+            if self.leg_pos < 0:
+                self.leg_pos = 0
+            self.leg_info = self.flight_info.legs[self.leg_pos]
+            self.logger.debug('Moving to previous leg, number {}'.format(
+                self.leg_pos))
+        self.update_leg_info_window()
+        self.leg_timer.status = 'stopped'
+        self.logger.debug('Stopped leg timer')
+        self.setup_leg_map()
+
+    def next_leg(self):
+        """Move the leg position counter to the next value."""
+        if self.success_parse is True:
+            self.leg_pos += 1
+            if self.leg_pos > self.flight_info.num_legs - 1:
+                self.leg_pos = self.flight_info.num_legs - 1
+            self.leg_info = self.flight_info.legs[self.leg_pos]
+            self.logger.debug('Moved to next leg, number {}'.format(
+                self.leg_pos))
         else:
             pass
-        self.updateLegInfoWindow()
+        self.update_leg_info_window()
+        self.leg_timer.status = 'stopped'
+        self.logger.debug('Stopped leg timer')
+        self.setup_leg_map()
 
-    def updateTakeoffTime(self):
-        """
+    def update_flight_time(self, key):
+        """Fills the takeoff or landing time fields
+
         Grab the flight takeoff time from the flight plan, which is in UTC,
         and turn it into the time at the local location.
-
         Then, take that time and update the DateTimeEdit box in the GUI
-        """
-        fptakeoffDT = self.flightinfo.takeoff.replace(tzinfo=pytz.utc)
-        fptakeoffDT = fptakeoffDT.astimezone(self.localtz)
-        fptakeoffstr = fptakeoffDT.strftime("%m/%d/%Y %H:%M:%S")
-        fptakeoffQt = QtCore.QDateTime.fromString(fptakeoffstr,
-                                                  "MM/dd/yyyy HH:mm:ss")
-        self.takeoff_time.setDateTime(fptakeoffQt)
 
-    def updateLandingTime(self):
+        Parameters
+        ----------
+        key : ['takeoff', 'landing']
+            Set if working with takeoff or landing leg
         """
-        Grab the flight landing time from the flight plan, which is in UTC,
-        and turn it into the time at the local location.
+        if key == 'takeoff':
+            time = pytz.utc.localize(self.flight_info.takeoff)
+        elif key == 'landing':
+            time = self.flight_info.landing.replace(tzinfo=pytz.utc)
+        else:
+            return
+        self.logger.debug('Updating flight time for {} leg'.format(key))
+        time = time.astimezone(self.localtz)
+        time_str = time.strftime('%m/%d/%Y %H:%M:%S')
+        time_qt = QtCore.QDateTime.fromString(time_str, 'MM/dd/yyyy HH:mm:ss')
+        if key == 'takeoff':
+            self.takeoff_time.setDateTime(time_qt)
+        else:
+            self.landing_time.setDateTime(time_qt)
 
-        Then, take that time and update the DateTimeEdit box in the GUI
-        """
-        fplandingDT = self.flightinfo.landing.replace(tzinfo=pytz.utc)
-        fplandingDT = fplandingDT.astimezone(self.localtz)
-        fplandingstr = fplandingDT.strftime("%m/%d/%Y %H:%M:%S")
-        fplandingQt = QtCore.QDateTime.fromString(fplandingstr,
-                                                  "MM/dd/yyyy HH:mm:ss")
-        self.landing_time.setDateTime(fplandingQt)
+    def update_duration(self, reset=False):
+        """Update the duration of the current leg.
 
-    def selectInputFile(self):
+        Parameters
+        ----------
+        reset : bool, optional
+            Updates the duration of the current leg with user inputs,
+            If reset is true, undo user changes and reset the duration to
+            result from flight plan.
         """
-        Spawn the file chooser diaglog box and return the result, attempting
+        if reset:
+            # Reset the duration to the current leg to
+            # the duration from flight plan
+            self.logger.debug('Resetting custom duration of leg number {} to '
+                              'original value'.format(self.leg_pos))
+            orig_duration = self.flight_info.legs[self.leg_pos].duration
+            orig_duration = timedelta_to_time(orig_duration)
+            self.leg_timer.control_timer('reset')
+            self.leg_duration.setTime(orig_duration)
+            self.txt_leg_duration.setText('Leg Duration')
+        else:
+            self.logger.debug('Changing duration of leg number {}'.format(
+                self.leg_pos))
+            new_duration = self.leg_duration.time().toPyTime()
+            new_duration = datetime.timedelta(hours=new_duration.hour,
+                                              minutes=new_duration.minute,
+                                              seconds=new_duration.second)
+            self.leg_timer.duration = new_duration
+            self.txt_leg_duration.setText('Leg Duration (Changed)')
+
+    def parse_flight_file(self, from_gui=None):
+        """Parse flight plan from .msi file.
+
+        Spawn the file chooser dialog box and return the result, attempting
         to parse the file as a SOFIA flight plan (.mis).
-
         If successful, set the various state parameters for further use.
         If unsuccessful, make the label text red and angry and give the
         user another chance
+
+        Parameters
+        ----------
+        from_gui : str, optional
+            Name of the flight plan to parse, defaults to None which prompts user
+            for the flight plan's file name.
         """
-        self.fname = QtWidgets.QFileDialog.getOpenFileName()[0]
+        # If from_gui is None, prompt the user to select a filename
+        if not from_gui:
+            self.fname = ''
+        else:
+            self.fname = from_gui
+        self.logger.debug('Parsing flight plan: {}'.format(self.fname))
         # Make sure the label text is black every time we start, and
         #   cut out the path so we just have the filename instead of huge str
-        self.flightplan_filename.setStyleSheet("QLabel { color : black; }")
-        self.flightplan_filename.setText(basename(str(self.fname)))
+        self.flight_plan_filename.setStyleSheet(self.pass_style)
+        self.flight_plan_filename.setText(os.path.basename(str(self.fname)))
         try:
-            self.flightinfo = fpmis.parseMIS(self.fname)
-            self.lginfo = self.flightinfo.legs[self.legpos]
-            self.successparse = True
-            self.updateLegInfoWindow()
-            if self.set_takeoffFP.isChecked() is True:
-                self.updateTakeoffTime()
-            if self.set_landingFP.isChecked() is True:
-                self.updateLandingTime()
-        except Exception as why:
-            print(str(why))
-            self.flightinfo = ''
-            self.errmsg = 'ERROR: Failure Parsing File!'
-            self.flightplan_filename.setStyleSheet("QLabel { color : red; }")
-            self.flightplan_filename.setText(self.errmsg)
-            self.successparse = False
+            self.flight_info = fpmis.parse_mis_file(self.fname)
+            self.leg_info = self.flight_info.legs[self.leg_pos]
+            self.success_parse = True
+            self.update_leg_info_window()
+            if self.set_takeoff_fp.isChecked() is True:
+                self.update_flight_time('takeoff')
+            if self.set_landing_fp.isChecked() is True:
+                self.update_flight_time('landing')
+            self.logger.debug('Flight plan successfully parsed.')
+        except IOError:
+            self.flight_info = ''
+            self.err_msg = 'ERROR: Failure Parsing File!'
+            self.flight_plan_filename.setStyleSheet(self.fail_style)
+            self.flight_plan_filename.setText(self.err_msg)
+            self.success_parse = False
+            self.logger.exception('Failure while parsing {}'.format(self.fname))
 
-    def browse_folder(self):
-        """
-        What is this function for?  Is it vestigial?  I don't remember
-        this function or its purpose at all :-/
-        """
-        # In case there are any existing elements in the list
-        self.listWidget.clear()
-        titlestr = "Choose a SOFIA mission file (.mis)"
-        directory = QtWidgets.QFileDialog.getExistingDirectory(self, titlestr)[0]
+    def log_performance(self, header=False):
+        """Log code performance.
 
-        # if user didn't pick a directory don't continue
-        if directory:
-            # for all files, if any, in the directory
-            for file_name in listdir(directory):
-                # add file to the listWidget
-                self.listWidget.addItem(file_name)
+        Records the memory and cpu consumption of Cruise
+        Director, as well as the total health of the system.
+
+        Parameters
+        ----------
+        header : bool
+            If true print the header as well
+        """
+        pmem = self.process.memory_full_info()
+        smem = psutil.virtual_memory()
+
+        if header:
+            self.perform_logger.info('Process CPU, RMS, VMS, USS: System CPU, '
+                                     'total, available, active, used, free')
+
+        line = '{} , {} , {} , {} , {} , {} , {} , {} , {} , {}'.format(
+            self.process.cpu_percent(), bytes2human(pmem.rss),
+            bytes2human(pmem.vms), bytes2human(pmem.uss),
+            psutil.cpu_percent(percpu=False), bytes2human(smem.total),
+            bytes2human(smem.available), bytes2human(smem.active),
+            bytes2human(smem.used), bytes2human(smem.free))
+
+        self.perform_logger.info(line)
+
+
+class WorkerSignals(QtCore.QObject):
+    """Defines the signals available from a running worker thread.
+
+    Supported signals are:
+
+    finished
+        No data
+
+    error
+        `tuple` (exctype, value, traceback.format_exc() )
+
+    result
+        `object` data returned from processing, anything
+
+    progress
+        `int` indicating % progress
+
+    """
+    finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(tuple)
+    result = QtCore.pyqtSignal(object)
+    progress = QtCore.pyqtSignal(int)
+
+
+class Worker(QtCore.QRunnable):
+    """Handles a QThread instance to run a function separate from the main thread.
+
+    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
+    Uses the WorkerSignals class for custom signal handling.
+
+    Parameters
+    ----------
+    fn : function
+        Function the worker will run
+    args : list-like
+        Arguments for `fn`
+    kwargs : list-like
+        Key word arguments for `fn`
+    """
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+        # Add the callback to our kwargs
+        self.kwargs['progress_callback'] = self.signals.progress
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        """Initialise the runner function with passed args, kwargs.
+
+        Attempt to run `fn`. If an exception occurs, emit the
+        error signal. If no exception occurs, emit the result
+        signal. At the end, emit the finished signal regardless
+        of exceptions.
+        """
+
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the
+                                              # processing
+        finally:
+            self.signals.finished.emit()  # Done
+
+
+def total_sec_to_hms_str(obj):
+    """ Formats a datetime object into a time string """
+    tsecs = obj.total_seconds()
+    if tsecs < 0:
+        isneg = True
+        tsecs *= -1
+    else:
+        isneg = False
+    hours = tsecs / 60. / 60.
+    ihrs = np.int(hours)
+    minutes = (hours - ihrs) * 60.
+    imin = np.int(minutes)
+    seconds = (minutes - imin) * 60.
+    if isneg is True:
+        done_str = '-{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
+    else:
+        done_str = '+{0:02d}:{1:02d}:{2:02.0f}'.format(ihrs, imin, seconds)
+    return done_str
+
+
+def timedelta_to_time(delta):
+    """Converts a timedelta object to a time object"""
+    hours = delta.seconds/3600.
+    ihours = np.int(hours)
+    minutes = (hours - ihours) *60
+    iminutes = np.int(minutes)
+    seconds = (minutes - iminutes) * 60.
+    iseconds = np.int(seconds)
+    t = datetime.time(hour=ihours, minute=iminutes, second=iseconds)
+    return t
+
+
+def bytes2human(n):
+    """Converts bytes to human readable value.
+
+    http://code.activestate.com/recipes/578019
+
+    >>> bytes2human(10000)
+    '9.8K'
+    >>> bytes2human(100001221)
+    '95.4M'
+    """
+    symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    prefix = {}
+    for i, s in enumerate(symbols):
+        prefix[s] = 1 << (i + 1) * 10
+    for s in reversed(symbols):
+        if n >= prefix[s]:
+            value = float(n) / prefix[s]
+            return '{0:.2f}{1:s}'.format(value, s)
+    return '{}B'.format(n)
 
 
 def main():
+    """ Generate the gui and run """
     app = QtWidgets.QApplication(sys.argv)
-    QtGui.QFontDatabase.addApplicationFont("./SOFIACruiseTools/resources/fonts/digital_7/digital-7_mono.ttf")
+    app.setStyle('fusion')
+    
+    font = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                        'resources', 'fonts', 'digital_7', 
+                        'digital-7_mono.ttf')
+    QtGui.QFontDatabase.addApplicationFont(font)
+
     form = SOFIACruiseDirectorApp()
+
+    resolution = app.desktop().screenGeometry()
+    w, h = resolution.width(), resolution.height()
+    new_w = w*0.5
+    new_h = h*0.75
+
+    form.resize(new_w, new_h)
     form.show()  # Show the form
     app.exec_()  # and execute the app
 
