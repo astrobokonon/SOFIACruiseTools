@@ -62,30 +62,30 @@ from SOFIACruiseTools.Director.fitsHeader import FITSHeader
 from SOFIACruiseTools.Director.legTimer import LegTimerObj
 
 
-try:
-    from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
-except ImportError as e:
-    print('\nEncountered {0} while importint header checker: '
-          '\n\t{1}\n'.format(e.__class__.__name__, e))
-    # Check that the directory is not empty
-    target = './SOFIACruiseTools/header_checker/hcheck/file_checker.py'
-    if os.path.isfile(target):
-        # File exists, but not imported.
-        # Check if __init__.py exists
-        target = './SOFIACruiseTools/header_checker/__init__.py'
-        if os.path.isfile(target):
-            # Dunder init exists, but isn't being imported for some reason
-            raise ImportError('Unable to import header_checker')
-        else:
-            # Dunder init is not there. Make it and try import again
-            subprocess.call('touch {0}'.format(target), shell=True)
-            try:
-                from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
-            except ImportError:
-                raise ImportError('Unable to import header_checker')
-    else:
-        raise ImportError('Header checker directory is empty.\n'
-                          'Run:\n\tgit submodule update --init --recursive')
+#try:
+#    from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
+#except ImportError as e:
+#    print('\nEncountered {0} while importint header checker: '
+#          '\n\t{1}\n'.format(e.__class__.__name__, e))
+#    # Check that the directory is not empty
+#    target = './SOFIACruiseTools/header_checker/hcheck/file_checker.py'
+#    if os.path.isfile(target):
+#        # File exists, but not imported.
+#        # Check if __init__.py exists
+#        target = './SOFIACruiseTools/header_checker/__init__.py'
+#        if os.path.isfile(target):
+#            # Dunder init exists, but isn't being imported for some reason
+#            raise ImportError('Unable to import header_checker')
+#        else:
+#            # Dunder init is not there. Make it and try import again
+#            subprocess.call('touch {0}'.format(target), shell=True)
+#            try:
+#                from SOFIACruiseTools.header_checker.hcheck import file_checker as fc
+#            except ImportError:
+#                raise ImportError('Unable to import header_checker')
+#    else:
+#        raise ImportError('Header checker directory is empty.\n'
+#                          'Run:\n\tgit submodule update --init --recursive')
 
 
 class ConfigError(Exception):
@@ -194,7 +194,8 @@ class SOFIACruiseDirectorApp(QtWidgets.QMainWindow, scdp.Ui_MainWindow):
         self.kwname = None
         self.new_headers = None
         self.flight_info = None
-        self.checker = fc.FileChecker()
+#        self.checker = fc.FileChecker()
+        self.checker = None
         self.checker_rules = None
         self.network_status = True
         self.network_status_hold = False
